@@ -21,7 +21,8 @@ namespace NServiceBus.IntegrationTesting
                         MessageType = context.MessageMetadata.MessageType,
                         NotFound = saga.NotFound,
                         SagaType = saga.NotFound ? null : saga.Instance.GetType(),
-                        IsNew = saga.IsNew
+                        IsNew = saga.IsNew,
+                        SagaData = saga.NotFound ? null : saga.Instance.Entity
                     });
                 }
                 else

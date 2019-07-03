@@ -9,7 +9,7 @@ namespace MyService
     {
         public Task Handle(AReplyMessage message, IMessageHandlerContext context)
         {
-            return context.SendLocal(new StartASaga() { SomeId = Guid.NewGuid() });
+            return context.SendLocal(new StartASaga() { SomeId = message.ThisWillBeTheSagaId });
         }
     }
 }

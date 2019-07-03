@@ -6,6 +6,7 @@ using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -16,8 +17,9 @@ namespace MySystem.AcceptanceTests
         [Test]
         public async Task something_should_happen()
         {
+            var expectedSomeId = Guid.NewGuid();
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage())))
+                .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = expectedSomeId })))
                 .WithEndpoint<MyOtherEndpointEndpoint>()
                 .Done(c =>
                 {
@@ -31,9 +33,11 @@ namespace MySystem.AcceptanceTests
                 })
                 .Run();
 
-            Assert.True(context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga)).IsNew);
-            Assert.True(context.HandlerWasInvoked<AMessageHandler>());
-            Assert.True(context.HandlerWasInvoked<AReplyMessageHandler>());
+            var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
+
+
+            Assert.True(invokedSaga.IsNew);
+            Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == expectedSomeId);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }

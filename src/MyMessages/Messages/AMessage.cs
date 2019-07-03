@@ -1,6 +1,9 @@
-﻿namespace MyMessages.Messages
+﻿using System;
+
+namespace MyMessages.Messages
 {
     public class AMessage
     {
+        public Guid ThisWillBeTheSagaId { get; set; }
     }
 }

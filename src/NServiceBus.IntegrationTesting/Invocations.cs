@@ -18,5 +18,6 @@ namespace NServiceBus.IntegrationTesting
         public Type SagaType { get; set; }
         public bool NotFound { get; set; }
         public bool IsNew { get; set; }
+        public IContainSagaData SagaData { get; internal set; }
     }
 }
