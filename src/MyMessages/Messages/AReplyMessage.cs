@@ -1,6 +1,6 @@
 ﻿namespace MyMessages.Messages
 {
-    public class AMessage
+    public class AReplyMessage
     {
     }
 }

@@ -9,6 +9,7 @@ namespace MyService
             : base("MyService")
         {
             this.UseSerialization<NewtonsoftSerializer>();
+            this.UsePersistence<LearningPersistence>();
             var transportConfig = this.UseTransport<LearningTransport>();
 
             transportConfig.Routing()
