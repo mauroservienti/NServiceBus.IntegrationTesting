@@ -3,6 +3,7 @@ using MyOtherService;
 using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
+using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using System.Linq;
@@ -46,7 +47,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyServiceConfiguration, EmptyTestCompletionHandler>>();
+                EndpointSetup<ServiceTemplate<MyServiceConfiguration, CompletionHandler>>();
             }
         }
 
@@ -54,7 +55,18 @@ namespace MySystem.AcceptanceTests
         {
             public MyOtherEndpointEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, EmptyTestCompletionHandler>>();
+                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, CompletionHandler>>();
+            }
+        }
+
+        class CompletionHandler : IHandleTestCompletion
+        {
+            public Task OnTestCompleted(RunSummary summary)
+            {
+                //clean-up transport
+                //clean-up storage
+
+                return Task.CompletedTask;
             }
         }
     }
