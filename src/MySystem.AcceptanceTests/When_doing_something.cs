@@ -5,6 +5,7 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
@@ -20,7 +21,7 @@ namespace MySystem.AcceptanceTests
                 .Done(c =>
                 {
                     return
-                    ( 
+                    (
                         c.HandlerWasInvoked<AMessageHandler>()
                         && c.HandlerWasInvoked<AReplyMessageHandler>()
                         && c.SagaWasInvoked<ASaga>()
@@ -29,7 +30,7 @@ namespace MySystem.AcceptanceTests
                 })
                 .Run();
 
-            Assert.True(context.SagaWasInvoked<ASaga>());
+            Assert.True(context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga)).IsNew);
             Assert.True(context.HandlerWasInvoked<AMessageHandler>());
             Assert.True(context.HandlerWasInvoked<AReplyMessageHandler>());
             Assert.False(context.HasFailedMessages());
@@ -38,7 +39,7 @@ namespace MySystem.AcceptanceTests
 
         class Context : IntegrationContext
         {
-            
+
         }
 
         class MyServiceEndpoint : EndpointConfigurationBuilder
@@ -53,7 +54,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyOtherEndpointEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, EmptyTestCompletionHandler >> ();
+                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, EmptyTestCompletionHandler>>();
             }
         }
     }
