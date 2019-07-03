@@ -4,26 +4,36 @@ using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NUnit.Framework;
 using System.Threading.Tasks;
+using MyService.AcceptanceTests.Extensions;
+using MyMessages.Messages;
 
 namespace MyService.AcceptanceTests
 {
-    public class When_defining_routes
+    public class When_doing_something
     {
         [Test]
-        public async Task route_to_attribute_should_be_overwritten()
+        public async Task something_should_happen()
         {
             var context = await Scenario.Define<Context>()
-                .WithEndpoint<MyServiceEndpoint>(/*g => g.When(b => b.Send(new Message()))*/)
+                .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage())))
                 .WithEndpoint<MyOtherEndpointEndpoint>()
-                .Done(c => c.MessageReceived)
+                .Done(c =>
+                {
+                    return
+                    ( 
+                        c.WhenHandlerIsInvoked<MyService.AMessageHandler>()
+                        && c.WhenHandlerIsInvoked<MyOtherService.AMessageHandler>()
+                    )
+                    || c.HasFailedMessages();
+                })
                 .Run();
 
-            Assert.True(context.MessageReceived);
+            Assert.False(context.HasFailedMessages());
         }
 
-        class Context : ScenarioContext
+        class Context : SpecialContext
         {
-            public bool MessageReceived { get; set; }
+            
         }
 
         class MyServiceEndpoint : EndpointConfigurationBuilder

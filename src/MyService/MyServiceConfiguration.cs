@@ -1,4 +1,5 @@
-﻿using NServiceBus;
+﻿using MyMessages.Messages;
+using NServiceBus;
 
 namespace MyService
 {
@@ -10,7 +11,8 @@ namespace MyService
             this.UseSerialization<NewtonsoftSerializer>();
             var transportConfig = this.UseTransport<LearningTransport>();
 
-            //transportConfig.Routing();
+            transportConfig.Routing()
+                .RouteToEndpoint(typeof(AMessage), "MyOtherService");
 
             this.SendFailedMessagesTo("error");
 
