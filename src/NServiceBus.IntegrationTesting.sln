@@ -5,11 +5,13 @@ VisualStudioVersion = 16.0.29020.237
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyService", "MyService\MyService.csproj", "{AB7F9FB9-B79B-47BF-A42E-CD6DB62E0E40}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyService.AcceptanceTests", "MyService.AcceptanceTests\MyService.AcceptanceTests.csproj", "{44C27AAF-4413-4741-A064-ED05B26483E0}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyOtherService", "MyOtherService\MyOtherService.csproj", "{C95878F3-DA0D-4760-8A64-0620EE62725B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyMessages", "MyMessages\MyMessages.csproj", "{D998B309-33DB-449E-85EC-C9EE951128AD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyMessages", "MyMessages\MyMessages.csproj", "{D998B309-33DB-449E-85EC-C9EE951128AD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MySystem.AcceptanceTests", "MySystem.AcceptanceTests\MySystem.AcceptanceTests.csproj", "{6C53ED36-0F82-4F62-A94A-43D92D3AC6F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting", "NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj", "{A1DF8428-D478-4FAA-9237-AA36D4C83732}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,10 +23,6 @@ Global
 		{AB7F9FB9-B79B-47BF-A42E-CD6DB62E0E40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB7F9FB9-B79B-47BF-A42E-CD6DB62E0E40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB7F9FB9-B79B-47BF-A42E-CD6DB62E0E40}.Release|Any CPU.Build.0 = Release|Any CPU
-		{44C27AAF-4413-4741-A064-ED05B26483E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{44C27AAF-4413-4741-A064-ED05B26483E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{44C27AAF-4413-4741-A064-ED05B26483E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{44C27AAF-4413-4741-A064-ED05B26483E0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C95878F3-DA0D-4760-8A64-0620EE62725B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C95878F3-DA0D-4760-8A64-0620EE62725B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C95878F3-DA0D-4760-8A64-0620EE62725B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,6 +31,14 @@ Global
 		{D998B309-33DB-449E-85EC-C9EE951128AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D998B309-33DB-449E-85EC-C9EE951128AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D998B309-33DB-449E-85EC-C9EE951128AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C53ED36-0F82-4F62-A94A-43D92D3AC6F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C53ED36-0F82-4F62-A94A-43D92D3AC6F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C53ED36-0F82-4F62-A94A-43D92D3AC6F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C53ED36-0F82-4F62-A94A-43D92D3AC6F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1DF8428-D478-4FAA-9237-AA36D4C83732}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1DF8428-D478-4FAA-9237-AA36D4C83732}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1DF8428-D478-4FAA-9237-AA36D4C83732}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1DF8428-D478-4FAA-9237-AA36D4C83732}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

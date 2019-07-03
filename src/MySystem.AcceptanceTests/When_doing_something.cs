@@ -1,13 +1,13 @@
+using MyMessages.Messages;
 using MyOtherService;
-using MyService.AcceptanceTests.Templates;
+using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
+using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using System.Threading.Tasks;
-using MyService.AcceptanceTests.Extensions;
-using MyMessages.Messages;
 
-namespace MyService.AcceptanceTests
+namespace MySystem.AcceptanceTests
 {
     public class When_doing_something
     {
@@ -21,17 +21,22 @@ namespace MyService.AcceptanceTests
                 {
                     return
                     ( 
-                        c.WhenHandlerIsInvoked<MyService.AMessageHandler>()
-                        && c.WhenHandlerIsInvoked<MyOtherService.AMessageHandler>()
+                        c.HandlerWasInvoked<AMessageHandler>()
+                        && c.HandlerWasInvoked<AReplyMessageHandler>()
+                        && c.SagaWasInvoked<ASaga>()
                     )
                     || c.HasFailedMessages();
                 })
                 .Run();
 
+            Assert.True(context.SagaWasInvoked<ASaga>());
+            Assert.True(context.HandlerWasInvoked<AMessageHandler>());
+            Assert.True(context.HandlerWasInvoked<AReplyMessageHandler>());
             Assert.False(context.HasFailedMessages());
+            Assert.False(context.HasHandlingErrors());
         }
 
-        class Context : SpecialContext
+        class Context : IntegrationContext
         {
             
         }
@@ -40,7 +45,7 @@ namespace MyService.AcceptanceTests
         {
             public MyServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyServiceConfiguration>>();
+                EndpointSetup<ServiceTemplate<MyServiceConfiguration, EmptyTestCompletionHandler>>();
             }
         }
 
@@ -48,7 +53,7 @@ namespace MyService.AcceptanceTests
         {
             public MyOtherEndpointEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration>>();
+                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, EmptyTestCompletionHandler >> ();
             }
         }
     }
