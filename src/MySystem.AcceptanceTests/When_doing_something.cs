@@ -20,7 +20,7 @@ namespace MySystem.AcceptanceTests
             var expectedSomeId = Guid.NewGuid();
             var context = await Scenario.Define<Context>()
                 .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = expectedSomeId })))
-                .WithEndpoint<MyOtherEndpointEndpoint>()
+                .WithEndpoint<MyOtherServiceEndpoint>()
                 .Done(c =>
                 {
                     return
@@ -55,9 +55,9 @@ namespace MySystem.AcceptanceTests
             }
         }
 
-        class MyOtherEndpointEndpoint : EndpointConfigurationBuilder
+        class MyOtherServiceEndpoint : EndpointConfigurationBuilder
         {
-            public MyOtherEndpointEndpoint()
+            public MyOtherServiceEndpoint()
             {
                 EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, CompletionHandler>>();
             }
