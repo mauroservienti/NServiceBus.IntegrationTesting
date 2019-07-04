@@ -51,7 +51,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyServiceConfiguration, CompletionHandler>>();
+                EndpointSetup<ServiceTemplate<MyServiceConfiguration>>();
             }
         }
 
@@ -59,18 +59,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyOtherServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration, CompletionHandler>>();
-            }
-        }
-
-        class CompletionHandler : IHandleTestCompletion
-        {
-            public Task OnTestCompleted(RunSummary summary)
-            {
-                //clean-up transport
-                //clean-up storage
-
-                return Task.CompletedTask;
+                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration>>();
             }
         }
     }
