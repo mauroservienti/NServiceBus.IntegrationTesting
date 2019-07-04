@@ -3,7 +3,6 @@ using MyOtherService;
 using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
-using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using System;

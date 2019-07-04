@@ -1,13 +1,11 @@
 ﻿using MyMessages.Messages;
 using NServiceBus;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace MyService
 {
-    public class ASaga : Saga<ASagaData>, 
+    public class ASaga : Saga<ASagaData>,
         IAmStartedByMessages<StartASaga>
     {
         public Task Handle(StartASaga message, IMessageHandlerContext context)

@@ -1,6 +1,5 @@
 ﻿using MyMessages.Messages;
 using NServiceBus;
-using System;
 using System.Threading.Tasks;
 
 namespace MyService
