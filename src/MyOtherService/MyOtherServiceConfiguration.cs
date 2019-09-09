@@ -1,4 +1,7 @@
 ﻿using NServiceBus;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace MyOtherService
 {
@@ -11,7 +14,14 @@ namespace MyOtherService
             this.UsePersistence<LearningPersistence>();
             var transportConfig = this.UseTransport<LearningTransport>();
 
-            //transportConfig.Routing();
+            var included = new[] { "MyOtherService.dll", "MyMessages.dll" };
+            var excluded = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll")
+                .Select(path => Path.GetFileName(path))
+                .Where(existingAssembly => !included.Contains(existingAssembly))
+                .ToArray();
+
+            var scanner = this.AssemblyScanner();
+            scanner.ExcludeAssemblies(excluded);
 
             this.SendFailedMessagesTo("error");
 
