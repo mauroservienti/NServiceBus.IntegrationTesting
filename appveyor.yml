@@ -16,7 +16,7 @@ branches:
   - /^\d+\.\d+\.\d+(-\S*)?$/
 
 build_script:
-- cmd: ./build.sh
+- sh: ./build.sh
 
 test: off
 deploy: off
