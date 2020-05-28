@@ -6,18 +6,26 @@ internal class Program
 {
     public static void Main(string[] args)
     {
+        var sourceDir = "src";
+        var dockerComposeYml = "docker-compose.yml";
+
         var sdk = new DotnetSdkManager();
 
         Target("default", DependsOn("test"));
 
         Target("build",
-            Directory.EnumerateFiles("src", "*.sln", SearchOption.AllDirectories),
+            Directory.EnumerateFiles(sourceDir, "*.sln", SearchOption.AllDirectories),
             solution => Run(sdk.GetDotnetCliPath(), $"build \"{solution}\" --configuration Release"));
 
         Target("test", DependsOn("build"),
-            Directory.EnumerateFiles("src", "*Tests.csproj", SearchOption.AllDirectories),
-            proj => Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build"));
-        
+            Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
+            proj => 
+            {
+                Run("docker-compose", @$"-f {sourceDir}\{dockerComposeYml} up -d");
+                Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
+                Run("docker-compose", @$"-f {sourceDir}\{dockerComposeYml} down");
+            });
+
         RunTargetsAndExit(args);
     }
 }
