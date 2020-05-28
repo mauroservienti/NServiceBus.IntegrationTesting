@@ -18,7 +18,6 @@ namespace NServiceBus.IntegrationTesting
                 {
                     invocation = IntegrationContext.CurrentContext.CaptureInvokedSaga(new SagaInvocation()
                     {
-                        MessageType = context.MessageMetadata.MessageType,
                         NotFound = saga.NotFound,
                         SagaType = saga.NotFound ? null : saga.Instance.GetType(),
                         IsNew = saga.IsNew,
@@ -29,10 +28,12 @@ namespace NServiceBus.IntegrationTesting
                 {
                     invocation = IntegrationContext.CurrentContext.CaptureInvokedHandler(new HandlerInvocation()
                     {
-                        MessageType = context.MessageMetadata.MessageType,
                         HandlerType = context.MessageHandler.HandlerType
                     });
                 }
+
+                invocation.Message = context.MessageBeingHandled;
+                invocation.MessageType = context.MessageMetadata.MessageType;
             }
             catch (Exception handlingError)
             {
