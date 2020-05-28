@@ -16,6 +16,7 @@ branches:
   - /^\d+\.\d+\.\d+(-\S*)?$/
 
 build_script:
+- docker-switch-linux
 - cmd: ./build.cmd
 
 test: off
