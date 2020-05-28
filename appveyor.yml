@@ -1,5 +1,5 @@
 version: '{build}'
-image: Visual Studio 2019
+image: ubuntu2004
 
 skip_branch_with_pr: true
 pull_requests:
@@ -16,8 +16,7 @@ branches:
   - /^\d+\.\d+\.\d+(-\S*)?$/
 
 build_script:
-- docker-switch-linux
-- cmd: ./build.cmd
+- cmd: ./build.sh
 
 test: off
 deploy: off
