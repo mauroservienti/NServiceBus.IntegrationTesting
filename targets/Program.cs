@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 
@@ -7,8 +9,8 @@ internal class Program
     public static void Main(string[] args)
     {
         var sourceDir = "src";
-        var dockerComposeYml = "docker-compose.yml";
-        var dockerComposePath = Path.Combine("./", "src", dockerComposeYml);
+        var dockerCompose = Directory.EnumerateFiles(sourceDir, "docker-compose.yml", SearchOption.AllDirectories).Single();
+        Debug.Assert(File.Exists(dockerCompose));
 
         var sdk = new DotnetSdkManager();
 
@@ -22,9 +24,9 @@ internal class Program
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
             proj => 
             {
-                Run("docker-compose", @$"-f {dockerComposePath} up -d");
+                Run("docker-compose", @$"-f {dockerCompose} up -d");
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-                Run("docker-compose", @$"-f {dockerComposePath} down");
+                Run("docker-compose", @$"-f {dockerCompose} down");
             });
 
         RunTargetsAndExit(args);
