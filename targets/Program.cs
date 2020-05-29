@@ -9,10 +9,7 @@ internal class Program
     public static void Main(string[] args)
     {
         var sourceDir = "src";
-        var dockerCompose = Directory.EnumerateFiles(sourceDir, "docker-compose.yml", SearchOption.AllDirectories).Single();
-        var dockerComposeFullPath = Path.GetFullPath(dockerCompose);
-        Debug.Assert(File.Exists(dockerCompose));
-        Debug.Assert(File.Exists(dockerComposeFullPath));
+        //var dockerComposeYmlFullPath = Path.GetFullPath(Directory.EnumerateFiles(sourceDir, "docker-compose.yml", SearchOption.AllDirectories).Single());
 
         var sdk = new DotnetSdkManager();
 
@@ -26,9 +23,15 @@ internal class Program
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
             proj => 
             {
-                Run("docker-compose", @$"-f {dockerComposeFullPath} up -d");
+                var projFileNameWithoutExt = Path.GetFileNameWithoutExtension(proj);
+                var projFileName = Path.GetFileName(proj);
+                var dockerComposeYmlFileName = $"{projFileNameWithoutExt}.docker-compose.yml";
+                var dockerComposeYmlFullPath = proj.Replace(projFileName, dockerComposeYmlFileName);
+
+
+                Run("docker-compose", @$"up -f {dockerComposeYmlFullPath} -d");
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-                Run("docker-compose", @$"-f {dockerComposeFullPath} down");
+                Run("docker-compose", @$"down -f {dockerComposeYmlFullPath}");
             });
 
         RunTargetsAndExit(args);
