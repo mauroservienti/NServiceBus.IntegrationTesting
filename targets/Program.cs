@@ -24,14 +24,12 @@ internal class Program
                 var projFileNameWithoutExt = Path.GetFileNameWithoutExtension(proj);
                 var dockerComposeYmlFullPath = proj.Replace(Path.GetFileName(proj), $"{projFileNameWithoutExt}.docker-compose.yml");
                 var testProjDirectory = proj.Replace(Path.GetFileName(proj), "");
-                var dockerComposeCommand = Path.Combine(testProjDirectory, "docker-compose");
-                Console.WriteLine($"docker-compose command: {dockerComposeCommand}");
 
                 var useDockerCompose = File.Exists(dockerComposeYmlFullPath);
                 if (useDockerCompose) 
                 {
                     Console.WriteLine($"{projFileNameWithoutExt} is configured to use docker. Setting up docker using docker-compose ({dockerComposeYmlFullPath})");
-                    Run(dockerComposeCommand, $"--file \"{dockerComposeYmlFullPath}\" up");
+                    Run("docker-compose", $"--file=\"{dockerComposeYmlFullPath}\" --project-directory=\"{testProjDirectory}\" up");
                 }
 
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
@@ -39,7 +37,7 @@ internal class Program
                 if (useDockerCompose)
                 {
                     Console.WriteLine("docker-compose tear down.");
-                    Run(dockerComposeCommand, $"--file \"{dockerComposeYmlFullPath}\" down");
+                    Run("docker-compose", $"--file=\"{dockerComposeYmlFullPath}\" --project-directory=\"{testProjDirectory}\" down");
                 }
             });
 
