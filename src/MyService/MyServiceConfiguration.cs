@@ -13,7 +13,10 @@ namespace MyService
 
             this.UseSerialization<NewtonsoftSerializer>();
             this.UsePersistence<LearningPersistence>();
-            var transportConfig = this.UseTransport<LearningTransport>();
+            this.EnableInstallers();
+
+            var transportConfig = this.UseTransport<RabbitMQTransport>();
+            transportConfig.ConnectionString("host=localhost;username=guest;password=guest");
 
             transportConfig.Routing()
                 .RouteToEndpoint(typeof(AMessage), "MyOtherService");
