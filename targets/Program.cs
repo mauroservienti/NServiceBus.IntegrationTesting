@@ -28,7 +28,7 @@ internal class Program
                 if (useDockerCompose) 
                 {
                     Console.WriteLine($"{projFileNameWithoutExt} is configured to use docker. Setting up docker using docker-compose ({dockerComposeYmlFullPath})");
-                    Run("docker-compose", $"up --file=\"{dockerComposeYmlFullPath}\" -d");
+                    Run("docker-compose", $"--file=\"{dockerComposeYmlFullPath}\" up -d");
                 }
 
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
@@ -36,7 +36,7 @@ internal class Program
                 if (useDockerCompose)
                 {
                     Console.WriteLine("docker-compose tear down.");
-                    Run("docker-compose", $"down --file=\"{dockerComposeYmlFullPath}\"");
+                    Run("docker-compose", $"--file=\"{dockerComposeYmlFullPath}\" down");
                 }
             });
 
