@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -21,14 +22,22 @@ internal class Program
             proj => 
             {
                 var projFileNameWithoutExt = Path.GetFileNameWithoutExtension(proj);
-                var projFileName = Path.GetFileName(proj);
-                var dockerComposeYmlFileName = $"{projFileNameWithoutExt}.docker-compose.yml";
-                var dockerComposeYmlFullPath = proj.Replace(projFileName, dockerComposeYmlFileName);
+                var dockerComposeYmlFullPath = proj.Replace(Path.GetFileName(proj), $"{projFileNameWithoutExt}.docker-compose.yml");
 
+                var useDockerCompose = File.Exists(dockerComposeYmlFullPath);
+                if (useDockerCompose) 
+                {
+                    Console.WriteLine($"{projFileNameWithoutExt} is configured to use docker. Setting up docker using docker-compose ({dockerComposeYmlFullPath})");
+                    Run("docker-compose", $"up --file=\"{dockerComposeYmlFullPath}\" -d");
+                }
 
-                Run("docker-compose", $"up --file=\"{dockerComposeYmlFullPath}\" -d");
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-                Run("docker-compose", $"down --file=\"{dockerComposeYmlFullPath}\"");
+
+                if (useDockerCompose)
+                {
+                    Console.WriteLine("docker-compose tear down.");
+                    Run("docker-compose", $"down --file=\"{dockerComposeYmlFullPath}\"");
+                }
             });
 
         RunTargetsAndExit(args);
