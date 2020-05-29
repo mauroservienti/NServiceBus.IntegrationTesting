@@ -29,9 +29,9 @@ internal class Program
                 var dockerComposeYmlFullPath = proj.Replace(projFileName, dockerComposeYmlFileName);
 
 
-                Run("docker-compose", @$"up -f {dockerComposeYmlFullPath} -d");
+                Run("docker-compose", @$"up -f \"{dockerComposeYmlFullPath}\" -d");
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-                Run("docker-compose", @$"down -f {dockerComposeYmlFullPath}");
+                Run("docker-compose", @$"down -f \"{dockerComposeYmlFullPath}\"");
             });
 
         RunTargetsAndExit(args);
