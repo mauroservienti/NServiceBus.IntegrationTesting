@@ -16,6 +16,7 @@ namespace MyService
             this.EnableInstallers();
 
             var transportConfig = this.UseTransport<RabbitMQTransport>();
+            transportConfig.UseConventionalRoutingTopology();
             transportConfig.ConnectionString("host=localhost;username=guest;password=guest");
 
             transportConfig.Routing()
