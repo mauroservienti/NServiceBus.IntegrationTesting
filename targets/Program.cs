@@ -8,7 +8,7 @@ internal class Program
     {
         var sourceDir = "src";
         var dockerComposeYml = "docker-compose.yml";
-        var dockerComposePath = Path.Combine("/", "src", dockerComposeYml);
+        var dockerComposePath = Path.Combine("./", "src", dockerComposeYml);
 
         var sdk = new DotnetSdkManager();
 
