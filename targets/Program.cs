@@ -10,7 +10,9 @@ internal class Program
     {
         var sourceDir = "src";
         var dockerCompose = Directory.EnumerateFiles(sourceDir, "docker-compose.yml", SearchOption.AllDirectories).Single();
+        var dockerComposeFullPath = Path.GetFullPath(dockerCompose);
         Debug.Assert(File.Exists(dockerCompose));
+        Debug.Assert(File.Exists(dockerComposeFullPath));
 
         var sdk = new DotnetSdkManager();
 
@@ -24,9 +26,9 @@ internal class Program
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
             proj => 
             {
-                Run("docker-compose", @$"-f {dockerCompose} up -d");
+                Run("docker-compose", @$"-f {dockerComposeFullPath} up -d");
                 Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-                Run("docker-compose", @$"-f {dockerCompose} down");
+                Run("docker-compose", @$"-f {dockerComposeFullPath} down");
             });
 
         RunTargetsAndExit(args);
