@@ -12,7 +12,7 @@ namespace Targets
         readonly bool useDockerCompose;
         readonly string dockerComposeYml = "docker-compose.yml";
 
-        public DockerCompose(string testProjectFullPath, int delayAfterCompose = 1000)
+        public DockerCompose(string testProjectFullPath, Func<bool> dockerStatusChecker = null)
         {
             testProjDirectory = testProjectFullPath.Replace(Path.GetFileName(testProjectFullPath), "");
             dockerComposeYmlFullPath = Path.Combine(testProjDirectory, dockerComposeYml);
@@ -23,10 +23,13 @@ namespace Targets
                 Console.WriteLine($"{Path.GetFileNameWithoutExtension(testProjectFullPath)} is configured to use docker. Setting up docker using {dockerComposeYml} file.");
                 Run("docker-compose", "up -d", workingDirectory: testProjDirectory);
                 Run("docker", "ps -a");
-                
-                if (delayAfterCompose > 0)
+
+                if (dockerStatusChecker != null)
                 {
-                    Thread.Sleep(delayAfterCompose);
+                    while (!dockerStatusChecker())
+                    {
+                        Thread.Sleep(500);
+                    }
                 }
             }
         }

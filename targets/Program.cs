@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.Net.Http;
 using Targets;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
@@ -21,7 +23,14 @@ internal class Program
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
             proj => 
             {
-                using(new DockerCompose(proj)) 
+                static bool statusChecker()
+                {
+                    using var client = new HttpClient();
+                    var response = client.GetAsync("http://localhost:15672/").GetAwaiter().GetResult();
+                    return response.IsSuccessStatusCode;
+                }
+
+                using (new DockerCompose(proj, statusChecker)) 
                 {
                     Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
                 }                
