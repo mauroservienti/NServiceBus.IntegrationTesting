@@ -25,9 +25,16 @@ internal class Program
             {
                 static bool statusChecker()
                 {
-                    using var client = new HttpClient();
-                    var response = client.GetAsync("http://localhost:15672/").GetAwaiter().GetResult();
-                    return response.IsSuccessStatusCode;
+                    try
+                    {
+                        using var client = new HttpClient();
+                        var response = client.GetAsync("http://localhost:15672/").GetAwaiter().GetResult();
+                        return response.IsSuccessStatusCode;
+                    }
+                    catch 
+                    {
+                        return false;
+                    }
                 }
 
                 using (new DockerCompose(proj, statusChecker)) 
