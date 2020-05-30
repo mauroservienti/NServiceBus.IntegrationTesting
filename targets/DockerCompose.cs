@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using static SimpleExec.Command;
 
 namespace Targets
@@ -11,7 +12,7 @@ namespace Targets
         readonly bool useDockerCompose;
         readonly string dockerComposeYml = "docker-compose.yml";
 
-        public DockerCompose(string testProjectFullPath)
+        public DockerCompose(string testProjectFullPath, int delayAfterCompose = 3000)
         {
             testProjDirectory = testProjectFullPath.Replace(Path.GetFileName(testProjectFullPath), "");
             dockerComposeYmlFullPath = Path.Combine(testProjDirectory, dockerComposeYml);
@@ -22,6 +23,11 @@ namespace Targets
                 Console.WriteLine($"{Path.GetFileNameWithoutExtension(testProjectFullPath)} is configured to use docker. Setting up docker using {dockerComposeYml} file.");
                 Run("docker-compose", "up -d", workingDirectory: testProjDirectory);
                 Run("docker", "ps -a");
+                
+                if (delayAfterCompose > 0)
+                {
+                    Thread.Sleep(delayAfterCompose);
+                }
             }
         }
 
