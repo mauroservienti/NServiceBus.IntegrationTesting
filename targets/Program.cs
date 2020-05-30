@@ -1,5 +1,5 @@
-using System;
 using System.IO;
+using Targets;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 
@@ -21,25 +21,10 @@ internal class Program
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
             proj => 
             {
-                var testProjDirectory = proj.Replace(Path.GetFileName(proj), "");
-                var dockerComposeYml = "docker-compose.yml";
-                var dockerComposeYmlFullPath = Path.Combine(testProjDirectory, dockerComposeYml);
-                
-
-                var useDockerCompose = File.Exists(dockerComposeYmlFullPath);
-                if (useDockerCompose) 
+                using(new DockerCompose(proj)) 
                 {
-                    Console.WriteLine($"{Path.GetFileNameWithoutExtension(proj)} is configured to use docker. Setting up docker using {dockerComposeYml} file.");
-                    Run("docker-compose", "up -d", workingDirectory: testProjDirectory);
-                }
-
-                Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-
-                if (useDockerCompose)
-                {
-                    Console.WriteLine("docker-compose tear down.");
-                    Run("docker-compose", "down", workingDirectory: testProjDirectory);
-                }
+                    Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
+                }                
             });
 
         RunTargetsAndExit(args);
