@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\MyMessages\MyMessages.csproj" />
     <ProjectReference Include="..\NServiceBus.AssemblyScanner.Extensions\NServiceBus.AssemblyScanner.Extensions.csproj" />
   </ItemGroup>
