@@ -12,7 +12,7 @@ namespace Targets
         readonly bool useDockerCompose;
         readonly string dockerComposeYml = "docker-compose.yml";
 
-        public DockerCompose(string testProjectFullPath, int delayAfterCompose = 3000)
+        public DockerCompose(string testProjectFullPath, int delayAfterCompose = 1000)
         {
             testProjDirectory = testProjectFullPath.Replace(Path.GetFileName(testProjectFullPath), "");
             dockerComposeYmlFullPath = Path.Combine(testProjDirectory, dockerComposeYml);
