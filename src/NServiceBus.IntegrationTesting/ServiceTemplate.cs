@@ -5,17 +5,11 @@ using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public class ServiceTemplate<T> : IEndpointSetupTemplate
-        where T : EndpointConfiguration, new()
+    public abstract class ServiceTemplate : IEndpointSetupTemplate
     {
-        public Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+        public async Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
         {
-            return OnGetConfiguration(runDescriptor, endpointConfiguration, configurationBuilderCustomization);
-        }
-
-        protected virtual Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
-        {
-            var configuration = new T();
+            var configuration = await OnGetConfiguration(runDescriptor, endpointCustomizationConfiguration, configurationBuilderCustomization);
 
             var settings = configuration.GetSettings();
             endpointCustomizationConfiguration.EndpointName = settings.EndpointName();
@@ -23,6 +17,19 @@ namespace NServiceBus.IntegrationTesting
             configurationBuilderCustomization(configuration);
 
             configuration.Pipeline.Register(new InterceptInvokedHandlers(endpointCustomizationConfiguration.EndpointName), "Intercept invoked Message Handlers");
+
+            return configuration;
+        }
+
+        protected abstract Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization);
+    }
+
+    public class ServiceTemplate<T> : ServiceTemplate
+        where T : EndpointConfiguration, new()
+    {
+        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+        {
+            var configuration = new T();
 
             return Task.FromResult<EndpointConfiguration>(configuration);
         }
