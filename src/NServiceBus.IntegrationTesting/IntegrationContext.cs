@@ -8,9 +8,11 @@ namespace NServiceBus.IntegrationTesting
 {
     public class IntegrationContext : ScenarioContext
     {
-        ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
+        readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
+        readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
 
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
+        public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
 
         internal HandlerInvocation CaptureInvokedHandler(HandlerInvocation invocation)
         {
@@ -19,11 +21,6 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
-        ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
-
-        public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
-
-
         internal SagaInvocation CaptureInvokedSaga(SagaInvocation invocation)
         {
             invokedSagas.Add(invocation);
@@ -31,7 +28,7 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
-        static PropertyInfo GetCurrentProperty()
+        static PropertyInfo GetScenarioContextCurrentProperty()
         {
             return typeof(ScenarioContext).GetProperty("Current", BindingFlags.Static | BindingFlags.NonPublic);
         }
@@ -40,7 +37,7 @@ namespace NServiceBus.IntegrationTesting
         {
             get
             {
-                var pi = GetCurrentProperty();
+                var pi = GetScenarioContextCurrentProperty();
                 var current = (IntegrationContext)pi.GetMethod.Invoke(null, null);
 
                 return current;
