@@ -1,4 +1,5 @@
 ﻿using NServiceBus.AcceptanceTesting;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,15 +11,23 @@ namespace NServiceBus.IntegrationTesting
     {
         readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
+        readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new ConcurrentBag<OutgoingMessageOperation>();
 
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
+        public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
+
 
         internal HandlerInvocation CaptureInvokedHandler(HandlerInvocation invocation)
         {
             invokedHandlers.Add(invocation);
 
             return invocation;
+        }
+
+        internal void AddOutogingOperation(OutgoingMessageOperation outgoingMessageOperation)
+        {
+            outgoingMessageOperations.Add(outgoingMessageOperation);
         }
 
         internal SagaInvocation CaptureInvokedSaga(SagaInvocation invocation)
