@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public abstract class IntegrationContext : ScenarioContext
+    public class IntegrationContext : ScenarioContext
     {
         List<HandlerInvocation> invokedHandlers = new List<HandlerInvocation>();
 

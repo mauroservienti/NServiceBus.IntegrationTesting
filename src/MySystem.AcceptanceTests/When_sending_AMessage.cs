@@ -11,14 +11,14 @@ using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
 {
-    public class When_doing_something
+    public class When_sending_AMessage
     {
         [Test]
-        public async Task something_should_happen()
+        public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {
-            var expectedSomeId = Guid.NewGuid();
-            var context = await Scenario.Define<Context>()
-                .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = expectedSomeId })))
+            var theExpectedSagaId = Guid.NewGuid();
+            var context = await Scenario.Define<IntegrationContext>()
+                .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = theExpectedSagaId })))
                 .WithEndpoint<MyOtherServiceEndpoint>()
                 .Done(c =>
                 {
@@ -36,14 +36,9 @@ namespace MySystem.AcceptanceTests
 
 
             Assert.True(invokedSaga.IsNew);
-            Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == expectedSomeId);
+            Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
-        }
-
-        class Context : IntegrationContext
-        {
-
         }
 
         class MyServiceEndpoint : EndpointConfigurationBuilder
