@@ -36,6 +36,7 @@ namespace MySystem.AcceptanceTests
 
 
             Assert.True(invokedSaga.IsNew);
+            Assert.AreEqual("MyService", invokedSaga.EndpointName);
             Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());

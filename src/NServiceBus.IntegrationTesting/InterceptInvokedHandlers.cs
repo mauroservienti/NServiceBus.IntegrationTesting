@@ -7,6 +7,13 @@ namespace NServiceBus.IntegrationTesting
 {
     class InterceptInvokedHandlers : Behavior<IInvokeHandlerContext>
     {
+        readonly string endpointName;
+
+        public InterceptInvokedHandlers(string endpointName)
+        {
+            this.endpointName = endpointName;
+        }
+
         public override async Task Invoke(IInvokeHandlerContext context, Func<Task> next)
         {
             Invocation invocation = null;
@@ -33,6 +40,7 @@ namespace NServiceBus.IntegrationTesting
                     });
                 }
 
+                invocation.EndpointName = endpointName;
                 invocation.Message = context.MessageBeingHandled;
                 invocation.MessageType = context.MessageMetadata.MessageType;
             }
