@@ -4,6 +4,7 @@ namespace NServiceBus.IntegrationTesting
 {
     public abstract class Invocation
     {
+        public string EndpointName { get; internal set; }
         public object Message { get; internal set; }
         public Type MessageType { get; internal set; }
         public Exception HandlingError { get; internal set; }

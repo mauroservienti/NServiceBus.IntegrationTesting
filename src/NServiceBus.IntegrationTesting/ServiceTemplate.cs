@@ -18,7 +18,7 @@ namespace NServiceBus.IntegrationTesting
 
             configurationBuilderCustomization(configuration);
 
-            configuration.Pipeline.Register(typeof(InterceptInvokedHandlers), "Intercept invoked Message Handlers");
+            configuration.Pipeline.Register(new InterceptInvokedHandlers(endpointConfiguration.EndpointName), "Intercept invoked Message Handlers");
 
             return Task.FromResult<EndpointConfiguration>(configuration);
         }
