@@ -1,4 +1,5 @@
 ﻿using NServiceBus.AcceptanceTesting;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -7,7 +8,7 @@ namespace NServiceBus.IntegrationTesting
 {
     public class IntegrationContext : ScenarioContext
     {
-        List<HandlerInvocation> invokedHandlers = new List<HandlerInvocation>();
+        ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
 
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
 
@@ -18,7 +19,7 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
-        List<SagaInvocation> invokedSagas = new List<SagaInvocation>();
+        ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
 
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
 
