@@ -17,23 +17,34 @@ namespace NServiceBus.IntegrationTesting
 
         public override async Task Invoke(IOutgoingSendContext context, Func<Task> next)
         {
-            var sendOperation = new SendOperation
+            OutgoingMessageOperation outgoingOperation;
+            if (context.Headers.ContainsKey(Headers.IsSagaTimeoutMessage))
             {
-                SenderEndpoint = endpointName,
-                MessageId = context.MessageId,
-                MessageType = context.Message.MessageType,
-                MessageInstance = context.Message.Instance,
-                MessageHeaders = context.Headers
-            };
+                outgoingOperation = new RequestTimeoutOperation()
+                {
+                    SagaId = context.Headers[Headers.SagaId],
+                    SagaTypeAssemblyQualifiedName = context.Headers[Headers.SagaType]
+                };
+            }
+            else
+            {
+                outgoingOperation = new SendOperation();
+            }
 
-            IntegrationContext.CurrentContext.AddOutogingOperation(sendOperation);
-            try 
+            outgoingOperation.SenderEndpoint = endpointName;
+            outgoingOperation.MessageId = context.MessageId;
+            outgoingOperation.MessageType = context.Message.MessageType;
+            outgoingOperation.MessageInstance = context.Message.Instance;
+            outgoingOperation.MessageHeaders = context.Headers;
+
+            IntegrationContext.CurrentContext.AddOutogingOperation(outgoingOperation);
+            try
             {
                 await next();
             }
-            catch(Exception sendError)
+            catch (Exception sendError)
             {
-                sendOperation.OperationError = sendError;
+                outgoingOperation.OperationError = sendError;
                 throw;
             }
         }

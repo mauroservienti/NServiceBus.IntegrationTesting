@@ -14,15 +14,15 @@ namespace NServiceBus.IntegrationTesting
         public Exception OperationError { get; internal set; }
     }
 
-    public class SendOperation : OutgoingMessageOperation
-    {
-    }
+    public class SendOperation : OutgoingMessageOperation { }
 
-    public class ReplyOperation : OutgoingMessageOperation
-    {
-    }
+    public class ReplyOperation : OutgoingMessageOperation { }
 
-    public class PublishOperation : OutgoingMessageOperation
+    public class PublishOperation : OutgoingMessageOperation { }
+
+    public class RequestTimeoutOperation : SendOperation 
     {
+        public string SagaId { get; internal set; }
+        public string SagaTypeAssemblyQualifiedName { get; internal set; }
     }
 }
