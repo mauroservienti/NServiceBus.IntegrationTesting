@@ -36,22 +36,6 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
-        //static PropertyInfo GetScenarioContextCurrentProperty()
-        //{
-        //    return typeof(ScenarioContext).GetProperty("Current", BindingFlags.Static | BindingFlags.NonPublic);
-        //}
-
-        //public static IntegrationContext CurrentContext
-        //{
-        //    get
-        //    {
-        //        var pi = GetScenarioContextCurrentProperty();
-        //        var current = (IntegrationContext)pi.GetMethod.Invoke(null, null);
-
-        //        return current;
-        //    }
-        //}
-
         public bool HandlerWasInvoked<THandler>()
         {
             return InvokedHandlers.Any(invocation => invocation.HandlerType == typeof(THandler));
