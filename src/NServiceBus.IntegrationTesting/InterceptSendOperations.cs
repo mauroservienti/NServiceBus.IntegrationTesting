@@ -18,7 +18,7 @@ namespace NServiceBus.IntegrationTesting
         public override async Task Invoke(IOutgoingSendContext context, Func<Task> next)
         {
             OutgoingMessageOperation outgoingOperation;
-            if (context.Headers.ContainsKey(Headers.IsSagaTimeoutMessage))
+            if (context.Headers.ContainsKey(Headers.IsSagaTimeoutMessage) && context.Headers[Headers.IsSagaTimeoutMessage] == bool.TrueString)
             {
                 outgoingOperation = new RequestTimeoutOperation()
                 {
