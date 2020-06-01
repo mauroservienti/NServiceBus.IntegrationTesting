@@ -22,5 +22,8 @@ before_build:
 build_script:
 - sh: ./build.sh
 
+artifacts:
+- path: ./**/*.nupkg
+
 test: off
 deploy: off
