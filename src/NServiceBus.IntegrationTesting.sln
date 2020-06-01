@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MySystem.AcceptanceTests", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTesting", "NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj", "{A1DF8428-D478-4FAA-9237-AA36D4C83732}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.AssemblyScanner.Extensions", "NServiceBus.AssemblyScanner.Extensions\NServiceBus.AssemblyScanner.Extensions.csproj", "{DA921CE7-6B53-4196-8567-B0197E773043}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.AssemblyScanner.Extensions", "NServiceBus.AssemblyScanner.Extensions\NServiceBus.AssemblyScanner.Extensions.csproj", "{DA921CE7-6B53-4196-8567-B0197E773043}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting.Tests", "NServiceBus.IntegrationTesting.Tests\NServiceBus.IntegrationTesting.Tests.csproj", "{18A4490B-641E-471C-9A53-02C4AAB69551}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +47,10 @@ Global
 		{DA921CE7-6B53-4196-8567-B0197E773043}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA921CE7-6B53-4196-8567-B0197E773043}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA921CE7-6B53-4196-8567-B0197E773043}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18A4490B-641E-471C-9A53-02C4AAB69551}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18A4490B-641E-471C-9A53-02C4AAB69551}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18A4490B-641E-471C-9A53-02C4AAB69551}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18A4490B-641E-471C-9A53-02C4AAB69551}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
