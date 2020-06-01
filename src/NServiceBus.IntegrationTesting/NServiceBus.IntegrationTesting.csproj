@@ -3,6 +3,19 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
+   
+   <PropertyGroup>
+    <Authors>Mauro Servienti</Authors>
+    <Description>NServiceBus integration testing support</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageIconUrl>https://raw.githubusercontent.com/mauroservienti/NServiceBus.IntegrationTesting/assets/icon.png</PackageIconUrl>
+    <PackageTags>NServiceBus Integration Testing</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <NoWarn>$(NoWarn);NU5105</NoWarn>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="7.3.0" />
