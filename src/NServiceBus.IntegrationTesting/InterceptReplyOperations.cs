@@ -7,10 +7,12 @@ namespace NServiceBus.IntegrationTesting
     class InterceptReplyOperations : Behavior<IOutgoingReplyContext>
     {
         readonly string endpointName;
+        readonly IntegrationScenarioContext integrationContext;
 
-        public InterceptReplyOperations(string endpointName)
+        public InterceptReplyOperations(string endpointName, IntegrationScenarioContext integrationContext)
         {
             this.endpointName = endpointName;
+            this.integrationContext = integrationContext;
         }
 
         public override async Task Invoke(IOutgoingReplyContext context, Func<Task> next)
@@ -24,7 +26,7 @@ namespace NServiceBus.IntegrationTesting
                 MessageHeaders = context.Headers
             };
 
-            IntegrationContext.CurrentContext.AddOutogingOperation(sendOperation);
+            integrationContext.AddOutogingOperation(sendOperation);
             try 
             {
                 await next();

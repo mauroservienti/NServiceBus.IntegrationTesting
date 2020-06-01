@@ -17,7 +17,7 @@ namespace MySystem.AcceptanceTests
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {
             var theExpectedSagaId = Guid.NewGuid();
-            var context = await Scenario.Define<IntegrationContext>()
+            var context = await Scenario.Define<IntegrationScenarioContext>()
                 .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = theExpectedSagaId })))
                 .WithEndpoint<MyOtherServiceEndpoint>()
                 .Done(c =>

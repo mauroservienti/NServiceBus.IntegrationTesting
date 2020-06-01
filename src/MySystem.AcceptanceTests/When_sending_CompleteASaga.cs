@@ -16,7 +16,7 @@ namespace MySystem.AcceptanceTests
         public async Task ASaga_is_completed()
         {
             var theExpectedSagaId = Guid.NewGuid();
-            var context = await Scenario.Define<IntegrationContext>()
+            var context = await Scenario.Define<IntegrationScenarioContext>()
                 .WithEndpoint<MyServiceEndpoint>(g =>
                 {
                     g.When(session => session.Send("MyService", new StartASaga() { SomeId = theExpectedSagaId }));

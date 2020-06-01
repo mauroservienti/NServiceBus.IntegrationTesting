@@ -7,10 +7,12 @@ namespace NServiceBus.IntegrationTesting
     class InterceptPublishOperations : Behavior<IOutgoingPublishContext>
     {
         readonly string endpointName;
+        readonly IntegrationScenarioContext integrationContext;
 
-        public InterceptPublishOperations(string endpointName)
+        public InterceptPublishOperations(string endpointName, IntegrationScenarioContext integrationContext)
         {
             this.endpointName = endpointName;
+            this.integrationContext = integrationContext;
         }
 
         public override async Task Invoke(IOutgoingPublishContext context, Func<Task> next)
@@ -24,7 +26,7 @@ namespace NServiceBus.IntegrationTesting
                 MessageHeaders = context.Headers
             };
 
-            IntegrationContext.CurrentContext.AddOutogingOperation(sendOperation);
+            integrationContext.AddOutogingOperation(sendOperation);
             try 
             {
                 await next();

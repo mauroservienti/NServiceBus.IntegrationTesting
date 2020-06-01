@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public class IntegrationContext : ScenarioContext
+    public class IntegrationScenarioContext : ScenarioContext
     {
         readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
@@ -36,21 +36,21 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
-        static PropertyInfo GetScenarioContextCurrentProperty()
-        {
-            return typeof(ScenarioContext).GetProperty("Current", BindingFlags.Static | BindingFlags.NonPublic);
-        }
+        //static PropertyInfo GetScenarioContextCurrentProperty()
+        //{
+        //    return typeof(ScenarioContext).GetProperty("Current", BindingFlags.Static | BindingFlags.NonPublic);
+        //}
 
-        public static IntegrationContext CurrentContext
-        {
-            get
-            {
-                var pi = GetScenarioContextCurrentProperty();
-                var current = (IntegrationContext)pi.GetMethod.Invoke(null, null);
+        //public static IntegrationContext CurrentContext
+        //{
+        //    get
+        //    {
+        //        var pi = GetScenarioContextCurrentProperty();
+        //        var current = (IntegrationContext)pi.GetMethod.Invoke(null, null);
 
-                return current;
-            }
-        }
+        //        return current;
+        //    }
+        //}
 
         public bool HandlerWasInvoked<THandler>()
         {
