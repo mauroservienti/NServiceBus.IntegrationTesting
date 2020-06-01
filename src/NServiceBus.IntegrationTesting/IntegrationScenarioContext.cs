@@ -16,7 +16,6 @@ namespace NServiceBus.IntegrationTesting
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
         public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
 
-
         internal HandlerInvocation CaptureInvokedHandler(HandlerInvocation invocation)
         {
             invokedHandlers.Add(invocation);
