@@ -6,13 +6,15 @@ using System.Reflection;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public class IntegrationContext : ScenarioContext
+    public class IntegrationScenarioContext : ScenarioContext
     {
         readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
+        readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new ConcurrentBag<OutgoingMessageOperation>();
 
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
+        public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
 
         internal HandlerInvocation CaptureInvokedHandler(HandlerInvocation invocation)
         {
@@ -21,27 +23,16 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
+        internal void AddOutogingOperation(OutgoingMessageOperation outgoingMessageOperation)
+        {
+            outgoingMessageOperations.Add(outgoingMessageOperation);
+        }
+
         internal SagaInvocation CaptureInvokedSaga(SagaInvocation invocation)
         {
             invokedSagas.Add(invocation);
 
             return invocation;
-        }
-
-        static PropertyInfo GetScenarioContextCurrentProperty()
-        {
-            return typeof(ScenarioContext).GetProperty("Current", BindingFlags.Static | BindingFlags.NonPublic);
-        }
-
-        public static IntegrationContext CurrentContext
-        {
-            get
-            {
-                var pi = GetScenarioContextCurrentProperty();
-                var current = (IntegrationContext)pi.GetMethod.Invoke(null, null);
-
-                return current;
-            }
         }
 
         public bool HandlerWasInvoked<THandler>()
