@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public abstract class ServiceTemplate : IEndpointSetupTemplate
+    public abstract class EndpointTemplate : IEndpointSetupTemplate
     {
         public async Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
         {
@@ -24,7 +24,7 @@ namespace NServiceBus.IntegrationTesting
         protected abstract Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization);
     }
 
-    public class ServiceTemplate<T> : ServiceTemplate
+    public class EndpointTemplate<T> : EndpointTemplate
         where T : EndpointConfiguration, new()
     {
         protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
@@ -35,7 +35,7 @@ namespace NServiceBus.IntegrationTesting
         }
     }
 
-    public class ServiceTemplate<T, C> : ServiceTemplate<T>
+    public class EndpointTemplate<T, C> : EndpointTemplate<T>
         where T : EndpointConfiguration, new()
         where C : IHandleTestCompletion, new()
     {

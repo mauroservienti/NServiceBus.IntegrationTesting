@@ -46,7 +46,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyServiceConfiguration>>();
+                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
             }
         }
 
@@ -54,7 +54,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyOtherServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyOtherServiceConfiguration>>();
+                EndpointSetup<MyOtherServiceTemplate>();
             }
         }
     }
