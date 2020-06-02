@@ -13,44 +13,45 @@ namespace NServiceBus.IntegrationTesting.Tests
         [Test]
         public async Task Should_Capture_Sent_Message_Operation()
         {
-            var integrationContext = new IntegrationScenarioContext();
-            
-            var sut = new InterceptSendOperations("fake-endpoint", integrationContext); ;
+            var scenarioContext = new IntegrationScenarioContext();
             var context = new TestableOutgoingSendContext
             {
                 Message = new OutgoingLogicalMessage(typeof(AMessage), new AMessage())
             };
 
+            var sut = new InterceptSendOperations("fake-endpoint", scenarioContext);
             await sut.Invoke(context, () => Task.CompletedTask).ConfigureAwait(false);
 
-            var sendOperation = integrationContext.OutgoingMessageOperations.SingleOrDefault() as SendOperation;
+            var sendOperation = scenarioContext.OutgoingMessageOperations.SingleOrDefault() as SendOperation;
 
-            Assert.AreEqual(1, integrationContext.OutgoingMessageOperations.Count());
+            Assert.AreEqual(1, scenarioContext.OutgoingMessageOperations.Count());
             Assert.IsNotNull(sendOperation);
         }
 
         [Test]
         public async Task Should_Capture_TimeoutRequest_Operation()
         {
-            var integrationContext = new IntegrationScenarioContext();
+            var expectedSagaId = "a-saga-id";
+            var expectedSagaType = "a-saga-type";
 
-            var sut = new InterceptSendOperations("fake-endpoint", integrationContext); ;
+            var scenarioContext = new IntegrationScenarioContext();
             var context = new TestableOutgoingSendContext
             {
                 Message = new OutgoingLogicalMessage(typeof(AMessage), new AMessage())
             };
-            context.Headers.Add(Headers.SagaId, "a-saga-id");
-            context.Headers.Add(Headers.SagaType, "a-saga-type");
+            context.Headers.Add(Headers.SagaId, expectedSagaId);
+            context.Headers.Add(Headers.SagaType, expectedSagaType);
             context.Headers.Add(Headers.IsSagaTimeoutMessage, bool.TrueString);
 
+            var sut = new InterceptSendOperations("fake-endpoint", scenarioContext); ;
             await sut.Invoke(context, () => Task.CompletedTask).ConfigureAwait(false);
 
-            var requestTimeoutOperation = integrationContext.OutgoingMessageOperations.SingleOrDefault() as RequestTimeoutOperation;
+            var requestTimeoutOperation = scenarioContext.OutgoingMessageOperations.SingleOrDefault() as RequestTimeoutOperation;
 
-            Assert.AreEqual(1, integrationContext.OutgoingMessageOperations.Count());
+            Assert.AreEqual(1, scenarioContext.OutgoingMessageOperations.Count());
             Assert.IsNotNull(requestTimeoutOperation);
-            Assert.AreEqual("a-saga-id", requestTimeoutOperation.SagaId);
-            Assert.AreEqual("a-saga-type", requestTimeoutOperation.SagaTypeAssemblyQualifiedName);
+            Assert.AreEqual(expectedSagaId, requestTimeoutOperation.SagaId);
+            Assert.AreEqual(expectedSagaType, requestTimeoutOperation.SagaTypeAssemblyQualifiedName);
         }
     }
 }
