@@ -14,12 +14,12 @@ namespace NServiceBus.IntegrationTesting
             var settings = configuration.GetSettings();
             endpointCustomizationConfiguration.EndpointName = settings.EndpointName();
 
-            configurationBuilderCustomization(configuration);
-
             configuration.Pipeline.Register(new InterceptInvokedHandlers(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext), "Intercept invoked Message Handlers and Sagas");
             configuration.Pipeline.Register(new InterceptSendOperations(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext), "Intercept send operations");
             configuration.Pipeline.Register(new InterceptPublishOperations(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext), "Intercept publish operations");
             configuration.Pipeline.Register(new InterceptReplyOperations(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext), "Intercept reply operations");
+
+            configurationBuilderCustomization(configuration);
 
             return configuration;
         }
