@@ -1,4 +1,6 @@
 ﻿using NServiceBus.AcceptanceTesting;
+using NServiceBus.DelayedDelivery;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +13,8 @@ namespace NServiceBus.IntegrationTesting
         readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
         readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new ConcurrentBag<OutgoingMessageOperation>();
-
+        readonly Dictionary<Type, Func<DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new Dictionary<Type, Func<DoNotDeliverBefore, DoNotDeliverBefore>>();
+        
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
         public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
@@ -21,6 +24,21 @@ namespace NServiceBus.IntegrationTesting
             invokedHandlers.Add(invocation);
 
             return invocation;
+        }
+
+        public void RegisterTimeoutRescheduleRule<TTimeout>(Func<DoNotDeliverBefore, DoNotDeliverBefore> rule) 
+        {
+            if (timeoutRescheduleRules.ContainsKey(typeof(TTimeout))) 
+            {
+                throw new NotSupportedException("Only one rule per timeout message type is allowed.");
+            }
+
+            timeoutRescheduleRules.Add(typeof(TTimeout), rule);
+        }
+
+        internal bool TryGetTimeoutRescheduleRule(Type timeoutMessageType, out Func<DoNotDeliverBefore, DoNotDeliverBefore> rule)
+        {
+            return timeoutRescheduleRules.TryGetValue(timeoutMessageType, out rule);
         }
 
         internal void AddOutogingOperation(OutgoingMessageOperation outgoingMessageOperation)
