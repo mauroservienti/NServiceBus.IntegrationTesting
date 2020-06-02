@@ -1,5 +1,10 @@
-﻿using NServiceBus.Pipeline;
+﻿using NServiceBus.DelayedDelivery;
+using NServiceBus.DeliveryConstraints;
+using NServiceBus.Pipeline;
+using NUnit.Framework;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting
@@ -20,6 +25,16 @@ namespace NServiceBus.IntegrationTesting
             OutgoingMessageOperation outgoingOperation;
             if (context.Headers.ContainsKey(Headers.IsSagaTimeoutMessage) && context.Headers[Headers.IsSagaTimeoutMessage] == bool.TrueString)
             {
+                if (integrationContext.TryGetTimeoutRescheduleRule(context.Message.MessageType, out Func<DoNotDeliverBefore, DoNotDeliverBefore> rule)) 
+                {
+                    var constraints = context.Extensions.Get<List<DeliveryConstraint>>();
+                    var doNotDeliverBefore = constraints.OfType<DoNotDeliverBefore>().SingleOrDefault();
+
+                    var newDoNotDeliverBefore = rule(doNotDeliverBefore);
+                    constraints.Remove(doNotDeliverBefore);
+                    constraints.Add(newDoNotDeliverBefore);
+                }
+
                 outgoingOperation = new RequestTimeoutOperation()
                 {
                     SagaId = context.Headers[Headers.SagaId],
