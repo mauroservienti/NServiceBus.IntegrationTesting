@@ -1,5 +1,4 @@
 using MyMessages.Messages;
-using MyOtherService;
 using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
@@ -55,7 +54,7 @@ namespace MySystem.AcceptanceTests
         {
             public MyServiceEndpoint()
             {
-                EndpointSetup<ServiceTemplate<MyServiceConfiguration>>();
+                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
             }
         }
     }
