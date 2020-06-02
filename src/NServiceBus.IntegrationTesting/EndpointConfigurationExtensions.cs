@@ -12,5 +12,20 @@ namespace NServiceBus.IntegrationTesting
             builder.Pipeline.Register(new InterceptPublishOperations(endpointName, integrationScenarioContext), "Intercept publish operations");
             builder.Pipeline.Register(new InterceptReplyOperations(endpointName, integrationScenarioContext), "Intercept reply operations");
         }
+
+        public static void RegisterScenarioContext(this EndpointConfiguration builder, ScenarioContext scenarioContext)
+        {
+            builder.RegisterComponents(r => { RegisterInheritanceHierarchyOfContextOnContainer(scenarioContext, r); });
+        }
+
+        static void RegisterInheritanceHierarchyOfContextOnContainer(ScenarioContext scenarioContext, IConfigureComponents r)
+        {
+            var type = scenarioContext.GetType();
+            while (type != typeof(object))
+            {
+                r.RegisterSingleton(type, scenarioContext);
+                type = type.BaseType;
+            }
+        }
     }
 }

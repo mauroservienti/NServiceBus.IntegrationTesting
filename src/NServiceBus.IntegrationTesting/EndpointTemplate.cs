@@ -15,6 +15,7 @@ namespace NServiceBus.IntegrationTesting
             endpointCustomizationConfiguration.EndpointName = settings.EndpointName();
 
             configuration.RegisterRequiredPipelineBehaviors(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
+            configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
 
             configurationBuilderCustomization(configuration);
 
