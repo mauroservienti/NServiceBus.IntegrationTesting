@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
 {
-    public class When_requesting_a_timeout
+    [TestFixture]
+    public class When_requesting_a_timeout : WithDockerCompose
     {
         [Test]
         public async Task It_should_be_rescheduled_and_handled()

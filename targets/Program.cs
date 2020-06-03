@@ -21,27 +21,7 @@ internal class Program
 
         Target("test", DependsOn("build"),
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
-            proj => 
-            {
-                static bool statusChecker()
-                {
-                    try
-                    {
-                        using var client = new HttpClient();
-                        var response = client.GetAsync("http://localhost:15672/").GetAwaiter().GetResult();
-                        return response.IsSuccessStatusCode;
-                    }
-                    catch 
-                    {
-                        return false;
-                    }
-                }
-
-                using (new DockerCompose(proj, statusChecker)) 
-                {
-                    Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build");
-                }                
-            });
+            proj => Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build"));
 
         RunTargetsAndExit(args);
     }

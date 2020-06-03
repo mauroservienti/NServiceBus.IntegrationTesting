@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
 {
+    [TestFixture]
     public class When_sending_AMessage
     {
         [Test]
