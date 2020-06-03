@@ -6,14 +6,25 @@ using NServiceBus.DelayedDelivery;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
 {
     [TestFixture]
-    public class When_requesting_a_timeout : WithDockerCompose
+    public class When_requesting_a_timeout
     {
+        [SetUp]
+        public async Task Setup()
+        {
+            await DockerCompose.Up();
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            DockerCompose.Down();
+        }
+
         [Test]
         public async Task It_should_be_rescheduled_and_handled()
         {

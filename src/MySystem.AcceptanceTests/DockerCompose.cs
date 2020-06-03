@@ -1,25 +1,23 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Net.Http;
-using System.Threading;
+using System.Threading.Tasks;
 using static SimpleExec.Command;
 
 namespace MySystem.AcceptanceTests
 {
-    public class WithDockerCompose
+    public static class DockerCompose
     {
-        [SetUp]
-        public void Up()
+        public static async Task Up()
         {
             Run("docker-compose", "up -d", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
             Run("docker", "ps -a");
 
-            static bool statusChecker()
+            static async Task<bool> statusChecker()
             {
                 try
                 {
                     using var client = new HttpClient();
-                    var response = client.GetAsync("http://localhost:15672/").GetAwaiter().GetResult();
+                    var response = await client.GetAsync("http://localhost:15672/");
                     return response.IsSuccessStatusCode;
                 }
                 catch
@@ -27,14 +25,13 @@ namespace MySystem.AcceptanceTests
                     return false;
                 }
             }
-            while (!statusChecker())
+            while (!await statusChecker())
             {
-                Thread.Sleep(500);
+                await Task.Delay(500);
             }
         }
 
-        [TearDown]
-        public void Down()
+        public static void Down()
         {
             Run("docker-compose", "down", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
         }
