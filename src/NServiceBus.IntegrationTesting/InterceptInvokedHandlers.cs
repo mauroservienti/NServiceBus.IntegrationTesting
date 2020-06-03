@@ -8,10 +8,12 @@ namespace NServiceBus.IntegrationTesting
     class InterceptInvokedHandlers : Behavior<IInvokeHandlerContext>
     {
         readonly string endpointName;
+        readonly IntegrationScenarioContext integrationContext;
 
-        public InterceptInvokedHandlers(string endpointName)
+        public InterceptInvokedHandlers(string endpointName, IntegrationScenarioContext integrationContext)
         {
             this.endpointName = endpointName;
+            this.integrationContext = integrationContext;
         }
 
         public override async Task Invoke(IInvokeHandlerContext context, Func<Task> next)
@@ -23,7 +25,7 @@ namespace NServiceBus.IntegrationTesting
 
                 if (context.Extensions.TryGet(out ActiveSagaInstance saga))
                 {
-                    invocation = IntegrationContext.CurrentContext.CaptureInvokedSaga(new SagaInvocation()
+                    invocation = integrationContext.CaptureInvokedSaga(new SagaInvocation()
                     {
                         NotFound = saga.NotFound,
                         SagaType = saga.NotFound ? null : saga.Instance.GetType(),
@@ -34,7 +36,7 @@ namespace NServiceBus.IntegrationTesting
                 }
                 else
                 {
-                    invocation = IntegrationContext.CurrentContext.CaptureInvokedHandler(new HandlerInvocation()
+                    invocation = integrationContext.CaptureInvokedHandler(new HandlerInvocation()
                     {
                         HandlerType = context.MessageHandler.HandlerType
                     });
