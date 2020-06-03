@@ -14,7 +14,7 @@ namespace NServiceBus.IntegrationTesting
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
         readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new ConcurrentBag<OutgoingMessageOperation>();
         readonly Dictionary<Type, Func<DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new Dictionary<Type, Func<DoNotDeliverBefore, DoNotDeliverBefore>>();
-        
+
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
         public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
@@ -26,9 +26,9 @@ namespace NServiceBus.IntegrationTesting
             return invocation;
         }
 
-        public void RegisterTimeoutRescheduleRule<TTimeout>(Func<DoNotDeliverBefore, DoNotDeliverBefore> rule) 
+        public void RegisterTimeoutRescheduleRule<TTimeout>(Func<DoNotDeliverBefore, DoNotDeliverBefore> rule)
         {
-            if (timeoutRescheduleRules.ContainsKey(typeof(TTimeout))) 
+            if (timeoutRescheduleRules.ContainsKey(typeof(TTimeout)))
             {
                 throw new NotSupportedException("Only one rule per timeout message type is allowed.");
             }
@@ -61,6 +61,22 @@ namespace NServiceBus.IntegrationTesting
         public bool SagaWasInvoked<TSaga>() where TSaga : Saga
         {
             return InvokedSagas.Any(invocation => invocation.SagaType == typeof(TSaga));
+        }
+
+        public bool MessageWasProcessed<TMessage>()
+        {
+            return invokedHandlers.Any(invocation => invocation.MessageType == typeof(TMessage))
+                || invokedSagas.Any(invocation => invocation.MessageType == typeof(TMessage));
+        }
+
+        public bool MessageWasProcessedBySaga<TMessage, TSaga>()
+        {
+            return invokedSagas.Any(i => i.SagaType == typeof(TSaga) && i.MessageType == typeof(TMessage));
+        }
+
+        public bool MessageWasProcessedByHandler<TMessage, THandler>()
+        {
+            return invokedHandlers.Any(i => i.HandlerType == typeof(THandler) && i.MessageType == typeof(TMessage));
         }
 
         public bool HasFailedMessages()

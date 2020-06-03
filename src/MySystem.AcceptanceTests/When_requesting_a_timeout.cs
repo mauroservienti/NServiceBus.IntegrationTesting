@@ -16,34 +16,18 @@ namespace MySystem.AcceptanceTests
         [Test]
         public async Task It_should_be_rescheduled_and_handled()
         {
-            var theExpectedSagaId = Guid.NewGuid();
-            var context = await Scenario.Define<IntegrationScenarioContext>(ctx=> 
+            var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
             {
-                ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>(currentDelay => 
+                ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>(currentDelay =>
                 {
                     return new DoNotDeliverBefore(DateTime.Now.AddSeconds(5));
                 });
             })
-            .WithEndpoint<MyServiceEndpoint>(g =>
-            {
-                g.When(session => session.Send("MyService", new StartASaga() { SomeId = theExpectedSagaId }));
-            })
-            .Done(c =>
-            {
-                return
-                (
-                    c.SagaHandledMessage<ASaga, ASaga.MyTimeout>()
-                )
-                || c.HasFailedMessages();
-            })
+            .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
+            .Done(c => c.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || c.HasFailedMessages())
             .Run();
 
-            var invokedSagas = context.InvokedSagas.Where(s => s.SagaType == typeof(ASaga));
-            var newSaga = invokedSagas.SingleOrDefault(s => s.IsNew);
-            var completedSaga = invokedSagas.SingleOrDefault(s => s.IsCompleted);
-
-            Assert.IsNotNull(newSaga);
-            Assert.IsNotNull(completedSaga);
+            Assert.True(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>());
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }

@@ -11,6 +11,7 @@ namespace NServiceBus.IntegrationTesting
             builder.Pipeline.Register(new InterceptSendOperations(endpointName, integrationScenarioContext), "Intercept send operations");
             builder.Pipeline.Register(new InterceptPublishOperations(endpointName, integrationScenarioContext), "Intercept publish operations");
             builder.Pipeline.Register(new InterceptReplyOperations(endpointName, integrationScenarioContext), "Intercept reply operations");
+            builder.Pipeline.Register(new RescheduleTimeoutsBehavior(integrationScenarioContext), "Intercept serialized message dispatch");
         }
 
         public static void RegisterScenarioContext(this EndpointConfiguration builder, ScenarioContext scenarioContext)

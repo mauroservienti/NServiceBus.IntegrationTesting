@@ -56,37 +56,5 @@ namespace NServiceBus.IntegrationTesting.Tests
             Assert.AreEqual(expectedSagaId, requestTimeoutOperation.SagaId);
             Assert.AreEqual(expectedSagaType, requestTimeoutOperation.SagaTypeAssemblyQualifiedName);
         }
-
-        [Test]
-        public async Task Should_Reschedule_Timeouts()
-        {
-            var expectedDeliveryAt = new DateTime(2020, 1, 1);
-
-            var scenarioContext = new IntegrationScenarioContext();
-            scenarioContext.RegisterTimeoutRescheduleRule<AMessage>(currentDelay => 
-            {
-                return new DoNotDeliverBefore(expectedDeliveryAt);
-            });
-
-            var context = new TestableOutgoingSendContext
-            {
-                Message = new OutgoingLogicalMessage(typeof(AMessage), new AMessage())
-            };
-            context.Headers.Add(Headers.SagaId, "a-saga-id");
-            context.Headers.Add(Headers.SagaType, "a-saga-type");
-            context.Headers.Add(Headers.IsSagaTimeoutMessage, bool.TrueString);
-
-            var constraints = new List<DeliveryConstraint>
-            {
-                new DoNotDeliverBefore(new DateTime(2030, 1, 1))
-            };
-            context.Extensions.Set(constraints);
-
-            var sut = new InterceptSendOperations("fake-endpoint", scenarioContext); ;
-            await sut.Invoke(context, () => Task.CompletedTask).ConfigureAwait(false);
-
-            var rescheduledDoNotDeliverBefore = constraints.OfType<DoNotDeliverBefore>().Single();
-            Assert.AreEqual(expectedDeliveryAt, rescheduledDoNotDeliverBefore.At);
-        }
     }
 }
