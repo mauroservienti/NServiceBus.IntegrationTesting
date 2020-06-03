@@ -14,6 +14,18 @@ namespace MySystem.AcceptanceTests
     [TestFixture]
     public class When_sending_AMessage
     {
+        [OneTimeSetUp]
+        public async Task Setup()
+        {
+            await DockerCompose.Up();
+        }
+
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+            DockerCompose.Down();
+        }
+
         [Test]
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {

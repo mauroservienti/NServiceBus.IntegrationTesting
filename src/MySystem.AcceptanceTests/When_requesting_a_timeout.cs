@@ -13,13 +13,13 @@ namespace MySystem.AcceptanceTests
     [TestFixture]
     public class When_requesting_a_timeout
     {
-        [SetUp]
+        [OneTimeSetUp]
         public async Task Setup()
         {
             await DockerCompose.Up();
         }
 
-        [TearDown]
+        [OneTimeTearDown]
         public void Teardown()
         {
             DockerCompose.Down();
