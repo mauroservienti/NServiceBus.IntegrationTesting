@@ -12,7 +12,7 @@ namespace MyService
     {
         public Task Handle(StartASaga message, IMessageHandlerContext context)
         {
-            return RequestTimeout<MyTimeout>(context, DateTime.Now.AddDays(10));
+            return RequestTimeout<MyTimeout>(context, DateTime.UtcNow.AddDays(10));
         }
 
         public Task Handle(CompleteASaga message, IMessageHandlerContext context)

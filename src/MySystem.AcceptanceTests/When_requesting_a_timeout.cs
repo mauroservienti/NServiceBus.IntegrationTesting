@@ -31,7 +31,7 @@ namespace MySystem.AcceptanceTests
             {
                 ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>(currentDelay =>
                 {
-                    return new DoNotDeliverBefore(DateTime.Now.AddSeconds(5));
+                    return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
                 });
             })
             .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
