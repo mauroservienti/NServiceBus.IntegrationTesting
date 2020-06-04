@@ -19,7 +19,7 @@ namespace NServiceBus.IntegrationTesting.Tests
             var expectedDeliveryAt = new DateTime(2020, 1, 1);
 
             var scenarioContext = new IntegrationScenarioContext();
-            scenarioContext.RegisterTimeoutRescheduleRule<AMessage>(currentDelay =>
+            scenarioContext.RegisterTimeoutRescheduleRule<AMessage>((msg, currentDelay) =>
             {
                 return new DoNotDeliverBefore(expectedDeliveryAt);
             });
