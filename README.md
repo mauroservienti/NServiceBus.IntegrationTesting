@@ -52,6 +52,19 @@ When the test is started, it sends an initial `AMessage` message to trigger the 
 
 *NOTE*: Endpoints in the samples contained in this repository are using RabbitMQ as the NServiceBus transport, LearningPersistence as the persistence mechanism. Tests are using docker-compose to make sure the required infrastructure is made available to endpoints exercised by tests.
 
+## How to define a test
+
+### How to deal with timeouts
+
+## Available assertions
+
+## Limitations
+
+NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTesting framework, this comes with a few limitations:
+
+- Each test has a fixed, hardcoded, timeout of 90 seconds
+- Tests can only use NUnit and at this time there is no way to use a different unit testing framework
+
 ## How to install
 
 Using a package manager add a nuget reference to [NServiceBus.IntegrationTesting](https://www.nuget.org/packages/NServiceBus.IntegrationTesting/).
