@@ -29,7 +29,7 @@ namespace MySystem.AcceptanceTests
         {
             var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
             {
-                ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>(currentDelay =>
+                ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((message, currentDelay) =>
                 {
                     return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
                 });

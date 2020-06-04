@@ -19,14 +19,17 @@ namespace NServiceBus.IntegrationTesting
 
         public override Task Invoke(IOutgoingSendContext context, Func<Task> next)
         {
-            if (integrationContext.TryGetTimeoutRescheduleRule(context.Message.MessageType, out Func<DoNotDeliverBefore, DoNotDeliverBefore> rule))
+            if (integrationContext.TryGetTimeoutRescheduleRule(context.Message.MessageType, out Func<object, DoNotDeliverBefore, DoNotDeliverBefore> rule))
             {
                 var constraints = context.Extensions.Get<List<DeliveryConstraint>>();
                 var doNotDeliverBefore = constraints.OfType<DoNotDeliverBefore>().SingleOrDefault();
 
-                var newDoNotDeliverBefore = rule(doNotDeliverBefore);
-                constraints.Remove(doNotDeliverBefore);
-                constraints.Add(newDoNotDeliverBefore);
+                var newDoNotDeliverBefore = rule(context.Message, doNotDeliverBefore);
+                if(newDoNotDeliverBefore != doNotDeliverBefore)
+                {
+                   constraints.Remove(doNotDeliverBefore);
+                   constraints.Add(newDoNotDeliverBefore);
+                }
             }
 
             return next();
