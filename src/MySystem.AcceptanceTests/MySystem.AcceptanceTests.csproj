@@ -12,12 +12,19 @@
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
     <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.3.0" />
+    <PackageReference Include="SimpleExec" Version="6.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
     <ProjectReference Include="..\MyService\MyService.csproj" />
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="docker-compose.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -6,13 +6,24 @@ using NServiceBus.DelayedDelivery;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
 {
     public class When_requesting_a_timeout
     {
+        [OneTimeSetUp]
+        public async Task Setup()
+        {
+            await DockerCompose.Up();
+        }
+
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+            DockerCompose.Down();
+        }
+
         [Test]
         public async Task It_should_be_rescheduled_and_handled()
         {
@@ -20,7 +31,7 @@ namespace MySystem.AcceptanceTests
             {
                 ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>(currentDelay =>
                 {
-                    return new DoNotDeliverBefore(DateTime.Now.AddSeconds(5));
+                    return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
                 });
             })
             .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
