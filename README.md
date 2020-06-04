@@ -40,7 +40,7 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
 
 (Full test [source code](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/src/MySystem.AcceptanceTests/When_sending_AMessage.cs) for the above sample is available in this repo)
 
-The above test does quite a lo of things, but the most important ones are:
+The above test does quite a lot of things, but the most important ones are:
 
 - it's exercising the real production endpoints
 - it's asserting on the end-to-end choreography, for example it's checking that a saga was invoked and/or a message handler was invoked
