@@ -54,9 +54,28 @@ When the test is started, it sends an initial `AMessage` message to trigger the 
 
 ## How to define a test
 
-### How to deal with timeouts
-
 ## Available assertions
+
+## How to deal with timeouts
+
+When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
+
+NServiceBus.IntegrationTesting provides a way to reschedule timeouts when they are requested by the production code:
+
+```csharp
+var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
+{
+    ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((message, currentDelay) =>
+    {
+        return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
+    });
+})
+.WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
+.Done(c => c.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || c.HasFailedMessages())
+.Run();
+```
+
+The above sample test shows how to inject a timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the timeout expires in 5 seconds insted of the default production value. The timeout reschedule rule receives as arguments the current timeout message and the current delivery constraint.
 
 ## Limitations
 
