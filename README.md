@@ -54,7 +54,16 @@ When the test is started, it sends an initial `AMessage` message to trigger the 
 
 ## How to define a test
 
-## Available assertions
+Defining an NServiceBus integration test is a multi-step process, composed of:
+
+- Make sure endpoints configuartion can be istantiated by tests
+- Define endpoints that will be used in each test; and if needed customize each endpoint configuration to adapt to the test environment
+- Define tests and completion criteria
+- Assert on tests results
+
+### Make sure endpoints configuartion can be istantiated by tests
+
+
 
 ## How to deal with timeouts
 
