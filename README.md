@@ -90,6 +90,31 @@ namespace MyService
 
 Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
 
+#### Use a builder class
+
+In case configuration values need to be passed to the endpoint configuration the easiest option is to use a builder class, even a very simple static one, that can then be used in tests as well with different configuration values. The following snippet shows a simple configuration builder:
+
+```csharp
+namespace MyService
+{
+    public static class MyServiceConfigurationBuilder
+    {
+        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
+        {
+            var config = new EndpointConfiguration(endpointName);
+            config.SendFailedMessagesTo("error");
+            config.EnableInstallers();
+
+            var transportConfig = config.UseTransport<RabbitMQTransport>();
+            transportConfig.UseConventionalRoutingTopology();
+            transportConfig.ConnectionString(rabbitMqConnectionString);
+            
+            return config;
+        }
+    }
+}
+```
+
 ## How to deal with timeouts
 
 When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
