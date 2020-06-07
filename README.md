@@ -92,6 +92,7 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 
 - Each test has a fixed, hardcoded, timeout of 90 seconds
 - Tests can only use NUnit and at this time there is no way to use a different unit testing framework
+- All endpoints run in a test share the same test process, they are not isolated
 
 ## How to install
 
