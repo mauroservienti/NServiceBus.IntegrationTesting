@@ -61,9 +61,34 @@ Defining an NServiceBus integration test is a multi-step process, composed of:
 - Define tests and completion criteria
 - Assert on tests results
 
-### Make sure endpoints configuartion can be istantiated by tests
+### Make sure endpoints configuration can be istantiated by tests
 
+One of the goals of end-to-end testing an NServiceBus endpoints is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
 
+#### Inherit from EndpointConfiguration
+
+It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
+
+```csharp
+namespace MyService
+{
+    public class MyServiceConfiguration : EndpointConfiguration
+    {
+        public MyServiceConfiguration()
+            : base("MyService")
+        {
+            this.SendFailedMessagesTo("error");
+            this.EnableInstallers();
+
+            var transportConfig = this.UseTransport<RabbitMQTransport>();
+            transportConfig.UseConventionalRoutingTopology();
+            transportConfig.ConnectionString("host=localhost");
+        }
+    }
+}
+```
+
+Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
 
 ## How to deal with timeouts
 
