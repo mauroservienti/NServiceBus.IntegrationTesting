@@ -45,7 +45,7 @@ The above test does quite a lot of things, but the most important ones are:
 - it's exercising the real production endpoints
 - it's asserting on the end-to-end choreography, for example it's checking that a saga was invoked and/or a message handler was invoked
 
-When the test is started, it sends an initial `AMessage` message to trigger the choreography, and then it lets the endpoints involved do their job untill a specific condition is met. In this sample the `done` condition is quite complex:
+When the test is started, it sends an initial `AMessage` message to trigger the choreography, and then it lets the endpoints involved do their job until a specific condition is met. In this sample the `done` condition is quite complex:
 
 - An couple of handlers and a saga need to be invoked
 - Or there are failed messages
