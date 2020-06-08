@@ -18,13 +18,7 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
       .WithEndpoint<MyOtherServiceEndpoint>()
       .Done(c =>
       {
-         return
-         (
-            c.HandlerWasInvoked<AMessageHandler>()
-            && c.HandlerWasInvoked<AReplyMessageHandler>()
-            && c.SagaWasInvoked<ASaga>()
-         )
-         || c.HasFailedMessages();
+         return c.SagaWasInvoked<ASaga>() || c.HasFailedMessages();
       })
       .Run();
 
