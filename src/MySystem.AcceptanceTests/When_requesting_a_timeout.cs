@@ -29,13 +29,13 @@ namespace MySystem.AcceptanceTests
         {
             var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
             {
-                ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((message, currentDelay) =>
-                {
-                    return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
-                });
+                ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((msg, delay) => new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5)));
             })
-            .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { AnIdentifier = Guid.NewGuid() })))
-            .Done(c => c.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || c.HasFailedMessages())
+            .WithEndpoint<MyServiceEndpoint>(behavior =>
+            {
+                behavior.When(session => session.Send("MyService", new StartASaga() {AnIdentifier = Guid.NewGuid()}));
+            })
+            .Done(ctx => ctx.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || ctx.HasFailedMessages())
             .Run();
 
             Assert.True(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>());

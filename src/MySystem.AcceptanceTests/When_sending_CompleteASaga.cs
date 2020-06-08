@@ -29,26 +29,24 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(g =>
+                .WithEndpoint<MyServiceEndpoint>(behavior =>
                 {
-                    g.When(session => session.Send("MyService", new StartASaga() { AnIdentifier = theExpectedIdentifier }));
-                    g.When(condition: ctx =>
+                    behavior.When(session =>
+                    {
+                        return session.Send("MyService", new StartASaga() {AnIdentifier = theExpectedIdentifier});
+                    });
+                    behavior.When(condition: ctx =>
                     {
                         return ctx.SagaWasInvoked<ASaga>() && ctx.InvokedSagas.Any(s=> s.SagaType == typeof(ASaga) && s.IsNew);
                     }, 
-                    action: session => 
+                    action: session =>
                     {
-                        return session.Send("MyService", new CompleteASaga { AnIdentifier = theExpectedIdentifier }); ; 
+                        return session.Send("MyService", new CompleteASaga {AnIdentifier = theExpectedIdentifier});
                     });
                 })
-                .Done(c =>
+                .Done(ctx =>
                 {
-                    return
-                    (
-                        c.SagaWasInvoked<ASaga>()
-                        && c.InvokedSagas.Any(s => s.SagaType == typeof(ASaga) && s.IsCompleted)
-                    )
-                    || c.HasFailedMessages();
+                    return ctx.HasFailedMessages() || ctx.InvokedSagas.Any(s => s.SagaType == typeof(ASaga) && s.IsCompleted);
                 })
                 .Run();
 
