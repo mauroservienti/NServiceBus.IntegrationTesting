@@ -197,6 +197,32 @@ Use the `Define` static method to create a scenario and then add endpoints to th
 
 #### Done condition
 
+An end-to-end test execution can only be terminated by 3 events:
+
+- the done condition is `true`
+- the test times out
+- there are unhandled exceptions
+
+Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. based on this it's better to consider failed messages as part of the done condition:
+
+```csharp
+.Done(c =>
+{
+   return c.HasFailedMessages();
+})
+```
+
+Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
+
+```csharp
+.Done(c =>
+{
+   return c.SagaWasInvoked<ASaga>() || c.HasFailedMessages();
+})
+```
+
+The integration scenario context, the `c` argument, can be "queried" to gather the satus of the test, in this case the done condition is augmented to make so that the test is condiered done when a saga of type `ASaga` has been invoked or there are failed messages.
+
 ## How to deal with timeouts
 
 When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
