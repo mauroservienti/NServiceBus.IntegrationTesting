@@ -232,6 +232,26 @@ var context = await Scenario.Define<IntegrationScenarioContext>()
 
 The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
 
+### Assert on tests results
+
+The last step is to assert on test results. The `IntegrationScenarioContext` instance, created at the beginning of the test captures tests stages and exposes an API to query tests results. The following snippet demonstrates how to assert that a new `ASaga` instance has been created with specific values, a `AMessage` has been handled, and `AReplyMessage` has been handled:
+
+```csharp
+var invokedSaga = context.InvokedSagas.SingleOrDefault(s => s.SagaType == typeof(ASaga));
+
+Assert.IsNotNull(invokedSaga);
+Assert.True(invokedSaga.IsNew);
+Assert.AreEqual("MyService", invokedSaga.EndpointName);
+
+Assert.True(context.HandlerWasInvoked<AMessageHandler>());
+Assert.True(context.HandlerWasInvoked<AReplyMessageHandler>());
+
+Assert.False(context.HasFailedMessages());
+Assert.False(context.HasHandlingErrors());
+```
+
+The context contains also general assertions like `HasFailedMessages` or `HasHandlingErrors` useful to validate the overall correctness of the test execution. `HasFailedMessages` Is `true` if any message has been moved to the configured error queue. `HasHandlingErrors` is `true` if any handler or saga invocation failed at least ones.
+
 ## How to deal with NServiceBus Timeouts
 
 When testing production code, running a choreography, NServiceBus Timeouts can be problematic. Tests will timeout after 90 seconds, this means that if the production code schedules an NServiceBus Timeout for 1 hour, or for next week, it becomes impossible to verify the choreography.
