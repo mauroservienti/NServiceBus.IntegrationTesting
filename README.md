@@ -45,7 +45,7 @@ The above test does quite a lot of things, but the most important ones are:
 - it's exercising the real production endpoints
 - it's asserting on the end-to-end choreography, for example it's checking that a saga was invoked and/or a message handler was invoked
 
-When the test is started, it sends an initial `AMessage` message to trigger the choreography, and then it lets the endpoints involved do their job untill a specific condition is met. In this sample the `done` condition is quite complex:
+When the test is started, it sends an initial `AMessage` message to trigger the choreography, and then it lets the endpoints involved do their job until a specific condition is met. In this sample the `done` condition is quite complex:
 
 - An couple of handlers and a saga need to be invoked
 - Or there are failed messages
@@ -54,9 +54,87 @@ When the test is started, it sends an initial `AMessage` message to trigger the 
 
 ## How to define a test
 
-### How to deal with timeouts
+Defining an NServiceBus integration test is a multi-step process, composed of:
 
-## Available assertions
+- Make sure endpoints configuration can be istantiated by tests
+- Define endpoints that will be used in each test; and if needed customize each endpoint configuration to adapt to the test environment
+- Define tests and completion criteria
+- Assert on tests results
+
+### Make sure endpoints configuration can be istantiated by tests
+
+One of the goals of end-to-end testing an NServiceBus endpoints is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
+
+#### Inherit from EndpointConfiguration
+
+It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
+
+```csharp
+namespace MyService
+{
+    public class MyServiceConfiguration : EndpointConfiguration
+    {
+        public MyServiceConfiguration()
+            : base("MyService")
+        {
+            this.SendFailedMessagesTo("error");
+            this.EnableInstallers();
+
+            var transportConfig = this.UseTransport<RabbitMQTransport>();
+            transportConfig.UseConventionalRoutingTopology();
+            transportConfig.ConnectionString("host=localhost");
+        }
+    }
+}
+```
+
+Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
+
+#### Use a builder class
+
+In case configuration values need to be passed to the endpoint configuration the easiest option is to use a builder class, even a very simple static one, that can then be used in tests as well with different configuration values. The following snippet shows a simple configuration builder:
+
+```csharp
+namespace MyService
+{
+    public static class MyServiceConfigurationBuilder
+    {
+        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
+        {
+            var config = new EndpointConfiguration(endpointName);
+            config.SendFailedMessagesTo("error");
+            config.EnableInstallers();
+
+            var transportConfig = config.UseTransport<RabbitMQTransport>();
+            transportConfig.UseConventionalRoutingTopology();
+            transportConfig.ConnectionString(rabbitMqConnectionString);
+            
+            return config;
+        }
+    }
+}
+```
+
+## How to deal with timeouts
+
+When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
+
+NServiceBus.IntegrationTesting provides a way to reschedule timeouts when they are requested by the production code:
+
+```csharp
+var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
+{
+    ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((message, currentDelay) =>
+    {
+        return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
+    });
+})
+.WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
+.Done(c => c.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || c.HasFailedMessages())
+.Run();
+```
+
+The above sample test shows how to inject a timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the timeout expires in 5 seconds insted of the default production value. The timeout reschedule rule receives as arguments the current timeout message and the current delivery constraint.
 
 ## Limitations
 
@@ -64,6 +142,7 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 
 - Each test has a fixed, hardcoded, timeout of 90 seconds
 - Tests can only use NUnit and at this time there is no way to use a different unit testing framework
+- All endpoints run in a test share the same test process, they are not isolated
 
 ## How to install
 
