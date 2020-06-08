@@ -57,7 +57,7 @@ When the test is started, it sends an initial `AMessage` message to trigger the 
 Defining an NServiceBus integration test is a multi-step process, composed of:
 
 - Make sure endpoints configuration can be istantiated by tests
-- Define endpoints that will be used in each test; and if needed customize each endpoint configuration to adapt to the test environment
+- Define endpoints used in each test; and if needed customize each endpoint configuration to adapt to the test environment
 - Define tests and completion criteria
 - Assert on tests results
 
@@ -114,6 +114,48 @@ namespace MyService
     }
 }
 ```
+
+### Define endpoints used in each test
+
+To define an endpoint in tests a class inheriting from `EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
+
+```csharp
+public class When_sending_AMessage
+{
+    class MyServiceEndpoint : EndpointConfigurationBuilder
+    {
+        public MyServiceEndpoint()
+        {
+            EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
+        }
+    }
+
+    class MyOtherServiceEndpoint : EndpointConfigurationBuilder
+    {
+        public MyOtherServiceEndpoint()
+        {
+            EndpointSetup<MyOtherServiceTemplate>();
+        }
+    }
+}
+```
+
+The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by creating a custom endpoint template:
+
+```csharp
+class MyOtherServiceTemplate : EndpointTemplate
+{
+    protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+    {
+        var config = MyOtherServiceConfigurationBuilder.Build(
+            "MyOtherService",
+            "host=localhost;username=guest;password=guest");
+        return Task.FromResult(config);
+    }
+}
+```
+
+Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
 
 ## How to deal with timeouts
 
