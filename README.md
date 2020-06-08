@@ -215,7 +215,7 @@ Such a done condition has to be read has: "If there are one or more failed messa
 })
 ```
 
-The integration scenario context, the `c` argument, can be "queried" to gather the satus of the test, in this case the done condition is augmented to make so that the test is condiered done when a saga of type `ASaga` has been invoked or there are failed messages.
+The integration scenario context, the `c` argument, can be "queried" to gather the status of the test, in this case the done condition is augmented to make so that the test is considered done when a saga of type `ASaga` has been invoked or there are failed messages.
 
 ## How to deal with timeouts
 
