@@ -34,7 +34,7 @@ namespace MySystem.AcceptanceTests
                     return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
                 });
             })
-            .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
+            .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { AnIdentifier = Guid.NewGuid() })))
             .Done(c => c.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || c.HasFailedMessages())
             .Run();
 

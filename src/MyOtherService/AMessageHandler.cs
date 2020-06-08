@@ -8,7 +8,7 @@ namespace MyOtherService
     {
         public Task Handle(AMessage message, IMessageHandlerContext context)
         {
-            return context.Reply(new AReplyMessage() { ThisWillBeTheSagaId = message.ThisWillBeTheSagaId });
+            return context.Reply(new AReplyMessage() { AnIdentifier = message.AnIdentifier });
         }
     }
 }

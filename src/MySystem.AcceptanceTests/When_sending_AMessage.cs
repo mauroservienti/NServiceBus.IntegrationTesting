@@ -28,10 +28,10 @@ namespace MySystem.AcceptanceTests
         [Test]
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {
-            var theExpectedSagaId = Guid.NewGuid();
+            var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
                 .WithEndpoint<MyServiceEndpoint>(g =>
-                    g.When(b => b.Send(new AMessage() {ThisWillBeTheSagaId = theExpectedSagaId})))
+                    g.When(b => b.Send(new AMessage() {AnIdentifier = theExpectedIdentifier})))
                 .WithEndpoint<MyOtherServiceEndpoint>()
                 .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
                 .Run();
@@ -41,7 +41,7 @@ namespace MySystem.AcceptanceTests
 
             Assert.True(invokedSaga.IsNew);
             Assert.AreEqual("MyService", invokedSaga.EndpointName);
-            Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
+            Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }
