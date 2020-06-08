@@ -12,23 +12,24 @@ NServiceBus.IntegrationTesting enables a test like the following one to be defin
 [Test]
 public async Task AReplyMessage_is_received_and_ASaga_is_started()
 {
-   var theExpectedSagaId = Guid.NewGuid();
-   var context = await Scenario.Define<IntegrationScenarioContext>()
-      .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = theExpectedSagaId })))
-      .WithEndpoint<MyOtherServiceEndpoint>()
-      .Done(c =>
-      {
-         return c.SagaWasInvoked<ASaga>() || c.HasFailedMessages();
-      })
-      .Run();
+    var theExpectedIdentifier = Guid.NewGuid();
+    var context = await Scenario.Define<IntegrationScenarioContext>()
+        .WithEndpoint<MyServiceEndpoint>(behavior =>
+        {
+            behavior.When(session => session.Send(new AMessage() {AnIdentifier = theExpectedIdentifier}));
+        })
+        .WithEndpoint<MyOtherServiceEndpoint>()
+        .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
+        .Run();
 
-      var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
+    var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
-      Assert.True(invokedSaga.IsNew);
-      Assert.AreEqual("MyService", invokedSaga.EndpointName);
-      Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
-      Assert.False(context.HasFailedMessages());
-      Assert.False(context.HasHandlingErrors());
+
+    Assert.True(invokedSaga.IsNew);
+    Assert.AreEqual("MyService", invokedSaga.EndpointName);
+    Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
+    Assert.False(context.HasFailedMessages());
+    Assert.False(context.HasHandlingErrors());
 }
 ```
 
