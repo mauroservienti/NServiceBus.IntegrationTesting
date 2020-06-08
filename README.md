@@ -12,23 +12,24 @@ NServiceBus.IntegrationTesting enables a test like the following one to be defin
 [Test]
 public async Task AReplyMessage_is_received_and_ASaga_is_started()
 {
-   var theExpectedSagaId = Guid.NewGuid();
-   var context = await Scenario.Define<IntegrationScenarioContext>()
-      .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = theExpectedSagaId })))
-      .WithEndpoint<MyOtherServiceEndpoint>()
-      .Done(c =>
-      {
-         return c.SagaWasInvoked<ASaga>() || c.HasFailedMessages();
-      })
-      .Run();
+    var theExpectedIdentifier = Guid.NewGuid();
+    var context = await Scenario.Define<IntegrationScenarioContext>()
+        .WithEndpoint<MyServiceEndpoint>(behavior =>
+        {
+            behavior.When(session => session.Send(new AMessage() {AnIdentifier = theExpectedIdentifier}));
+        })
+        .WithEndpoint<MyOtherServiceEndpoint>()
+        .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
+        .Run();
 
-      var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
+    var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
-      Assert.True(invokedSaga.IsNew);
-      Assert.AreEqual("MyService", invokedSaga.EndpointName);
-      Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
-      Assert.False(context.HasFailedMessages());
-      Assert.False(context.HasHandlingErrors());
+
+    Assert.True(invokedSaga.IsNew);
+    Assert.AreEqual("MyService", invokedSaga.EndpointName);
+    Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
+    Assert.False(context.HasFailedMessages());
+    Assert.False(context.HasHandlingErrors());
 }
 ```
 
@@ -200,18 +201,18 @@ An end-to-end test execution can only be terminated by 3 events:
 Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. based on this it's better to consider failed messages as part of the done condition:
 
 ```csharp
-.Done(c =>
+.Done(ctx =>
 {
-   return c.HasFailedMessages();
+   return ctx.HasFailedMessages();
 })
 ```
 
 Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
 
 ```csharp
-.Done(c =>
+.Done(ctx =>
 {
-   return c.SagaWasInvoked<ASaga>() || c.HasFailedMessages();
+   return ctx.SagaWasInvoked<ASaga>() || ctx.HasFailedMessages();
 })
 ```
 
@@ -224,7 +225,7 @@ In the defined callback it's possible to define one or more "when" conditions th
 
 ```csharp
 var context = await Scenario.Define<IntegrationScenarioContext>()
-   .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send(new AMessage())))
+   .WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send(new AMessage())))
    .WithEndpoint<MyOtherServiceEndpoint>()
    .Done(...)
    .Run();
@@ -261,13 +262,13 @@ NServiceBus.IntegrationTesting provides a way to reschedule NServiceBus Timeouts
 ```csharp
 var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
 {
-    ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((message, currentDelay) =>
+    ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((msg, delay) =>
     {
         return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
     });
 })
-.WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
-.Done(c => c.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || c.HasFailedMessages())
+.WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
+.Done(ctx => ctx.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || ctx.HasFailedMessages())
 .Run();
 ```
 
