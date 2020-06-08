@@ -33,16 +33,7 @@ namespace MySystem.AcceptanceTests
                 .WithEndpoint<MyServiceEndpoint>(g =>
                     g.When(b => b.Send(new AMessage() {ThisWillBeTheSagaId = theExpectedSagaId})))
                 .WithEndpoint<MyOtherServiceEndpoint>()
-                .Done(c =>
-                {
-                    return
-                        (
-                            c.HandlerWasInvoked<AMessageHandler>()
-                            && c.HandlerWasInvoked<AReplyMessageHandler>()
-                            && c.SagaWasInvoked<ASaga>()
-                        )
-                        || c.HasFailedMessages();
-                })
+                .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
                 .Run();
 
             var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
