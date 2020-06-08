@@ -217,6 +217,21 @@ Such a done condition has to be read has: "If there are one or more failed messa
 
 The integration scenario context, the `c` argument, can be "queried" to gather the status of the test, in this case the done condition is augmented to make so that the test is considered done when a saga of type `ASaga` has been invoked or there are failed messages.
 
+#### Kick-off the test choreography 
+
+The last bit is to kick-off the choreography to test. This is usually done by stimulating the system with a message. `WithEndpoint<T>` has an overload that allows to define a callback that is invoked when the test is run.
+In the defined callback it's possible to define one or more "when" conditions that are evaluated by the testing infrastructure and invoked at the appropriate time:
+
+```csharp
+var context = await Scenario.Define<IntegrationScenarioContext>()
+   .WithEndpoint<MyServiceEndpoint>(g => g.When(session => session.Send(new AMessage())))
+   .WithEndpoint<MyOtherServiceEndpoint>()
+   .Done(...)
+   .Run();
+```
+
+The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
+
 ## How to deal with timeouts
 
 When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
