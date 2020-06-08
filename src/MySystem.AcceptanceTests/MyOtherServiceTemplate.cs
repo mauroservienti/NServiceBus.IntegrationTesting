@@ -11,7 +11,9 @@ namespace MySystem.AcceptanceTests
     {
         protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
         {
-            EndpointConfiguration config = new MyOtherServiceConfiguration();
+            var config = MyOtherServiceConfigurationBuilder.Build(
+                "MyOtherService",
+                "host=localhost;username=guest;password=guest");
             return Task.FromResult(config);
         }
     }
