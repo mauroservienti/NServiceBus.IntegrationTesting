@@ -28,20 +28,12 @@ namespace MySystem.AcceptanceTests
         [Test]
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {
-            var theExpectedSagaId = Guid.NewGuid();
+            var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = theExpectedSagaId })))
+                .WithEndpoint<MyServiceEndpoint>(g =>
+                    g.When(b => b.Send(new AMessage() {AnIdentifier = theExpectedIdentifier})))
                 .WithEndpoint<MyOtherServiceEndpoint>()
-                .Done(c =>
-                {
-                    return
-                    (
-                        c.HandlerWasInvoked<AMessageHandler>()
-                        && c.HandlerWasInvoked<AReplyMessageHandler>()
-                        && c.SagaWasInvoked<ASaga>()
-                    )
-                    || c.HasFailedMessages();
-                })
+                .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
                 .Run();
 
             var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
@@ -49,7 +41,7 @@ namespace MySystem.AcceptanceTests
 
             Assert.True(invokedSaga.IsNew);
             Assert.AreEqual("MyService", invokedSaga.EndpointName);
-            Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
+            Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }

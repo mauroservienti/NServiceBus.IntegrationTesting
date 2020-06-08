@@ -8,7 +8,7 @@ namespace MyService
     {
         public Task Handle(AReplyMessage message, IMessageHandlerContext context)
         {
-            return context.SendLocal(new StartASaga() { SomeId = message.ThisWillBeTheSagaId });
+            return context.SendLocal(new StartASaga() { AnIdentifier = message.AnIdentifier });
         }
     }
 }

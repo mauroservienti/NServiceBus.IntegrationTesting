@@ -27,18 +27,18 @@ namespace MySystem.AcceptanceTests
         [Test]
         public async Task ASaga_is_completed()
         {
-            var theExpectedSagaId = Guid.NewGuid();
+            var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
                 .WithEndpoint<MyServiceEndpoint>(g =>
                 {
-                    g.When(session => session.Send("MyService", new StartASaga() { SomeId = theExpectedSagaId }));
+                    g.When(session => session.Send("MyService", new StartASaga() { AnIdentifier = theExpectedIdentifier }));
                     g.When(condition: ctx =>
                     {
                         return ctx.SagaWasInvoked<ASaga>() && ctx.InvokedSagas.Any(s=> s.SagaType == typeof(ASaga) && s.IsNew);
                     }, 
                     action: session => 
                     {
-                        return session.Send("MyService", new CompleteASaga { SomeId = theExpectedSagaId }); ; 
+                        return session.Send("MyService", new CompleteASaga { AnIdentifier = theExpectedIdentifier }); ; 
                     });
                 })
                 .Done(c =>
