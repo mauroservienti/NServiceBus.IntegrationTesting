@@ -232,11 +232,11 @@ var context = await Scenario.Define<IntegrationScenarioContext>()
 
 The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
 
-## How to deal with timeouts
+## How to deal with NServiceBus Timeouts
 
-When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
+When testing production code, running a choreography, NServiceBus Timeouts can be problematic. Tests will timeout after 90 seconds, this means that if the production code schedules an NServiceBus Timeout for 1 hour, or for next week, it becomes impossible to verify the choreography.
 
-NServiceBus.IntegrationTesting provides a way to reschedule timeouts when they are requested by the production code:
+NServiceBus.IntegrationTesting provides a way to reschedule NServiceBus Timeouts when they are requested by the production code:
 
 ```csharp
 var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
@@ -251,7 +251,7 @@ var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
 .Run();
 ```
 
-The above sample test shows how to inject a timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the timeout expires in 5 seconds insted of the default production value. The timeout reschedule rule receives as arguments the current timeout message and the current delivery constraint.
+The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds insted of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
 
 ## Limitations
 
