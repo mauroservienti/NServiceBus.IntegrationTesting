@@ -157,6 +157,46 @@ class MyOtherServiceTemplate : EndpointTemplate
 
 Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
 
+### Define tests and completion criteria
+
+#### Scenario
+
+Once endpoints are defined, the test choreography can be implemented, the first thing is to define a `Scenario`:
+
+```csharp
+public class When_sending_AMessage
+{
+    [Test]
+    public async Task AReplyMessage_is_received_and_ASaga_is_started()
+    {
+        var context = await Scenario.Define<IntegrationScenarioContext>()
+            .WithEndpoint<MyServiceEndpoint>(...)
+            .WithEndpoint<MyOtherServiceEndpoint>(...)
+            .Done(...)
+            .Run();
+    }
+
+    class MyServiceEndpoint : EndpointConfigurationBuilder{ /* omitted */ }
+    class MyOtherServiceEndpoint : EndpointConfigurationBuilder{ /* omited */ }
+}
+```
+
+NOTE: The defined `Scenario` must use the `InterationScenarioContext` or a type that inherits from `InterationScenarioContext`.
+
+This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. 
+
+```csharp
+var context = await Scenario.Define<IntegrationScenarioContext>()
+   .WithEndpoint<MyServiceEndpoint>(...)
+   .WithEndpoint<MyOtherServiceEndpoint>(...)
+   .Done(...)
+   .Run();
+```
+
+Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed adn finally invoke `Run` to exercise the `Scenario`.
+
+#### Done condition
+
 ## How to deal with timeouts
 
 When testing production code, running a choreography, timeouts can be problematic. Tests timeout after 90 seconds, this means that if the production code schedules a timeouts for 1 hour, or for next week, it becomes essentially impossible to verify the choreography.
