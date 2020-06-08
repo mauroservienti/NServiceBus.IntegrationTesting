@@ -30,8 +30,10 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(g =>
-                    g.When(b => b.Send(new AMessage() {AnIdentifier = theExpectedIdentifier})))
+                .WithEndpoint<MyServiceEndpoint>(behavior =>
+                {
+                    behavior.When(session => session.Send(new AMessage() {AnIdentifier = theExpectedIdentifier}));
+                })
                 .WithEndpoint<MyOtherServiceEndpoint>()
                 .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
                 .Run();
