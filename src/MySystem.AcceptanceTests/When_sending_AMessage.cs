@@ -11,63 +11,64 @@ using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
 {
-public class When_sending_AMessage
-{
-    [OneTimeSetUp]
-    public async Task Setup()
+    public class When_sending_AMessage
     {
-        await DockerCompose.Up();
-    }
+        [OneTimeSetUp]
+        public async Task Setup()
+        {
+            await DockerCompose.Up();
+        }
 
-    [OneTimeTearDown]
-    public void Teardown()
-    {
-        DockerCompose.Down();
-    }
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+            DockerCompose.Down();
+        }
 
-    [Test]
-    public async Task AReplyMessage_is_received_and_ASaga_is_started()
-    {
-        var theExpectedSagaId = Guid.NewGuid();
-        var context = await Scenario.Define<IntegrationScenarioContext>()
-            .WithEndpoint<MyServiceEndpoint>(g => g.When(b => b.Send(new AMessage() { ThisWillBeTheSagaId = theExpectedSagaId })))
-            .WithEndpoint<MyOtherServiceEndpoint>()
-            .Done(c =>
+        [Test]
+        public async Task AReplyMessage_is_received_and_ASaga_is_started()
+        {
+            var theExpectedSagaId = Guid.NewGuid();
+            var context = await Scenario.Define<IntegrationScenarioContext>()
+                .WithEndpoint<MyServiceEndpoint>(g =>
+                    g.When(b => b.Send(new AMessage() {ThisWillBeTheSagaId = theExpectedSagaId})))
+                .WithEndpoint<MyOtherServiceEndpoint>()
+                .Done(c =>
+                {
+                    return
+                        (
+                            c.HandlerWasInvoked<AMessageHandler>()
+                            && c.HandlerWasInvoked<AReplyMessageHandler>()
+                            && c.SagaWasInvoked<ASaga>()
+                        )
+                        || c.HasFailedMessages();
+                })
+                .Run();
+
+            var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
+
+
+            Assert.True(invokedSaga.IsNew);
+            Assert.AreEqual("MyService", invokedSaga.EndpointName);
+            Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
+            Assert.False(context.HasFailedMessages());
+            Assert.False(context.HasHandlingErrors());
+        }
+
+        class MyServiceEndpoint : EndpointConfigurationBuilder
+        {
+            public MyServiceEndpoint()
             {
-                return
-                (
-                    c.HandlerWasInvoked<AMessageHandler>()
-                    && c.HandlerWasInvoked<AReplyMessageHandler>()
-                    && c.SagaWasInvoked<ASaga>()
-                )
-                || c.HasFailedMessages();
-            })
-            .Run();
+                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
+            }
+        }
 
-        var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
-
-
-        Assert.True(invokedSaga.IsNew);
-        Assert.AreEqual("MyService", invokedSaga.EndpointName);
-        Assert.True(((ASagaData)invokedSaga.SagaData).SomeId == theExpectedSagaId);
-        Assert.False(context.HasFailedMessages());
-        Assert.False(context.HasHandlingErrors());
-    }
-
-    class MyServiceEndpoint : EndpointConfigurationBuilder
-    {
-        public MyServiceEndpoint()
+        class MyOtherServiceEndpoint : EndpointConfigurationBuilder
         {
-            EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
+            public MyOtherServiceEndpoint()
+            {
+                EndpointSetup<MyOtherServiceTemplate>();
+            }
         }
     }
-
-    class MyOtherServiceEndpoint : EndpointConfigurationBuilder
-    {
-        public MyOtherServiceEndpoint()
-        {
-            EndpointSetup<MyOtherServiceTemplate>();
-        }
-    }
-}
 }
