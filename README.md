@@ -15,7 +15,9 @@ NServiceBus.IntegrationTesting allows testing end-to-end business scenarios, exe
 
 NServiceBus.IntegrationTesting enables a test like the following one to be defined:
 
-```csharp
+<!-- snippet: too-long-dont-read-full-test -->
+<a id='snippet-too-long-dont-read-full-test'/></a>
+```cs
 [Test]
 public async Task AReplyMessage_is_received_and_ASaga_is_started()
 {
@@ -31,7 +33,6 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
 
     var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
-
     Assert.True(invokedSaga.IsNew);
     Assert.AreEqual("MyService", invokedSaga.EndpointName);
     Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
@@ -39,6 +40,8 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
     Assert.False(context.HasHandlingErrors());
 }
 ```
+<sup><a href='/src/Snippets/ReadmeSnippets.cs#L17-L40' title='File snippet `too-long-dont-read-full-test` was extracted from'>snippet source</a> | <a href='#snippet-too-long-dont-read-full-test' title='Navigate to start of snippet `too-long-dont-read-full-test`'>anchor</a></sup>
+<!-- endsnippet -->
 
 (Full test [source code](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/src/MySystem.AcceptanceTests/When_sending_AMessage.cs) for the above sample is available in this repo)
 
