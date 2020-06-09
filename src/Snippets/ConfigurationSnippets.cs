@@ -1,6 +1,6 @@
 ﻿using NServiceBus;
 
-namespace Snippets
+namespace ConfigurationSnippets
 {
     // begin-snippet: inherit-from-endpoint-configuration
     public class MyServiceConfiguration : EndpointConfiguration

@@ -55,41 +55,11 @@ snippet: use-builder-class
 
 To define an endpoint in tests a class inheriting from `EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
 
-```csharp
-public class When_sending_AMessage
-{
-    class MyServiceEndpoint : EndpointConfigurationBuilder
-    {
-        public MyServiceEndpoint()
-        {
-            EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
-        }
-    }
-
-    class MyOtherServiceEndpoint : EndpointConfigurationBuilder
-    {
-        public MyOtherServiceEndpoint()
-        {
-            EndpointSetup<MyOtherServiceTemplate>();
-        }
-    }
-}
-```
+snippet: endpoints-used-in-each-test
 
 The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by creating a custom endpoint template:
 
-```csharp
-class MyOtherServiceTemplate : EndpointTemplate
-{
-    protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
-    {
-        var config = MyOtherServiceConfigurationBuilder.Build(
-            "MyOtherService",
-            "host=localhost;username=guest;password=guest");
-        return Task.FromResult(config);
-    }
-}
-```
+snippet: my-other-service-template
 
 Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
 
@@ -99,37 +69,11 @@ Using both approaches the endpoint configuration can be customized according to 
 
 Once endpoints are defined, the test choreography can be implemented, the first thing is to define a `Scenario`:
 
-```csharp
-public class When_sending_AMessage
-{
-    [Test]
-    public async Task AReplyMessage_is_received_and_ASaga_is_started()
-    {
-        var context = await Scenario.Define<IntegrationScenarioContext>()
-            .WithEndpoint<MyServiceEndpoint>(...)
-            .WithEndpoint<MyOtherServiceEndpoint>(...)
-            .Done(...)
-            .Run();
-    }
-
-    class MyServiceEndpoint : EndpointConfigurationBuilder{ /* omitted */ }
-    class MyOtherServiceEndpoint : EndpointConfigurationBuilder{ /* omited */ }
-}
-```
+snippet: scenario-skeleton
 
 NOTE: The defined `Scenario` must use the `InterationScenarioContext` or a type that inherits from `InterationScenarioContext`.
 
-This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. 
-
-```csharp
-var context = await Scenario.Define<IntegrationScenarioContext>()
-   .WithEndpoint<MyServiceEndpoint>(...)
-   .WithEndpoint<MyOtherServiceEndpoint>(...)
-   .Done(...)
-   .Run();
-```
-
-Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed adn finally invoke `Run` to exercise the `Scenario`.
+This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed adn finally invoke `Run` to exercise the `Scenario`.
 
 #### Done condition
 
@@ -141,36 +85,20 @@ An end-to-end test execution can only be terminated by 3 events:
 
 Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. based on this it's better to consider failed messages as part of the done condition:
 
-```csharp
-.Done(ctx =>
-{
-   return ctx.HasFailedMessages();
-})
-```
+snippet: simple-done-condition
 
 Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
 
-```csharp
-.Done(ctx =>
-{
-   return ctx.SagaWasInvoked<ASaga>() || ctx.HasFailedMessages();
-})
-```
+snippet: complete-done-condition
 
 The integration scenario context, the `c` argument, can be "queried" to gather the status of the test, in this case the done condition is augmented to make so that the test is considered done when a saga of type `ASaga` has been invoked or there are failed messages.
 
-#### Kick-off the test choreography 
+#### Kick-off the test choreography
 
 The last bit is to kick-off the choreography to test. This is usually done by stimulating the system with a message. `WithEndpoint<T>` has an overload that allows to define a callback that is invoked when the test is run.
 In the defined callback it's possible to define one or more "when" conditions that are evaluated by the testing infrastructure and invoked at the appropriate time:
 
-```csharp
-var context = await Scenario.Define<IntegrationScenarioContext>()
-   .WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send(new AMessage())))
-   .WithEndpoint<MyOtherServiceEndpoint>()
-   .Done(...)
-   .Run();
-```
+snippet: kick-off-choreography
 
 The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
 
@@ -178,19 +106,7 @@ The above code snippet makes so that when "MyServiceEndpoint" is started `AMessa
 
 The last step is to assert on test results. The `IntegrationScenarioContext` instance, created at the beginning of the test captures tests stages and exposes an API to query tests results. The following snippet demonstrates how to assert that a new `ASaga` instance has been created with specific values, a `AMessage` has been handled, and `AReplyMessage` has been handled:
 
-```csharp
-var invokedSaga = context.InvokedSagas.SingleOrDefault(s => s.SagaType == typeof(ASaga));
-
-Assert.IsNotNull(invokedSaga);
-Assert.True(invokedSaga.IsNew);
-Assert.AreEqual("MyService", invokedSaga.EndpointName);
-
-Assert.True(context.HandlerWasInvoked<AMessageHandler>());
-Assert.True(context.HandlerWasInvoked<AReplyMessageHandler>());
-
-Assert.False(context.HasFailedMessages());
-Assert.False(context.HasHandlingErrors());
-```
+snippet: assert-on-tests-results
 
 The context contains also general assertions like `HasFailedMessages` or `HasHandlingErrors` useful to validate the overall correctness of the test execution. `HasFailedMessages` Is `true` if any message has been moved to the configured error queue. `HasHandlingErrors` is `true` if any handler or saga invocation failed at least ones.
 
@@ -200,18 +116,7 @@ When testing production code, running a choreography, NServiceBus Timeouts can b
 
 NServiceBus.IntegrationTesting provides a way to reschedule NServiceBus Timeouts when they are requested by the production code:
 
-```csharp
-var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
-{
-    ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((msg, delay) =>
-    {
-        return new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5));
-    });
-})
-.WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send("MyService", new StartASaga() { SomeId = Guid.NewGuid() })))
-.Done(ctx => ctx.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || ctx.HasFailedMessages())
-.Run();
-```
+snippet: timeouts-reschedule
 
 The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds insted of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
 
