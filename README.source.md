@@ -41,24 +41,7 @@ One of the goals of end-to-end testing an NServiceBus endpoints is to make sure 
 
 It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
 
-```csharp
-namespace MyService
-{
-    public class MyServiceConfiguration : EndpointConfiguration
-    {
-        public MyServiceConfiguration()
-            : base("MyService")
-        {
-            this.SendFailedMessagesTo("error");
-            this.EnableInstallers();
-
-            var transportConfig = this.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString("host=localhost");
-        }
-    }
-}
-```
+snippet: inherit-from-endpoint-configuration
 
 Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
 
@@ -66,26 +49,7 @@ Using the above approach can be problematic when configuration values need to be
 
 In case configuration values need to be passed to the endpoint configuration the easiest option is to use a builder class, even a very simple static one, that can then be used in tests as well with different configuration values. The following snippet shows a simple configuration builder:
 
-```csharp
-namespace MyService
-{
-    public static class MyServiceConfigurationBuilder
-    {
-        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
-        {
-            var config = new EndpointConfiguration(endpointName);
-            config.SendFailedMessagesTo("error");
-            config.EnableInstallers();
-
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
-            
-            return config;
-        }
-    }
-}
-```
+snippet: use-builder-class
 
 ### Define endpoints used in each test
 
