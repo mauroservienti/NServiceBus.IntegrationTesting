@@ -74,24 +74,25 @@ One of the goals of end-to-end testing an NServiceBus endpoints is to make sure 
 
 It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
 
-```csharp
-namespace MyService
+<!-- snippet: inherit-from-endpoint-configuration -->
+<a id='snippet-inherit-from-endpoint-configuration'/></a>
+```cs
+public class MyServiceConfiguration : EndpointConfiguration
 {
-    public class MyServiceConfiguration : EndpointConfiguration
+    public MyServiceConfiguration()
+        : base("MyService")
     {
-        public MyServiceConfiguration()
-            : base("MyService")
-        {
-            this.SendFailedMessagesTo("error");
-            this.EnableInstallers();
+        this.SendFailedMessagesTo("error");
+        this.EnableInstallers();
 
-            var transportConfig = this.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString("host=localhost");
-        }
+        var transportConfig = this.UseTransport<RabbitMQTransport>();
+        transportConfig.UseConventionalRoutingTopology();
+        transportConfig.ConnectionString("host=localhost");
     }
 }
 ```
+<sup><a href='/src/Snippets/MyServiceConfiguration.cs#L5-L19' title='File snippet `inherit-from-endpoint-configuration` was extracted from'>snippet source</a> | <a href='#snippet-inherit-from-endpoint-configuration' title='Navigate to start of snippet `inherit-from-endpoint-configuration`'>anchor</a></sup>
+<!-- endsnippet -->
 
 Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
 
@@ -99,26 +100,27 @@ Using the above approach can be problematic when configuration values need to be
 
 In case configuration values need to be passed to the endpoint configuration the easiest option is to use a builder class, even a very simple static one, that can then be used in tests as well with different configuration values. The following snippet shows a simple configuration builder:
 
-```csharp
-namespace MyService
+<!-- snippet: use-builder-class -->
+<a id='snippet-use-builder-class'/></a>
+```cs
+public static class MyServiceConfigurationBuilder
 {
-    public static class MyServiceConfigurationBuilder
+    public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
     {
-        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
-        {
-            var config = new EndpointConfiguration(endpointName);
-            config.SendFailedMessagesTo("error");
-            config.EnableInstallers();
+        var config = new EndpointConfiguration(endpointName);
+        config.SendFailedMessagesTo("error");
+        config.EnableInstallers();
 
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
-            
-            return config;
-        }
+        var transportConfig = config.UseTransport<RabbitMQTransport>();
+        transportConfig.UseConventionalRoutingTopology();
+        transportConfig.ConnectionString(rabbitMqConnectionString);
+
+        return config;
     }
 }
 ```
+<sup><a href='/src/Snippets/MyServiceConfiguration.cs#L21-L37' title='File snippet `use-builder-class` was extracted from'>snippet source</a> | <a href='#snippet-use-builder-class' title='Navigate to start of snippet `use-builder-class`'>anchor</a></sup>
+<!-- endsnippet -->
 
 ### Define endpoints used in each test
 
