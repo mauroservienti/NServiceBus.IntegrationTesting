@@ -1,30 +1,18 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using MyMessages.Messages;
-using MyOtherService;
 using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace MySystem.AcceptanceTests
+namespace TooLongDontReadSnippets
 {
-    public class When_sending_AMessage
+    public class Snippets
     {
-        [OneTimeSetUp]
-        public async Task Setup()
-        {
-            await DockerCompose.Up();
-        }
-
-        [OneTimeTearDown]
-        public void Teardown()
-        {
-            DockerCompose.Down();
-        }
-
+        // begin-snippet: too-long-dont-read-full-test
         [Test]
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {
@@ -40,27 +28,16 @@ namespace MySystem.AcceptanceTests
 
             var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
+
             Assert.True(invokedSaga.IsNew);
             Assert.AreEqual("MyService", invokedSaga.EndpointName);
             Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }
+        // end-snippet
 
-        class MyServiceEndpoint : EndpointConfigurationBuilder
-        {
-            public MyServiceEndpoint()
-            {
-                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
-            }
-        }
-
-        class MyOtherServiceEndpoint : EndpointConfigurationBuilder
-        {
-            public MyOtherServiceEndpoint()
-            {
-                EndpointSetup<MyOtherServiceTemplate>();
-            }
-        }
+        class MyServiceEndpoint : EndpointConfigurationBuilder{ /* omitted */ }
+        class MyOtherServiceEndpoint : EndpointConfigurationBuilder{ /* omited */ }
     }
 }
