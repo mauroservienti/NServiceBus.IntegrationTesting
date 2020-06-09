@@ -128,6 +128,16 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 - Tests can only use NUnit and at this time there is no way to use a different unit testing framework
 - All endpoints run in a test share the same test process, they are not isolated
 
+### Assembly scanning setup
+
+By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoints is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
+
+snippet: assembly-scanner-config
+
+The `IncludeOnly` extension method is a cusomt extension defined as follows:
+
+snippet: include-only-extension
+
 ## How to install
 
 Using a package manager add a nuget reference to [NServiceBus.IntegrationTesting](https://www.nuget.org/packages/NServiceBus.IntegrationTesting/).
