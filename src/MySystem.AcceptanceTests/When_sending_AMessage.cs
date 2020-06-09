@@ -25,6 +25,7 @@ namespace MySystem.AcceptanceTests
             DockerCompose.Down();
         }
 
+        // begin-snippet: too-long-dont-read-full-test
         [Test]
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
         {
@@ -47,6 +48,7 @@ namespace MySystem.AcceptanceTests
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }
+        // end-snippet
 
         class MyServiceEndpoint : EndpointConfigurationBuilder
         {
