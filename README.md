@@ -40,7 +40,7 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
     Assert.False(context.HasHandlingErrors());
 }
 ```
-<sup><a href='/src/Snippets/ReadmeSnippets.cs#L17-L40' title='File snippet `too-long-dont-read-full-test` was extracted from'>snippet source</a> | <a href='#snippet-too-long-dont-read-full-test' title='Navigate to start of snippet `too-long-dont-read-full-test`'>anchor</a></sup>
+<sup><a href='/src/MySystem.AcceptanceTests/When_sending_AMessage.cs#L28-L51' title='File snippet `too-long-dont-read-full-test` was extracted from'>snippet source</a> | <a href='#snippet-too-long-dont-read-full-test' title='Navigate to start of snippet `too-long-dont-read-full-test`'>anchor</a></sup>
 <!-- endsnippet -->
 
 (Full test [source code](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/src/MySystem.AcceptanceTests/When_sending_AMessage.cs) for the above sample is available in this repo)
