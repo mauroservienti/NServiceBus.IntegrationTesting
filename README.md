@@ -306,6 +306,48 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 - Tests can only use NUnit and at this time there is no way to use a different unit testing framework
 - All endpoints run in a test share the same test process, they are not isolated
 
+### Assembly scanning setup
+
+By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoints is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
+
+<!-- snippet: assembly-scanner-config -->
+<a id='snippet-assembly-scanner-config'/></a>
+```cs
+public class MyServiceConfiguration : EndpointConfiguration
+{
+    public MyServiceConfiguration()
+        : base("MyService")
+    {
+        var scanner = this.AssemblyScanner();
+        scanner.IncludeOnly("MyService.dll", "MyMessages.dll");
+
+        //rest of the configuration
+    }
+}
+```
+<sup><a href='/src/Snippets/AssemblyScannerSnippets.cs#L5-L17' title='File snippet `assembly-scanner-config` was extracted from'>snippet source</a> | <a href='#snippet-assembly-scanner-config' title='Navigate to start of snippet `assembly-scanner-config`'>anchor</a></sup>
+<!-- endsnippet -->
+
+The `IncludeOnly` extension method is a cusomt extension defined as follows:
+
+<!-- snippet: include-only-extension -->
+<a id='snippet-include-only-extension'/></a>
+```cs
+public static AssemblyScannerConfiguration IncludeOnly(this AssemblyScannerConfiguration configuration, params string[] assembliesToInclude)
+{
+    var excluded = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll")
+        .Select(path => Path.GetFileName(path))
+        .Where(existingAssembly => !assembliesToInclude.Contains(existingAssembly))
+        .ToArray();
+
+    configuration.ExcludeAssemblies(excluded);
+
+    return configuration;
+}
+```
+<sup><a href='/src/NServiceBus.AssemblyScanner.Extensions/IncludeOnlyExtension.cs#L9-L21' title='File snippet `include-only-extension` was extracted from'>snippet source</a> | <a href='#snippet-include-only-extension' title='Navigate to start of snippet `include-only-extension`'>anchor</a></sup>
+<!-- endsnippet -->
+
 ## How to install
 
 Using a package manager add a nuget reference to [NServiceBus.IntegrationTesting](https://www.nuget.org/packages/NServiceBus.IntegrationTesting/).
