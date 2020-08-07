@@ -16,7 +16,7 @@ NServiceBus.IntegrationTesting allows testing end-to-end business scenarios, exe
 NServiceBus.IntegrationTesting enables a test like the following one to be defined:
 
 <!-- snippet: too-long-dont-read-full-test -->
-<a id='snippet-too-long-dont-read-full-test'/></a>
+<a id='snippet-too-long-dont-read-full-test'></a>
 ```cs
 [Test]
 public async Task AReplyMessage_is_received_and_ASaga_is_started()
@@ -75,7 +75,7 @@ One of the goals of end-to-end testing an NServiceBus endpoints is to make sure 
 It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
 
 <!-- snippet: inherit-from-endpoint-configuration -->
-<a id='snippet-inherit-from-endpoint-configuration'/></a>
+<a id='snippet-inherit-from-endpoint-configuration'></a>
 ```cs
 public class MyServiceConfiguration : EndpointConfiguration
 {
@@ -101,7 +101,7 @@ Using the above approach can be problematic when configuration values need to be
 In case configuration values need to be passed to the endpoint configuration the easiest option is to use a builder class, even a very simple static one, that can then be used in tests as well with different configuration values. The following snippet shows a simple configuration builder:
 
 <!-- snippet: use-builder-class -->
-<a id='snippet-use-builder-class'/></a>
+<a id='snippet-use-builder-class'></a>
 ```cs
 public static class MyServiceConfigurationBuilder
 {
@@ -127,7 +127,7 @@ public static class MyServiceConfigurationBuilder
 To define an endpoint in tests a class inheriting from `EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
 
 <!-- snippet: endpoints-used-in-each-test -->
-<a id='snippet-endpoints-used-in-each-test'/></a>
+<a id='snippet-endpoints-used-in-each-test'></a>
 ```cs
 public class When_sending_AMessage
 {
@@ -154,7 +154,7 @@ public class When_sending_AMessage
 The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by creating a custom endpoint template:
 
 <!-- snippet: my-other-service-template -->
-<a id='snippet-my-other-service-template'/></a>
+<a id='snippet-my-other-service-template'></a>
 ```cs
 class MyOtherServiceTemplate : EndpointTemplate
 {
@@ -179,7 +179,7 @@ Using both approaches the endpoint configuration can be customized according to 
 Once endpoints are defined, the test choreography can be implemented, the first thing is to define a `Scenario`:
 
 <!-- snippet: scenario-skeleton -->
-<a id='snippet-scenario-skeleton'/></a>
+<a id='snippet-scenario-skeleton'></a>
 ```cs
 [Test]
 public async Task AReplyMessage_is_received_and_ASaga_is_started()
@@ -212,7 +212,7 @@ An end-to-end test execution can only be terminated by 3 events:
 Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. based on this it's better to consider failed messages as part of the done condition:
 
 <!-- snippet: simple-done-condition -->
-<a id='snippet-simple-done-condition'/></a>
+<a id='snippet-simple-done-condition'></a>
 ```cs
 .Done(ctx =>
 {
@@ -225,7 +225,7 @@ Unhandled exceptions are a sort of problem from the integration testing infrastr
 Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
 
 <!-- snippet: complete-done-condition -->
-<a id='snippet-complete-done-condition'/></a>
+<a id='snippet-complete-done-condition'></a>
 ```cs
 .Done(ctx =>
 {
@@ -243,7 +243,7 @@ The last bit is to kick-off the choreography to test. This is usually done by st
 In the defined callback it's possible to define one or more "when" conditions that are evaluated by the testing infrastructure and invoked at the appropriate time:
 
 <!-- snippet: kick-off-choreography -->
-<a id='snippet-kick-off-choreography'/></a>
+<a id='snippet-kick-off-choreography'></a>
 ```cs
 var context = await Scenario.Define<IntegrationScenarioContext>()
     .WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send(new AMessage())))
@@ -258,7 +258,7 @@ The above code snippet makes so that when "MyServiceEndpoint" is started `AMessa
 The last step is to assert on test results. The `IntegrationScenarioContext` instance, created at the beginning of the test captures tests stages and exposes an API to query tests results. The following snippet demonstrates how to assert that a new `ASaga` instance has been created with specific values, a `AMessage` has been handled, and `AReplyMessage` has been handled:
 
 <!-- snippet: assert-on-tests-results -->
-<a id='snippet-assert-on-tests-results'/></a>
+<a id='snippet-assert-on-tests-results'></a>
 ```cs
 var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
@@ -280,7 +280,7 @@ When testing production code, running a choreography, NServiceBus Timeouts can b
 NServiceBus.IntegrationTesting provides a way to reschedule NServiceBus Timeouts when they are requested by the production code:
 
 <!-- snippet: timeouts-reschedule -->
-<a id='snippet-timeouts-reschedule'/></a>
+<a id='snippet-timeouts-reschedule'></a>
 ```cs
 var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
     {
@@ -311,7 +311,7 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoints is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
 
 <!-- snippet: assembly-scanner-config -->
-<a id='snippet-assembly-scanner-config'/></a>
+<a id='snippet-assembly-scanner-config'></a>
 ```cs
 public class MyServiceConfiguration : EndpointConfiguration
 {
@@ -331,7 +331,7 @@ public class MyServiceConfiguration : EndpointConfiguration
 The `IncludeOnly` extension method is a cusomt extension defined as follows:
 
 <!-- snippet: include-only-extension -->
-<a id='snippet-include-only-extension'/></a>
+<a id='snippet-include-only-extension'></a>
 ```cs
 public static AssemblyScannerConfiguration IncludeOnly(this AssemblyScannerConfiguration configuration, params string[] assembliesToInclude)
 {
