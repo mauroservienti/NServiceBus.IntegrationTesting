@@ -17,12 +17,12 @@ The above test does quite a lot of things, but the most important ones are:
 - it's exercising the real production endpoints
 - it's asserting on the end-to-end choreography, for example it's checking that a saga was invoked and/or a message handler was invoked
 
-When the test is started, it sends an initial `AMessage` message to trigger the choreography, and then it lets the endpoints involved do their job until a specific condition is met. In this sample the `done` condition is quite complex:
+When the test is started, it sends an initial `AMessage` message to trigger the choreography, and then it lets the endpoints involved do their job until a specific condition is met. In this sample the `done` condition is:
 
-- An couple of handlers and a saga need to be invoked
+- A saga is invoked
 - Or there are failed messages
 
-*NOTE*: Endpoints in the samples contained in this repository are using RabbitMQ as the NServiceBus transport, LearningPersistence as the persistence mechanism. Tests are using docker-compose to make sure the required infrastructure is made available to endpoints exercised by tests.
+*NOTE*: Endpoints in the samples contained in this repository are using RabbitMQ as the NServiceBus transport, LearningPersistence as the persistence mechanism. Tests are using `docker-compose` to make sure the required infrastructure is made available to endpoints exercised by tests.
 
 ## How to define a test
 
