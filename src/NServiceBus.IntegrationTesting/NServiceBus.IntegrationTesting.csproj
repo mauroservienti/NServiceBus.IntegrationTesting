@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="7.4.1" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.4.0" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.4.1" />
     <PackageReference Include="MinVer" Version="2.3.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
