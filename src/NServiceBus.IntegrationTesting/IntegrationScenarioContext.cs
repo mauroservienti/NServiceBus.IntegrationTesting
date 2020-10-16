@@ -63,6 +63,11 @@ namespace NServiceBus.IntegrationTesting
             return InvokedSagas.Any(invocation => invocation.SagaType == typeof(TSaga));
         }
 
+        public bool SagaWasCompleted<TSaga>() where TSaga : Saga
+        {
+            return InvokedSagas.Any(invocation => invocation.SagaType == typeof(TSaga) && invocation.IsCompleted);
+        }
+
         public bool MessageWasProcessed<TMessage>()
         {
             return invokedHandlers.Any(invocation => invocation.MessageType == typeof(TMessage))
