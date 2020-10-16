@@ -40,7 +40,7 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
     Assert.False(context.HasHandlingErrors());
 }
 ```
-<sup><a href='/src/Snippets/TooLongDontReadSnippets.cs#L15-L38' title='File snippet `too-long-dont-read-full-test` was extracted from'>snippet source</a> | <a href='#snippet-too-long-dont-read-full-test' title='Navigate to start of snippet `too-long-dont-read-full-test`'>anchor</a></sup>
+<sup><a href='/src/Snippets/TooLongDontReadSnippets.cs#L15-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-too-long-dont-read-full-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 (Full test [source code](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/src/MySystem.AcceptanceTests/When_sending_AMessage.cs) for the above sample is available in this repo)
@@ -91,7 +91,7 @@ public class MyServiceConfiguration : EndpointConfiguration
     }
 }
 ```
-<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L5-L19' title='File snippet `inherit-from-endpoint-configuration` was extracted from'>snippet source</a> | <a href='#snippet-inherit-from-endpoint-configuration' title='Navigate to start of snippet `inherit-from-endpoint-configuration`'>anchor</a></sup>
+<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L5-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-inherit-from-endpoint-configuration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
@@ -119,7 +119,7 @@ public static class MyServiceConfigurationBuilder
     }
 }
 ```
-<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L21-L37' title='File snippet `use-builder-class` was extracted from'>snippet source</a> | <a href='#snippet-use-builder-class' title='Navigate to start of snippet `use-builder-class`'>anchor</a></sup>
+<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L21-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-use-builder-class' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Define endpoints used in each test
@@ -148,7 +148,7 @@ public class When_sending_AMessage
     }
 }
 ```
-<sup><a href='/src/Snippets/EndpointsSnippets.cs#L11-L30' title='File snippet `endpoints-used-in-each-test` was extracted from'>snippet source</a> | <a href='#snippet-endpoints-used-in-each-test' title='Navigate to start of snippet `endpoints-used-in-each-test`'>anchor</a></sup>
+<sup><a href='/src/Snippets/EndpointsSnippets.cs#L11-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-endpoints-used-in-each-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by creating a custom endpoint template:
@@ -167,7 +167,7 @@ class MyOtherServiceTemplate : EndpointTemplate
     }
 }
 ```
-<sup><a href='/src/Snippets/EndpointsSnippets.cs#L37-L48' title='File snippet `my-other-service-template` was extracted from'>snippet source</a> | <a href='#snippet-my-other-service-template' title='Navigate to start of snippet `my-other-service-template`'>anchor</a></sup>
+<sup><a href='/src/Snippets/EndpointsSnippets.cs#L37-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-my-other-service-template' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
@@ -194,7 +194,7 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
 class MyServiceEndpoint : EndpointConfigurationBuilder{ /* omitted */ }
 class MyOtherServiceEndpoint : EndpointConfigurationBuilder{ /* omited */ }
 ```
-<sup><a href='/src/Snippets/ScenarioSnippets.cs#L10-L24' title='File snippet `scenario-skeleton` was extracted from'>snippet source</a> | <a href='#snippet-scenario-skeleton' title='Navigate to start of snippet `scenario-skeleton`'>anchor</a></sup>
+<sup><a href='/src/Snippets/ScenarioSnippets.cs#L10-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-scenario-skeleton' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 NOTE: The defined `Scenario` must use the `InterationScenarioContext` or a type that inherits from `InterationScenarioContext`.
@@ -219,7 +219,7 @@ Unhandled exceptions are a sort of problem from the integration testing infrastr
     return ctx.HasFailedMessages();
 })
 ```
-<sup><a href='/src/Snippets/DoneSnippets.cs#L16-L21' title='File snippet `simple-done-condition` was extracted from'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Navigate to start of snippet `simple-done-condition`'>anchor</a></sup>
+<sup><a href='/src/Snippets/DoneSnippets.cs#L16-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
@@ -232,7 +232,7 @@ Such a done condition has to be read has: "If there are one or more failed messa
     return ctx.SagaWasInvoked<ASaga>() || ctx.HasFailedMessages();
 })
 ```
-<sup><a href='/src/Snippets/DoneSnippets.cs#L27-L32' title='File snippet `complete-done-condition` was extracted from'>snippet source</a> | <a href='#snippet-complete-done-condition' title='Navigate to start of snippet `complete-done-condition`'>anchor</a></sup>
+<sup><a href='/src/Snippets/DoneSnippets.cs#L27-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-complete-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The integration scenario context, the `c` argument, can be "queried" to gather the status of the test, in this case the done condition is augmented to make so that the test is considered done when a saga of type `ASaga` has been invoked or there are failed messages.
@@ -248,7 +248,7 @@ In the defined callback it's possible to define one or more "when" conditions th
 var context = await Scenario.Define<IntegrationScenarioContext>()
     .WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send(new AMessage())))
 ```
-<sup><a href='/src/Snippets/KickOffSnippets.cs#L15-L18' title='File snippet `kick-off-choreography` was extracted from'>snippet source</a> | <a href='#snippet-kick-off-choreography' title='Navigate to start of snippet `kick-off-choreography`'>anchor</a></sup>
+<sup><a href='/src/Snippets/KickOffSnippets.cs#L15-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-kick-off-choreography' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
@@ -268,7 +268,7 @@ Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentif
 Assert.False(context.HasFailedMessages());
 Assert.False(context.HasHandlingErrors());
 ```
-<sup><a href='/src/Snippets/AssertionSnippets.cs#L27-L35' title='File snippet `assert-on-tests-results` was extracted from'>snippet source</a> | <a href='#snippet-assert-on-tests-results' title='Navigate to start of snippet `assert-on-tests-results`'>anchor</a></sup>
+<sup><a href='/src/Snippets/AssertionSnippets.cs#L27-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-assert-on-tests-results' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The context contains also general assertions like `HasFailedMessages` or `HasHandlingErrors` useful to validate the overall correctness of the test execution. `HasFailedMessages` Is `true` if any message has been moved to the configured error queue. `HasHandlingErrors` is `true` if any handler or saga invocation failed at least ones.
@@ -293,7 +293,7 @@ var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
     .Done(ctx => ctx.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || ctx.HasFailedMessages())
     .Run();
 ```
-<sup><a href='/src/Snippets/TimeoutsRescheduleSnippets.cs#L16-L27' title='File snippet `timeouts-reschedule` was extracted from'>snippet source</a> | <a href='#snippet-timeouts-reschedule' title='Navigate to start of snippet `timeouts-reschedule`'>anchor</a></sup>
+<sup><a href='/src/Snippets/TimeoutsRescheduleSnippets.cs#L16-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-timeouts-reschedule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds insted of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
@@ -325,7 +325,7 @@ public class MyServiceConfiguration : EndpointConfiguration
     }
 }
 ```
-<sup><a href='/src/Snippets/AssemblyScannerSnippets.cs#L5-L17' title='File snippet `assembly-scanner-config` was extracted from'>snippet source</a> | <a href='#snippet-assembly-scanner-config' title='Navigate to start of snippet `assembly-scanner-config`'>anchor</a></sup>
+<sup><a href='/src/Snippets/AssemblyScannerSnippets.cs#L5-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-assembly-scanner-config' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `IncludeOnly` extension method is a cusomt extension defined as follows:
@@ -345,7 +345,7 @@ public static AssemblyScannerConfiguration IncludeOnly(this AssemblyScannerConfi
     return configuration;
 }
 ```
-<sup><a href='/src/NServiceBus.AssemblyScanner.Extensions/IncludeOnlyExtension.cs#L9-L21' title='File snippet `include-only-extension` was extracted from'>snippet source</a> | <a href='#snippet-include-only-extension' title='Navigate to start of snippet `include-only-extension`'>anchor</a></sup>
+<sup><a href='/src/NServiceBus.AssemblyScanner.Extensions/IncludeOnlyExtension.cs#L9-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-include-only-extension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## How to install
