@@ -70,18 +70,18 @@ namespace NServiceBus.IntegrationTesting
 
         public bool MessageWasProcessed<TMessage>()
         {
-            return invokedHandlers.Any(invocation => invocation.MessageType == typeof(TMessage))
-                || invokedSagas.Any(invocation => invocation.MessageType == typeof(TMessage));
+            return invokedHandlers.Any(invocation => typeof(TMessage).IsAssignableFrom(invocation.MessageType))
+                || invokedSagas.Any(invocation => typeof(TMessage).IsAssignableFrom(invocation.MessageType));
         }
 
         public bool MessageWasProcessedBySaga<TMessage, TSaga>()
         {
-            return invokedSagas.Any(i => i.SagaType == typeof(TSaga) && i.MessageType == typeof(TMessage));
+            return invokedSagas.Any(i => i.SagaType == typeof(TSaga) && typeof(TMessage).IsAssignableFrom(i.MessageType));
         }
 
         public bool MessageWasProcessedByHandler<TMessage, THandler>()
         {
-            return invokedHandlers.Any(i => i.HandlerType == typeof(THandler) && i.MessageType == typeof(TMessage));
+            return invokedHandlers.Any(i => i.HandlerType == typeof(THandler) && typeof(TMessage).IsAssignableFrom(i.MessageType));
         }
 
         public bool HasFailedMessages()
