@@ -38,7 +38,7 @@ namespace NServiceBus.IntegrationTesting.Tests
         }
 
         [Test]
-        public void Condition_should_match_type()
+        public void MessageWasProcessedByHandler_condition_should_match_type()
         {
             var scenarioContext = new IntegrationScenarioContext();
             scenarioContext.CaptureInvokedHandler(new HandlerInvocation()
@@ -50,12 +50,11 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(TestMessage)
             });
 
-            Assert.IsTrue(scenarioContext.HandlerWasInvoked<TestMessageHandler>());
             Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<TestMessage, TestMessageHandler>());
         }
 
         [Test]
-        public void Condition_should_match_base_type()
+        public void MessageWasProcessedByHandler_condition_should_match_base_type()
         {
             var scenarioContext = new IntegrationScenarioContext();
             scenarioContext.CaptureInvokedHandler(new HandlerInvocation()
@@ -67,7 +66,6 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(InheritedMessage)
             });
 
-            Assert.IsTrue(scenarioContext.HandlerWasInvoked<MessageInterfaceHandler>());
             Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<IMessageInterface, MessageInterfaceHandler>());
         }
     }
