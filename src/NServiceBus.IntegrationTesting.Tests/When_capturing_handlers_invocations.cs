@@ -68,5 +68,37 @@ namespace NServiceBus.IntegrationTesting.Tests
 
             Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<IMessageInterface, MessageInterfaceHandler>());
         }
+
+        [Test]
+        public void MessageWasProcessed_condition_should_match_type()
+        {
+            var scenarioContext = new IntegrationScenarioContext();
+            scenarioContext.CaptureInvokedHandler(new HandlerInvocation()
+            {
+                Message = new TestMessage(),
+                EndpointName = "fake-endpoint",
+                HandlerType = typeof(TestMessageHandler),
+                HandlingError = null,
+                MessageType = typeof(TestMessage)
+            });
+
+            Assert.IsTrue(scenarioContext.MessageWasProcessed<TestMessage>());
+        }
+
+        [Test]
+        public void MessageWasProcessed_condition_should_match_base_type()
+        {
+            var scenarioContext = new IntegrationScenarioContext();
+            scenarioContext.CaptureInvokedHandler(new HandlerInvocation()
+            {
+                Message = new InheritedMessage(),
+                EndpointName = "fake-endpoint",
+                HandlerType = typeof(MessageInterfaceHandler),
+                HandlingError = null,
+                MessageType = typeof(InheritedMessage)
+            });
+
+            Assert.IsTrue(scenarioContext.MessageWasProcessed<IMessageInterface>());
+        }
     }
 }

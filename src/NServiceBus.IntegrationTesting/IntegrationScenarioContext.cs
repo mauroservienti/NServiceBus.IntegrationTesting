@@ -70,8 +70,8 @@ namespace NServiceBus.IntegrationTesting
 
         public bool MessageWasProcessed<TMessage>()
         {
-            return invokedHandlers.Any(invocation => invocation.MessageType == typeof(TMessage))
-                || invokedSagas.Any(invocation => invocation.MessageType == typeof(TMessage));
+            return invokedHandlers.Any(invocation => typeof(TMessage).IsAssignableFrom(invocation.MessageType))
+                || invokedSagas.Any(invocation => typeof(TMessage).IsAssignableFrom(invocation.MessageType));
         }
 
         public bool MessageWasProcessedBySaga<TMessage, TSaga>()
