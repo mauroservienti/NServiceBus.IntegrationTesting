@@ -27,7 +27,10 @@ build_script:
 - sh: ./build.sh
 
 artifacts:
-- path: ./**/*.nupkg
+  - path: ./**/*.nupkg
+    type: NuGetPackage
+  - path: ./**/*.snupkg
+    type: NuGetPackage
 
 test: off
 deploy: off
