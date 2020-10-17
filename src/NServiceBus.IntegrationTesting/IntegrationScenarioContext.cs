@@ -81,7 +81,7 @@ namespace NServiceBus.IntegrationTesting
 
         public bool MessageWasProcessedByHandler<TMessage, THandler>()
         {
-            return invokedHandlers.Any(i => i.HandlerType == typeof(THandler) && i.MessageType == typeof(TMessage));
+            return invokedHandlers.Any(i => i.HandlerType == typeof(THandler) && typeof(TMessage).IsAssignableFrom(i.MessageType));
         }
 
         public bool HasFailedMessages()
