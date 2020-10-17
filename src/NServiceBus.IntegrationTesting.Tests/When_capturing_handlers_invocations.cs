@@ -25,15 +25,15 @@ namespace NServiceBus.IntegrationTesting.Tests
         {
             public Task Handle(TestMessage message, IMessageHandlerContext context)
             {
-                throw new NotImplementedException();
+                return Task.CompletedTask;
             }
         }
 
-        class IMessageInterfaceHandler : IHandleMessages<IMessageInterface>
+        class MessageInterfaceHandler : IHandleMessages<IMessageInterface>
         {
             public Task Handle(IMessageInterface message, IMessageHandlerContext context)
             {
-                throw new NotImplementedException();
+                return Task.CompletedTask;
             }
         }
 
@@ -62,13 +62,13 @@ namespace NServiceBus.IntegrationTesting.Tests
             {
                 Message = new InheritedMessage(),
                 EndpointName = "fake-endpoint",
-                HandlerType = typeof(IMessageInterfaceHandler),
+                HandlerType = typeof(MessageInterfaceHandler),
                 HandlingError = null,
                 MessageType = typeof(InheritedMessage)
             });
 
-            Assert.IsTrue(scenarioContext.HandlerWasInvoked<IMessageInterfaceHandler>());
-            Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<IMessageInterface, IMessageInterfaceHandler>());
+            Assert.IsTrue(scenarioContext.HandlerWasInvoked<MessageInterfaceHandler>());
+            Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<IMessageInterface, MessageInterfaceHandler>());
         }
     }
 }
