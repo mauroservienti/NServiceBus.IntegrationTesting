@@ -18,38 +18,54 @@ namespace NServiceBus.IntegrationTesting
 
         public override async Task Invoke(IInvokeHandlerContext context, Func<Task> next)
         {
-            Invocation invocation = null;
             try
             {
                 await next();
+                CaptureInvocation(context, null);
+            }
+            catch (Exception ex)
+            {
+                CaptureInvocation(context, ex);
+                throw;
+            }
+        }
 
+        void CaptureInvocation(IInvokeHandlerContext context, Exception handlingError)
+        {
+            try
+            {
+                Invocation invocation = null;
                 if (context.Extensions.TryGet(out ActiveSagaInstance saga))
                 {
-                    invocation = integrationContext.CaptureInvokedSaga(new SagaInvocation()
-                    {
-                        NotFound = saga.NotFound,
-                        SagaType = saga.NotFound ? null : saga.Instance.GetType(),
-                        IsNew = saga.IsNew,
-                        IsCompleted = saga.NotFound ? false : saga.Instance.Completed,
-                        SagaData = saga.NotFound ? null : saga.Instance.Entity
-                    });
+                    var sagaInvocation = saga.NotFound
+                        ? new SagaInvocation()
+                        {
+                            NotFound = true
+                        }
+                        : new SagaInvocation()
+                        {
+                            NotFound = false,
+                            SagaType = saga.Instance.GetType(),
+                            IsNew = saga.IsNew,
+                            IsCompleted = saga.Instance.Completed,
+                            SagaData = saga.Instance.Entity
+                        };
+
+                    invocation = integrationContext.CaptureInvokedSaga(sagaInvocation);
                 }
                 else
                 {
-                    invocation = integrationContext.CaptureInvokedHandler(new HandlerInvocation()
-                    {
-                        HandlerType = context.MessageHandler.HandlerType
-                    });
+                    invocation = integrationContext.CaptureInvokedHandler(new HandlerInvocation() {HandlerType = context.MessageHandler.HandlerType});
                 }
 
                 invocation.EndpointName = endpointName;
                 invocation.Message = context.MessageBeingHandled;
                 invocation.MessageType = context.MessageMetadata.MessageType;
-            }
-            catch (Exception handlingError)
-            {
                 invocation.HandlingError = handlingError;
-                throw;
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException("Testing infrastructure failure while capturing handler/saga invocation.", e);
             }
         }
     }
