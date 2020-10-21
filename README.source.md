@@ -161,9 +161,11 @@ By default NServiceBus endpoints scan and load all assemblies found in the bin d
 
 snippet: assembly-scanner-config
 
-The `IncludeOnly` extension method is a cusomt extension defined as follows:
+The `IncludeOnly` extension method is a custom extension defined as follows:
 
 snippet: include-only-extension
+
+The above extension method is far from being complete and doesn't handle all the possible scenarios. It's provided as a sample and needs to customized on a case by case.
 
 ## How to install
 
