@@ -57,6 +57,33 @@ When the test is started, it sends an initial `AMessage` message to trigger the 
 
 *NOTE*: Endpoints in the samples contained in this repository are using RabbitMQ as the NServiceBus transport, LearningPersistence as the persistence mechanism. Tests are using `docker-compose` to make sure the required infrastructure is made available to endpoints exercised by tests.
 
+## Why?
+
+By using [NServiceBus testing](https://docs.particular.net/nservicebus/testing/) capabilities it is possible to unit test all NServiceBus features, from message handlers and sagas to custom behaviors. This doesn't mean that the system will work as expected in production, things like:
+
+- the overall business process behavior, or choreography  
+- correctness of the endpoint configuration
+- message routing and events subscriptions
+- saga message mappings
+
+and probably more, cannot be tested using a unit testing approach. NServiceBus.IntegrationTesting is designed to solve these problems.
+
+### Testing business processes (choreography testing)
+
+The goal of choreography testing is to consider endpoints in the system as black boxes, the only thing the test knows are input messages, output messages, and if really needed saga data stored by NServiceBus sagas while processing messages. In this case saga data are considered like an output of an endpoint.
+
+### Testing endpoint configuration
+
+It's important to make sure that each endpoint configuration works as expected, the only real way to validate that is to exercise the real production endpoint by instantiating and running it using the exact same configuration that will be used in production.
+
+### Testing message routing
+
+[Message routing](https://docs.particular.net/nservicebus/messaging/routing) is part of the endpoint configuration and is what makes a choreography successful, the only way to test correctness of the message routing set up is to exercise the choreography so that endpoints will use the production routing configuration to exchange messages, and to subscribe to events. If the routing configuration is wrong or is missing pieces the choreography tests wil fail.
+
+### Testing saga message mappings
+
+In theory, it's possible to assert on [saga message mappings](https://docs.particular.net/nservicebus/sagas/message-correlation) using an approval testing approach. By using this technique it's possible to catch changes to mappings. Although, it's impossible to validate that mappings are correct. The only way to make sure saga mappings are correct is, once again, to exercise sagas by hosting them in endpoints, by sending messages, and asserting on published messages and saga data.
+
 ## How to define a test
 
 Defining an NServiceBus integration test is a multi-step process, composed of:
