@@ -328,7 +328,7 @@ public class MyServiceConfiguration : EndpointConfiguration
 <sup><a href='/src/Snippets/AssemblyScannerSnippets.cs#L5-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-assembly-scanner-config' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `IncludeOnly` extension method is a cusomt extension defined as follows:
+The `IncludeOnly` extension method is a custom extension defined as follows:
 
 <!-- snippet: include-only-extension -->
 <a id='snippet-include-only-extension'></a>
@@ -347,6 +347,8 @@ public static AssemblyScannerConfiguration IncludeOnly(this AssemblyScannerConfi
 ```
 <sup><a href='/src/NServiceBus.AssemblyScanner.Extensions/IncludeOnlyExtension.cs#L9-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-include-only-extension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+The above extension method is far from being complete and doesn't handle all the possible scenarios. It's provided as a sample and needs to customized on a case by case.
 
 ## How to install
 
