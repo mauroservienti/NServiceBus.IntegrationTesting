@@ -38,7 +38,7 @@ namespace MySystem.AcceptanceTests
                     behavior.When(condition: ctx =>
                     {
                         return ctx.SagaWasInvoked<ASaga>() && ctx.InvokedSagas.Any(s=> s.SagaType == typeof(ASaga) && s.IsNew);
-                    }, 
+                    },
                     action: session =>
                     {
                         return session.Send("MyService", new CompleteASaga {AnIdentifier = theExpectedIdentifier});
@@ -54,10 +54,10 @@ namespace MySystem.AcceptanceTests
             var newSaga = invokedSagas.SingleOrDefault(s => s.IsNew);
             var completedSaga = invokedSagas.SingleOrDefault(s => s.IsCompleted);
 
+            Assert.False(context.HasFailedMessages(), "There are failed messages");
+            Assert.False(context.HasHandlingErrors(), "There were handling errors");
             Assert.IsNotNull(newSaga);
             Assert.IsNotNull(completedSaga);
-            Assert.False(context.HasFailedMessages());
-            Assert.False(context.HasHandlingErrors());
         }
 
         class MyServiceEndpoint : EndpointConfigurationBuilder

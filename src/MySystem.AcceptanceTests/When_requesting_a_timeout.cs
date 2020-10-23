@@ -38,9 +38,9 @@ namespace MySystem.AcceptanceTests
             .Done(ctx => ctx.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || ctx.HasFailedMessages())
             .Run();
 
-            Assert.True(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>());
-            Assert.False(context.HasFailedMessages());
-            Assert.False(context.HasHandlingErrors());
+            Assert.False(context.HasFailedMessages(), "There are failed messages");
+            Assert.False(context.HasHandlingErrors(), "There were handling errors");
+            Assert.True(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>(), "MyTimeout was not processed by ASaga");
         }
 
         class MyServiceEndpoint : EndpointConfigurationBuilder
