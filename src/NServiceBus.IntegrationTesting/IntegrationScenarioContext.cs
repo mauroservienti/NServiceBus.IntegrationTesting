@@ -14,6 +14,7 @@ namespace NServiceBus.IntegrationTesting
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
         readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new ConcurrentBag<OutgoingMessageOperation>();
         readonly Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>>();
+        readonly ConcurrentDictionary<Guid, Type> createdSagaInstances = new ConcurrentDictionary<Guid, Type>();
 
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
@@ -51,6 +52,16 @@ namespace NServiceBus.IntegrationTesting
             invokedSagas.Add(invocation);
 
             return invocation;
+        }
+
+        internal void RegisterSagaInstanceAsCreated(Guid sagaId, Type sagaDataType)
+        {
+            createdSagaInstances.AddOrUpdate(sagaId, sagaDataType, (id, type) => type);
+        }
+
+        public bool IsSagaInstanceAvailable(Guid sagaId)
+        {
+            return createdSagaInstances.ContainsKey(sagaId);
         }
 
         public bool HandlerWasInvoked<THandler>()

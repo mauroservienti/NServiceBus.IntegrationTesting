@@ -40,11 +40,11 @@ namespace MySystem.AcceptanceTests
 
             var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
+            Assert.False(context.HasFailedMessages(), "There are failed messages");
+            Assert.False(context.HasHandlingErrors(), "There were handling errors");
             Assert.True(invokedSaga.IsNew);
             Assert.AreEqual("MyService", invokedSaga.EndpointName);
             Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
-            Assert.False(context.HasFailedMessages());
-            Assert.False(context.HasHandlingErrors());
         }
 
         class MyServiceEndpoint : EndpointConfigurationBuilder

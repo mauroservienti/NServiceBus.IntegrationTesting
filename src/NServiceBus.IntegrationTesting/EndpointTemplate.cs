@@ -1,7 +1,9 @@
 ﻿using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Configuration.AdvancedExtensibility;
+using NServiceBus.IntegrationTesting.Messages.Handlers;
 using System;
 using System.Threading.Tasks;
+using NServiceBus.AcceptanceTesting.Customization;
 
 namespace NServiceBus.IntegrationTesting
 {
@@ -13,11 +15,16 @@ namespace NServiceBus.IntegrationTesting
 
             var settings = configuration.GetSettings();
             endpointCustomizationConfiguration.EndpointName = settings.EndpointName();
-
-            configuration.RegisterRequiredPipelineBehaviors(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
-            configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
-
             configurationBuilderCustomization(configuration);
+
+            configuration.TypesToIncludeInScan(new[]
+            {
+                typeof(CreateSagaInstanceHandler),
+                typeof(MarkSagaInstanceAsCreatedHandler)
+            });
+
+            configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
+            configuration.RegisterRequiredPipelineBehaviors(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
 
             return configuration;
         }
