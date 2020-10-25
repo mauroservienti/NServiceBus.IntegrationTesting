@@ -11,6 +11,10 @@ To change this file edit the source file and then run MarkdownSnippets.
 
 NServiceBus.IntegrationTesting allows testing end-to-end business scenarios, exercising the real production code.
 
+## Disclaimer
+
+NServiceBus.IntegrationTesting is not affiliated with Particular Software and thus is not officially supported. It's evolution stage doesn't make it production ready yet.  
+
 ## tl;dr
 
 NServiceBus.IntegrationTesting enables a test like the following one to be defined:
