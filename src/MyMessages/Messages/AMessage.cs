@@ -4,6 +4,6 @@ namespace MyMessages.Messages
 {
     public class AMessage
     {
-        public Guid ThisWillBeTheSagaId { get; set; }
+        public Guid AnIdentifier { get; set; }
     }
 }
