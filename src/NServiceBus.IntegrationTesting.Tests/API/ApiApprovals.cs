@@ -5,7 +5,7 @@ using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using PublicApiGenerator;
 
-namespace NServiceBus.Extensions.EndpointStarted.Tests.API
+namespace NServiceBus.IntegrationTesting.Tests.API
 {
     public class APIApprovals
     {
