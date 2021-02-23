@@ -17,7 +17,7 @@ namespace NServiceBus.IntegrationTesting.Tests
         [Test]
         public async Task Should_Reschedule_Timeouts()
         {
-            var expectedDeliveryAt = new DateTime(2020, 1, 1);
+            var expectedDeliveryAt = new DateTimeOffset(new DateTime(2020, 1, 1));
 
             var scenarioContext = new IntegrationScenarioContext();
             scenarioContext.RegisterTimeoutRescheduleRule<AMessage>((msg, currentDelay) =>
