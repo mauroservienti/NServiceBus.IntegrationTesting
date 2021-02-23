@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NServiceBus.Transport;
 
 namespace NServiceBus.IntegrationTesting
 {
@@ -21,14 +22,13 @@ namespace NServiceBus.IntegrationTesting
         {
             if (integrationContext.TryGetTimeoutRescheduleRule(context.Message.MessageType, out Func<object, DoNotDeliverBefore, DoNotDeliverBefore> rule))
             {
-                var constraints = context.Extensions.Get<List<DeliveryConstraint>>();
-                var doNotDeliverBefore = constraints.OfType<DoNotDeliverBefore>().SingleOrDefault();
+                var constraints = context.Extensions.Get<DispatchProperties>();
+                var doNotDeliverBefore = constraints.DoNotDeliverBefore;
 
                 var newDoNotDeliverBefore = rule(context.Message, doNotDeliverBefore);
                 if(newDoNotDeliverBefore != doNotDeliverBefore)
                 {
-                   constraints.Remove(doNotDeliverBefore);
-                   constraints.Add(newDoNotDeliverBefore);
+                   constraints.DoNotDeliverBefore = newDoNotDeliverBefore;
                 }
             }
 
