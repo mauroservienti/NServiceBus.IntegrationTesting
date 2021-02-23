@@ -15,12 +15,10 @@ namespace MyService
             this.UsePersistence<LearningPersistence>();
             this.EnableInstallers();
 
-            var transportConfig = this.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString("host=localhost;username=guest;password=guest");
+            var transport = new RabbitMQTransport(Topology.Conventional, "host=localhost;username=guest;password=guest");
+            var routing = this.UseTransport(transport);
 
-            transportConfig.Routing()
-                .RouteToEndpoint(typeof(AMessage), "MyOtherService");
+            routing.RouteToEndpoint(typeof(AMessage), "MyOtherService");
 
             this.SendFailedMessagesTo("error");
 

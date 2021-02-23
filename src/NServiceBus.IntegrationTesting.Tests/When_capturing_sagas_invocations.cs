@@ -18,15 +18,15 @@ namespace NServiceBus.IntegrationTesting.Tests
         {
         }
 
-        class TestSaga : Saga<TestSaga.Data>,
+        class TestSaga : Saga<TestSaga.SagaData>,
             IHandleMessages<TestMessage>,
             IHandleMessages<IMessageInterface>
         {
-            internal class Data : ContainSagaData
+            internal class SagaData : ContainSagaData
             {
             }
 
-            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<Data> mapper)
+            protected override void ConfigureHowToFindSaga(SagaPropertyMapper<SagaData> mapper)
             {
                 /**/
             }

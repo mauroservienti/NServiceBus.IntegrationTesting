@@ -1,5 +1,5 @@
-﻿using NServiceBus.AcceptanceTesting;
-using NServiceBus.ObjectBuilder;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NServiceBus.AcceptanceTesting;
 
 namespace NServiceBus.IntegrationTesting
 {
@@ -19,12 +19,17 @@ namespace NServiceBus.IntegrationTesting
             builder.RegisterComponents(r => { RegisterInheritanceHierarchyOfContextOnContainer(scenarioContext, r); });
         }
 
-        static void RegisterInheritanceHierarchyOfContextOnContainer(ScenarioContext scenarioContext, IConfigureComponents r)
+        static void RegisterInheritanceHierarchyOfContextOnContainer(ScenarioContext scenarioContext, IServiceCollection r)
         {
             var type = scenarioContext.GetType();
             while (type != typeof(object))
             {
-                r.RegisterSingleton(type, scenarioContext);
+                if (type == null)
+                {
+                    continue;
+                }
+
+                r.AddSingleton(type, scenarioContext);
                 type = type.BaseType;
             }
         }

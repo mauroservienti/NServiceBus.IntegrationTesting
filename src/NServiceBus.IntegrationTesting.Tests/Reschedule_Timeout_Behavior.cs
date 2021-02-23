@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NServiceBus.Transport;
 
 namespace NServiceBus.IntegrationTesting.Tests
 {
@@ -16,7 +17,7 @@ namespace NServiceBus.IntegrationTesting.Tests
         [Test]
         public async Task Should_Reschedule_Timeouts()
         {
-            var expectedDeliveryAt = new DateTime(2020, 1, 1);
+            var expectedDeliveryAt = new DateTimeOffset(new DateTime(2020, 1, 1));
 
             var scenarioContext = new IntegrationScenarioContext();
             scenarioContext.RegisterTimeoutRescheduleRule<AMessage>((msg, currentDelay) =>
@@ -32,16 +33,13 @@ namespace NServiceBus.IntegrationTesting.Tests
             context.Headers.Add(Headers.SagaType, "a-saga-type");
             context.Headers.Add(Headers.IsSagaTimeoutMessage, bool.TrueString);
 
-            var constraints = new List<DeliveryConstraint>
-            {
-                new DoNotDeliverBefore(new DateTime(2030, 1, 1))
-            };
-            context.Extensions.Set(constraints);
+            var properties = new DispatchProperties {DoNotDeliverBefore = new DoNotDeliverBefore(new DateTime(2030, 1, 1))};
+            context.Extensions.Set(properties);
 
             var sut = new RescheduleTimeoutsBehavior(scenarioContext); ;
             await sut.Invoke(context, () => Task.CompletedTask).ConfigureAwait(false);
 
-            var rescheduledDoNotDeliverBefore = constraints.OfType<DoNotDeliverBefore>().Single();
+            var rescheduledDoNotDeliverBefore = properties.DoNotDeliverBefore;
             Assert.AreEqual(expectedDeliveryAt, rescheduledDoNotDeliverBefore.At);
         }
     }
