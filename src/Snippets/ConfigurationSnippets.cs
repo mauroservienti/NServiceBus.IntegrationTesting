@@ -11,9 +11,7 @@ namespace ConfigurationSnippets
             this.SendFailedMessagesTo("error");
             this.EnableInstallers();
 
-            var transportConfig = this.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString("host=localhost");
+            this.UseTransport(new RabbitMQTransport(Topology.Conventional, "host=localhost"));
         }
     }
     // end-snippet
@@ -27,9 +25,7 @@ namespace ConfigurationSnippets
             config.SendFailedMessagesTo("error");
             config.EnableInstallers();
 
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
+            config.UseTransport(new RabbitMQTransport(Topology.Conventional, rabbitMqConnectionString));
 
             return config;
         }

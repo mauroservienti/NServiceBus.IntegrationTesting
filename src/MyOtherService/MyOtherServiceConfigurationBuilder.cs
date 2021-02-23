@@ -14,9 +14,8 @@ namespace MyOtherService
             config.UsePersistence<LearningPersistence>();
             config.EnableInstallers();
 
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
+            var transport = new RabbitMQTransport(Topology.Conventional, rabbitMqConnectionString);
+            config.UseTransport(transport);
 
             config.SendFailedMessagesTo("error");
 
@@ -24,7 +23,7 @@ namespace MyOtherService
                 .DefiningMessagesAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages"))
                 .DefiningEventsAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages.Events"))
                 .DefiningCommandsAs(t => t.Namespace != null && t.Namespace.EndsWith(".Messages.Commands"));
-            
+
             return config;
         }
     }
