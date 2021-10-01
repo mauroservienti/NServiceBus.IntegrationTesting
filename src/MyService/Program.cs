@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MyService;
 using NServiceBus;
+using Serilog;
 
 namespace MyService
 {
@@ -17,6 +17,11 @@ namespace MyService
         {
             var builder = Host.CreateDefaultBuilder(args);
             builder.UseConsoleLifetime();
+            
+            builder.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console());
 
             builder.ConfigureLogging((ctx, logging) =>
             {
