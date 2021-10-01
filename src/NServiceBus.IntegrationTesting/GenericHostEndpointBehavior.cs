@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NServiceBus.AcceptanceTesting.Support;
 
@@ -25,7 +26,7 @@ namespace NServiceBus.IntegrationTesting
             {
                 configuration.RegisterRequiredPipelineBehaviors(endpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
                 configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
-                configuration.RegisterComponents(r => { r.RegisterSingleton(new EnsureEndpointIsConfiguredForTests()); });
+                configuration.RegisterComponents(r => { r.AddSingleton<EnsureEndpointIsConfiguredForTests>(); });
             });
             var runner = new GenericHostEndpointRunner(runDescriptor, endpointName, host, whens);
             return Task.FromResult((ComponentRunner)runner);
