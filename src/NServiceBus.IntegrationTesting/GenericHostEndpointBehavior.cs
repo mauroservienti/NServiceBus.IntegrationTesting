@@ -25,6 +25,7 @@ namespace NServiceBus.IntegrationTesting
             {
                 configuration.RegisterRequiredPipelineBehaviors(endpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
                 configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
+                configuration.RegisterComponents(r => { r.RegisterSingleton(new EnsureEndpointIsConfiguredForTests()); });
             });
             var runner = new GenericHostEndpointRunner(runDescriptor, endpointName, host, whens);
             return Task.FromResult((ComponentRunner)runner);
