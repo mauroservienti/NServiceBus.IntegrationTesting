@@ -1,5 +1,7 @@
-﻿using MyMessages.Messages;
+﻿using Microsoft.Extensions.Logging;
+using MyMessages.Messages;
 using NServiceBus;
+using Serilog;
 using System;
 using System.Threading.Tasks;
 
@@ -10,6 +12,11 @@ namespace MyService
         IHandleMessages<CompleteASaga>,
         IHandleTimeouts<ASaga.MyTimeout>
     {
+        public ASaga(ILogger<ASaga> logger)
+        {
+            logger.LogInformation("ASaga instance created successfully");
+        }
+
         public Task Handle(StartASaga message, IMessageHandlerContext context)
         {
             return RequestTimeout<MyTimeout>(context, DateTime.UtcNow.AddDays(10));
