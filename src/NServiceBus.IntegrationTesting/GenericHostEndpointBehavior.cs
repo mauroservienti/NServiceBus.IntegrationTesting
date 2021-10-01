@@ -8,21 +8,25 @@ namespace NServiceBus.IntegrationTesting
 {
     class GenericHostEndpointBehavior : IComponentBehavior
     {
-        readonly Func<IHost> hostBuilder;
+        readonly Func<Action<EndpointConfiguration>, IHost> hostBuilder;
         readonly IList<IWhenDefinition> whens;
         readonly string endpointName;
 
-        public GenericHostEndpointBehavior(string endpointName, Func<IHost> hostBuilder, IList<IWhenDefinition> whens)
+        public GenericHostEndpointBehavior(string endpointName, Func<Action<EndpointConfiguration>, IHost> hostBuilder, IList<IWhenDefinition> whens)
         {
             this.endpointName = endpointName;
             this.hostBuilder = hostBuilder;
             this.whens = whens;
         }
 
-        public Task<ComponentRunner> CreateRunner(RunDescriptor run)
+        public Task<ComponentRunner> CreateRunner(RunDescriptor runDescriptor)
         {
-            var host = hostBuilder();
-            var runner = new GenericHostEndpointRunner(run, endpointName, host, whens);
+            var host = hostBuilder(configuration =>
+            {
+                configuration.RegisterRequiredPipelineBehaviors(endpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
+                configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
+            });
+            var runner = new GenericHostEndpointRunner(runDescriptor, endpointName, host, whens);
             return Task.FromResult((ComponentRunner)runner);
         }
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using System;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MyService;
 using NServiceBus;
@@ -12,7 +13,7 @@ namespace MyService
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args)
+        public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfiguration> configPreview = null)
         {
             var builder = Host.CreateDefaultBuilder(args);
             builder.UseConsoleLifetime();
@@ -23,7 +24,13 @@ namespace MyService
                 logging.AddConsole();
             });
 
-            builder.UseNServiceBus(ctx => new MyServiceConfiguration());
+            builder.UseNServiceBus(ctx =>
+            {
+                var config = new MyServiceConfiguration();
+                configPreview?.Invoke(config);
+
+                return config;
+            });
 
             return builder;
         }
