@@ -29,11 +29,11 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(behavior =>
+                .WithGenericHostEndpoint("MyService", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build(), behavior =>
                 {
                     behavior.When(session =>
                     {
-                        return session.Send("MyService", new StartASaga() {AnIdentifier = theExpectedIdentifier});
+                        return session.SendLocal(new StartASaga() {AnIdentifier = theExpectedIdentifier});
                     });
                     behavior.When(condition: ctx =>
                     {
@@ -58,14 +58,6 @@ namespace MySystem.AcceptanceTests
             Assert.IsNotNull(completedSaga);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
-        }
-
-        class MyServiceEndpoint : EndpointConfigurationBuilder
-        {
-            public MyServiceEndpoint()
-            {
-                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
-            }
         }
     }
 }

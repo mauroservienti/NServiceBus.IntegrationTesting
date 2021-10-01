@@ -30,9 +30,9 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(behavior =>
+                .WithGenericHostEndpoint("MyService", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build(), behavior =>
                 {
-                    behavior.When(session => session.Send(new AMessage() {AnIdentifier = theExpectedIdentifier}));
+                    behavior.When(session => session.Send(new AMessage() { AnIdentifier = theExpectedIdentifier }));
                 })
                 .WithEndpoint<MyOtherServiceEndpoint>()
                 .Done(c => c.SagaWasInvoked<ASaga>() || c.HasFailedMessages())
@@ -45,14 +45,6 @@ namespace MySystem.AcceptanceTests
             Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
-        }
-
-        class MyServiceEndpoint : EndpointConfigurationBuilder
-        {
-            public MyServiceEndpoint()
-            {
-                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
-            }
         }
 
         class MyOtherServiceEndpoint : EndpointConfigurationBuilder
