@@ -206,7 +206,7 @@ The "builder class" approach allows specific modifications of the `EndpointConfi
 
 #### Generic host support
 
-NServiceBus endpoints can be [hosted using the generic host](https://docs.particular.net/samples/hosting/generic-host/). When using the generic host the endpoint lifecycle and configuration is controlled by the host. The following is a sample endpoint hosted using te generic host:
+NServiceBus endpoints can be [hosted using the generic host](https://docs.particular.net/samples/hosting/generic-host/). When using the generic host the endpoint lifecycle and configuration are controlled by the host. The following is a sample endpoint hosted using the generic host:
 
 <!-- snippet: basic-generic-host-endpoint -->
 <a id='snippet-basic-generic-host-endpoint'></a>
@@ -263,7 +263,7 @@ public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfi
 <sup><a href='/src/Snippets/GenericHostSnippets.cs#L50-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-basic-generic-host-endpoint-with-config-previewer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The testing engine needs to access the endpoint configuration before it's initialized to register the needed tests behaviors. To do the creation of the `IHostBuilder` needs to be tweaked to invoke a callback delegate that the test engine will inject at tests runtime. 
+The testing engine needs to access the endpoint configuration before it's initialized to register the needed tests behaviors. The creation of the `IHostBuilder` needs to be tweaked to invoke a callback delegate that the test engine injects at tests runtime. 
 
 Finally, the endpoint can be added to the scenario using the `WithGenericHostEndpoint` configuration method:
 
