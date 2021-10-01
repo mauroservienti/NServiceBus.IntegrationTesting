@@ -21,10 +21,11 @@ namespace NServiceBus.IntegrationTesting
 
         public Task<ComponentRunner> CreateRunner(RunDescriptor runDescriptor)
         {
-            var host = hostBuilder(configuration => 
+            var host = hostBuilder(configuration =>
             {
                 configuration.RegisterRequiredPipelineBehaviors(endpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
                 configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
+                configuration.RegisterComponents(r => { r.RegisterSingleton(new EnsureEndpointIsConfiguredForTests()); });
             });
             var runner = new GenericHostEndpointRunner(runDescriptor, endpointName, host, whens);
             return Task.FromResult((ComponentRunner)runner);

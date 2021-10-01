@@ -32,6 +32,8 @@ namespace NServiceBus.IntegrationTesting
         {
             await host.StartAsync(token);
 
+            EnsureEndpointIsConfiguredForTests();
+
             var messageSession = host.Services.GetRequiredService<IMessageSession>();
 
             //TODO: How to access ScenarioContext.CurrentEndpoint
@@ -84,6 +86,18 @@ namespace NServiceBus.IntegrationTesting
                 Logger.Error($"Failed to execute Whens on endpoint{Name}", ex);
 
                 throw;
+            }
+        }
+
+        private void EnsureEndpointIsConfiguredForTests()
+        {
+            var check = host.Services.GetService<EnsureEndpointIsConfiguredForTests>();
+            if (check == null)
+            {
+                throw new Exception($"Endpoint {Name} is not correctly configured to be tested. " +
+                                    $"Make sure to pass the EndpointConfiguration instance to the " +
+                                    $"Action<EndpointConfiguration> provided by WithGenericHostEndpoint " +
+                                    $"tests setup method.");
             }
         }
 
