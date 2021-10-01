@@ -94,6 +94,28 @@ snippet: my-other-service-template
 
 Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
 
+#### Generic host support
+
+NServiceBus endpoints can be [hosted using the generic host](https://docs.particular.net/samples/hosting/generic-host/). When using the generic host the endpoint lifecycle and configuration are controlled by the host. The following is a sample endpoint hosted using the generic host:
+
+snippet: basic-generic-host-endpoint
+
+> For more information about hosting NServiceBus using the generic host refer to the [official documentation](https://docs.particular.net/samples/hosting/generic-host/). 
+
+Before using generic host hosted endpoints with `NServiceBus.IntegrationTesting`, a minor change to the above snippet is required:
+
+snippet: basic-generic-host-endpoint-with-config-previewer
+
+The testing engine needs to access the endpoint configuration before it's initialized to register the needed tests behaviors. The creation of the `IHostBuilder` needs to be tweaked to invoke a callback delegate that the test engine injects at tests runtime. 
+
+Finally, the endpoint can be added to the scenario using the `WithGenericHostEndpoint` configuration method:
+
+snippet: with-generic-host-endpoint
+
+Be sure to pass to the method that creates the `IHostBuilder` the provided `Action<EndpointConfiguration>` parameter. If the endpoint is not configured correctly the following exception will be raised at test time:
+
+> Endpoint \<endpointName\> is not correctly configured to be tested. Make sure to pass the EndpointConfiguration instance to the Action<EndpointConfiguration> provided by WithGenericHostEndpoint tests setup method.
+
 ### Define tests and completion criteria
 
 #### Scenario
