@@ -32,7 +32,7 @@ namespace MySystem.AcceptanceTests
             {
                 ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((msg, delay) => new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5)));
             })
-            .WithGenericHostEndpoint("MyService", () => Program.CreateHostBuilder(new string[0]).Build(), behavior =>
+                .WithGenericHostEndpoint("MyService", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build(), behavior =>
             {
                 behavior.When(session => session.Send("MyService", new StartASaga() {AnIdentifier = Guid.NewGuid()}));
             })
@@ -42,14 +42,6 @@ namespace MySystem.AcceptanceTests
             Assert.True(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>());
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
-        }
-
-        class MyServiceEndpoint : EndpointConfigurationBuilder
-        {
-            public MyServiceEndpoint()
-            {
-                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
-            }
         }
     }
 }
