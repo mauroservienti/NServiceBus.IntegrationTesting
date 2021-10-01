@@ -32,7 +32,7 @@ namespace MySystem.AcceptanceTests
             {
                 ctx.RegisterTimeoutRescheduleRule<ASaga.MyTimeout>((msg, delay) => new DoNotDeliverBefore(DateTime.UtcNow.AddSeconds(5)));
             })
-            .WithEndpoint<MyServiceEndpoint>(behavior =>
+            .WithGenericHostEndpoint("MyService", () => Program.CreateHostBuilder(new string[0]).Build(), behavior =>
             {
                 behavior.When(session => session.Send("MyService", new StartASaga() {AnIdentifier = Guid.NewGuid()}));
             })

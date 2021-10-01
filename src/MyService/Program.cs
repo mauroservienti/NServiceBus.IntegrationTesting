@@ -1,22 +1,31 @@
-﻿using NServiceBus;
-using System;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MyService;
+using NServiceBus;
 
 namespace MyService
 {
-    class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
-            Console.Title = typeof(Program).Namespace;
+            CreateHostBuilder(args).Build().Run();
+        }
 
-            var endpointConfiguration = new MyServiceConfiguration();
-            var endpointInstance = await Endpoint.Start(endpointConfiguration);
+        public static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            var builder = Host.CreateDefaultBuilder(args);
+            builder.UseConsoleLifetime();
 
-            Console.WriteLine($"{typeof(Program).Namespace} started. Press any key to stop.");
-            Console.ReadLine();
+            builder.ConfigureLogging((ctx, logging) =>
+            {
+                logging.AddConfiguration(ctx.Configuration.GetSection("Logging"));
+                logging.AddConsole();
+            });
 
-            await endpointInstance.Stop();
+            builder.UseNServiceBus(ctx => new MyServiceConfiguration());
+
+            return builder;
         }
     }
 }
