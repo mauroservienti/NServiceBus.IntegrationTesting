@@ -6,7 +6,7 @@ using NServiceBus.AcceptanceTesting.Support;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public class GenericHostEndpointBehavior : IComponentBehavior
+    class GenericHostEndpointBehavior : IComponentBehavior
     {
         readonly Func<Action<EndpointConfiguration>, IHost> hostBuilder;
         readonly IList<IWhenDefinition> whens;
