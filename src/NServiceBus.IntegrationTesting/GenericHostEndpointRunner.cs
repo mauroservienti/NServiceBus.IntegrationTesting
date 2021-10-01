@@ -14,14 +14,14 @@ namespace NServiceBus.IntegrationTesting
     class GenericHostEndpointRunner : ComponentRunner
     {
         static ILog Logger = LogManager.GetLogger<EndpointRunner>();
-        readonly RunDescriptor run;
+        readonly RunDescriptor runDescriptor;
         readonly IHost host;
         readonly IList<IWhenDefinition> whens;
 
-        public GenericHostEndpointRunner(RunDescriptor run, string endpointName, IHost host, IList<IWhenDefinition> whens)
+        public GenericHostEndpointRunner(RunDescriptor runDescriptor, string endpointName, IHost host, IList<IWhenDefinition> whens)
         {
             Name = endpointName;
-            this.run = run;
+            this.runDescriptor = runDescriptor;
             this.host = host;
             this.whens = whens;
         }
@@ -68,7 +68,7 @@ namespace NServiceBus.IntegrationTesting
                                     continue;
                                 }
 
-                                if (await when.ExecuteAction(run.ScenarioContext, messageSession).ConfigureAwait(false))
+                                if (await when.ExecuteAction(runDescriptor.ScenarioContext, messageSession).ConfigureAwait(false))
                                 {
                                     executedWhens.Add(when.Id);
                                 }
@@ -106,9 +106,9 @@ namespace NServiceBus.IntegrationTesting
 
         void ThrowOnFailedMessages()
         {
-            foreach (var failedMessage in run.ScenarioContext.FailedMessages.Where(kvp => kvp.Key == Name))
+            foreach (var failedMessage in runDescriptor.ScenarioContext.FailedMessages.Where(kvp => kvp.Key == Name))
             {
-                throw new MessageFailedException(failedMessage.Value.First(), run.ScenarioContext);
+                throw new MessageFailedException(failedMessage.Value.First(), runDescriptor.ScenarioContext);
             }
         }
     }
