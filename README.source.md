@@ -6,7 +6,7 @@ NServiceBus.IntegrationTesting allows testing end-to-end business scenarios, exe
 
 ## Disclaimer
 
-NServiceBus.IntegrationTesting is not affiliated with Particular Software and thus is not officially supported. It's evolution stage doesn't make it production ready yet. 
+NServiceBus.IntegrationTesting is not affiliated with Particular Software and thus is not officially supported. It's evolution stage doesn't make it production ready yet.
 
 ## tl;dr
 
@@ -66,11 +66,11 @@ Defining an NServiceBus integration test is a multi-step process, composed of:
 
 ### Make sure endpoints configuration can be istantiated by tests
 
-One of the goals of end-to-end testing an NServiceBus endpoints is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
+One of the goals of end-to-end testing a NServiceBus endpoint is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
 
 #### Inherit from EndpointConfiguration
 
-It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
+It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure can automatically instantiate it, the class must have a parameterless constructor, like in the following snippet:
 
 snippet: inherit-from-endpoint-configuration
 
@@ -84,15 +84,20 @@ snippet: use-builder-class
 
 ### Define endpoints used in each test
 
-To define an endpoint in tests a class inheriting from `EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
+To define an endpoint in tests a class inheriting from `NServiceBus.AcceptanceTesting.EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
 
 snippet: endpoints-used-in-each-test
 
-The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by creating a custom endpoint template:
+The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by inheriting from `NServiceBus.IntegrationTesting.EndpointTemplate`:
 
 snippet: my-other-service-template
 
-Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
+The "builder class" approach allows specific modifications of the `EndpointConfiguration` for the tests. Although modifications should be kept to a minimum they are reasonable for a few aspects:
+
+- Retries
+  - Retries should be reduced or even disabled for tests.
+  - Otherwise (with the default retry configuration) the IntegrationTests throw a "Some failed messages were not handled by the recoverability feature."-Exception because of a fixed 30 sec timeout in the `NServiceBus.AcceptanceTests.ScenarioRunner`.
+- Cleaning up the queues via `PurgeOnStartup(true)`
 
 ### Define tests and completion criteria
 
@@ -102,9 +107,9 @@ Once endpoints are defined, the test choreography can be implemented, the first 
 
 snippet: scenario-skeleton
 
-NOTE: The defined `Scenario` must use the `InterationScenarioContext` or a type that inherits from `InterationScenarioContext`.
+NOTE: The defined `Scenario` must use the `IntegrationScenarioContext` or a type that inherits from `IntegrationScenarioContext`.
 
-This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed adn finally invoke `Run` to exercise the `Scenario`.
+This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed and finally invoke `Run` to exercise the `Scenario`.
 
 #### Done condition
 
@@ -114,11 +119,11 @@ An end-to-end test execution can only be terminated by 3 events:
 - the test times out
 - there are unhandled exceptions
 
-Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. based on this it's better to consider failed messages as part of the done condition:
+Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. Based on this it's better to consider failed messages as part of the done condition:
 
 snippet: simple-done-condition
 
-Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
+Such a done condition has to be read as: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
 
 snippet: complete-done-condition
 
@@ -131,7 +136,7 @@ In the defined callback it's possible to define one or more "when" conditions th
 
 snippet: kick-off-choreography
 
-The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
+The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads (including one with a condition-parameter) to accommodate many different scenarios.
 
 ### Assert on tests results
 
@@ -149,7 +154,7 @@ NServiceBus.IntegrationTesting provides a way to reschedule NServiceBus Timeouts
 
 snippet: timeouts-reschedule
 
-The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds insted of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
+The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds instead of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
 
 ## Limitations
 
@@ -161,7 +166,7 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 
 ### Assembly scanning setup
 
-By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoints is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
+By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoint is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
 
 snippet: assembly-scanner-config
 
