@@ -15,8 +15,11 @@ namespace MyService
             this.UsePersistence<LearningPersistence>();
             this.EnableInstallers();
 
-            var transport = new RabbitMQTransport(Topology.Conventional, "host=localhost;username=guest;password=guest");
-            var routing = this.UseTransport(transport);
+            //TODO: renable when a compatible combination of alphas is available
+            //var transport = new RabbitMQTransport(Topology.Conventional, "host=localhost;username=guest;password=guest");
+            //var routing = this.UseTransport(transport);
+
+            var routing = this.UseTransport(new LearningTransport());
 
             routing.RouteToEndpoint(typeof(AMessage), "MyOtherService");
 
