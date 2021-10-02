@@ -223,7 +223,7 @@ public static IHostBuilder CreateHostBuilder(string[] args)
     builder.UseNServiceBus(ctx =>
     {
         var config = new EndpointConfiguration("endpoint-name");
-        config.UseTransport(new LearningTransport());
+        config.UseTransport<LearningTransport>();
 
         return config;
     });
@@ -249,7 +249,7 @@ public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfi
     builder.UseNServiceBus(ctx =>
     {
         var config = new EndpointConfiguration("endpoint-name");
-        config.UseTransport(new LearningTransport());
+        config.UseTransport<LearningTransport>();
 
         configPreview?.Invoke(config);
         
