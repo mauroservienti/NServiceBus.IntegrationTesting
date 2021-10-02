@@ -203,6 +203,82 @@ class MyOtherServiceTemplate : EndpointTemplate
 
 Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
 
+#### Generic host support
+
+NServiceBus endpoints can be [hosted using the generic host](https://docs.particular.net/samples/hosting/generic-host/). When using the generic host the endpoint lifecycle and configuration are controlled by the host. The following is a sample endpoint hosted using the generic host:
+
+<!-- snippet: basic-generic-host-endpoint -->
+<a id='snippet-basic-generic-host-endpoint'></a>
+```cs
+public static void Main(string[] args)
+{
+    CreateHostBuilder(args).Build().Run();
+}
+
+public static IHostBuilder CreateHostBuilder(string[] args)
+{
+    var builder = Host.CreateDefaultBuilder(args);
+    builder.UseConsoleLifetime();
+
+    builder.UseNServiceBus(ctx =>
+    {
+        var config = new EndpointConfiguration("endpoint-name");
+        config.UseTransport(new LearningTransport());
+
+        return config;
+    });
+
+    return builder;
+}
+```
+<sup><a href='/src/Snippets/GenericHostSnippets.cs#L27-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-basic-generic-host-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+> For more information about hosting NServiceBus using the generic host refer to the [official documentation](https://docs.particular.net/samples/hosting/generic-host/). 
+
+Before using generic host hosted endpoints with `NServiceBus.IntegrationTesting`, a minor change to the above snippet is required:
+
+<!-- snippet: basic-generic-host-endpoint-with-config-previewer -->
+<a id='snippet-basic-generic-host-endpoint-with-config-previewer'></a>
+```cs
+public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfiguration> configPreview)
+{
+    var builder = Host.CreateDefaultBuilder(args);
+    builder.UseConsoleLifetime();
+
+    builder.UseNServiceBus(ctx =>
+    {
+        var config = new EndpointConfiguration("endpoint-name");
+        config.UseTransport(new LearningTransport());
+
+        configPreview?.Invoke(config);
+        
+        return config;
+    });
+
+    return builder;
+}
+```
+<sup><a href='/src/Snippets/GenericHostSnippets.cs#L50-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-basic-generic-host-endpoint-with-config-previewer' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The testing engine needs to access the endpoint configuration before it's initialized to register the needed tests behaviors. The creation of the `IHostBuilder` needs to be tweaked to invoke a callback delegate that the test engine injects at tests runtime. 
+
+Finally, the endpoint can be added to the scenario using the `WithGenericHostEndpoint` configuration method:
+
+<!-- snippet: with-generic-host-endpoint -->
+<a id='snippet-with-generic-host-endpoint'></a>
+```cs
+_ = await Scenario.Define<IntegrationScenarioContext>()
+    .WithGenericHostEndpoint("endpoint-name", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build())
+```
+<sup><a href='/src/Snippets/GenericHostSnippets.cs#L16-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-with-generic-host-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Be sure to pass to the method that creates the `IHostBuilder` the provided `Action<EndpointConfiguration>` parameter. If the endpoint is not configured correctly the following exception will be raised at test time:
+
+> Endpoint \<endpointName\> is not correctly configured to be tested. Make sure to pass the EndpointConfiguration instance to the Action<EndpointConfiguration> provided by WithGenericHostEndpoint tests setup method.
+
 ### Define tests and completion criteria
 
 #### Scenario
