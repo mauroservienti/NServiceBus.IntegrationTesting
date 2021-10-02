@@ -14,8 +14,10 @@ namespace MyOtherService
             config.UsePersistence<LearningPersistence>();
             config.EnableInstallers();
 
-            var transport = new RabbitMQTransport(Topology.Conventional, rabbitMqConnectionString);
-            config.UseTransport(transport);
+            //TODO: renable when a compatible combination of alphas is available
+            //var transport = new RabbitMQTransport(Topology.Conventional, rabbitMqConnectionString);
+            //config.UseTransport(transport);
+            config.UseTransport(new LearningTransport());
 
             config.SendFailedMessagesTo("error");
 
