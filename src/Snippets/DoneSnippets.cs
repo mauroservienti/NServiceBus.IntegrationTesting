@@ -2,7 +2,6 @@
 using MyService;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
-using NUnit.Framework;
 
 namespace DoneSnippets
 {
