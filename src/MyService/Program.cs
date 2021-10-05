@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using NServiceBus;
 using Serilog;
 
@@ -22,12 +21,6 @@ namespace MyService
                     .ReadFrom.Configuration(context.Configuration)
                     .Enrich.FromLogContext()
                     .WriteTo.Console());
-
-            builder.ConfigureLogging((ctx, logging) =>
-            {
-                logging.AddConfiguration(ctx.Configuration.GetSection("Logging"));
-                logging.AddConsole();
-            });
 
             builder.UseNServiceBus(ctx =>
             {
