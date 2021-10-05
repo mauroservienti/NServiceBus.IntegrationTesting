@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Logging;
 

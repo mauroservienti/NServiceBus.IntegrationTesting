@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using MyMessages.Messages;
 using NServiceBus;
-using Serilog;
 using System;
 using System.Threading.Tasks;
 

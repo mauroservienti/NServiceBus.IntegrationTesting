@@ -1,5 +1,4 @@
 using MyMessages.Messages;
-using MyOtherService;
 using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
