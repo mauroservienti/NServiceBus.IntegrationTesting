@@ -30,7 +30,7 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(behavior =>
+                .WithGenericHostEndpoint("MyService", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build(), behavior =>
                 {
                     behavior.When(session =>
                     {
@@ -39,7 +39,7 @@ namespace MySystem.AcceptanceTests
                     behavior.When(condition: ctx =>
                     {
                         return ctx.SagaWasInvoked<ASaga>() && ctx.InvokedSagas.Any(s=> s.SagaType == typeof(ASaga) && s.IsNew);
-                    }, 
+                    },
                     action: session =>
                     {
                         return session.Send("MyService", new CompleteASaga {AnIdentifier = theExpectedIdentifier});
@@ -59,14 +59,6 @@ namespace MySystem.AcceptanceTests
             Assert.IsNotNull(completedSaga);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
-        }
-
-        class MyServiceEndpoint : EndpointConfigurationBuilder
-        {
-            public MyServiceEndpoint()
-            {
-                EndpointSetup<EndpointTemplate<MyServiceConfiguration>>();
-            }
         }
     }
 }

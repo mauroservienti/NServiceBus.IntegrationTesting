@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyMessages\MyMessages.csproj" />
+    <ProjectReference Include="..\NServiceBus.IntegrationTesting.Tests.TestEndpoint\NServiceBus.IntegrationTesting.Tests.TestEndpoint.csproj" />
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
   </ItemGroup>
 
