@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using ApprovalTests;
 using ApprovalTests.Reporters;
-using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using PublicApiGenerator;
 

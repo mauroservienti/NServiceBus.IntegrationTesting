@@ -20,12 +20,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\"/>
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="NServiceBus" Version="[7.4.3, 8.0.0)"/>
-        <PackageReference Include="NServiceBus.AcceptanceTesting" Version="[7.4.3, 8.0.0)"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="[3.1.19, 5.0.0)" />
+        <PackageReference Include="NServiceBus" Version="[7.4.3, 8.0.0)" />
+        <PackageReference Include="NServiceBus.AcceptanceTesting" Version="[7.4.3, 8.0.0)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -33,7 +34,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <Target Name="AppVeyorPullRequestsTarget" AfterTargets="MinVer" Condition="'$(APPVEYOR_PULL_REQUEST_NUMBER)' != ''">

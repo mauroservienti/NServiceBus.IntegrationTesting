@@ -1,10 +1,8 @@
 ﻿using System.Threading.Tasks;
 using MyMessages.Messages;
-using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
-using NUnit.Framework;
 
 namespace KickOffSnippets
 {

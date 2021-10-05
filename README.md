@@ -13,7 +13,7 @@ NServiceBus.IntegrationTesting allows testing end-to-end business scenarios, exe
 
 ## Disclaimer
 
-NServiceBus.IntegrationTesting is not affiliated with Particular Software and thus is not officially supported. It's evolution stage doesn't make it production ready yet. 
+NServiceBus.IntegrationTesting is not affiliated with Particular Software and thus is not officially supported. It's evolution stage doesn't make it production ready yet.
 
 ## tl;dr
 
@@ -99,11 +99,11 @@ Defining an NServiceBus integration test is a multi-step process, composed of:
 
 ### Make sure endpoints configuration can be istantiated by tests
 
-One of the goals of end-to-end testing an NServiceBus endpoints is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
+One of the goals of end-to-end testing a NServiceBus endpoint is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
 
 #### Inherit from EndpointConfiguration
 
-It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure con automatically instante it, the class must have a parameterless constructor, like in the following snippet:
+It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure can automatically instantiate it, the class must have a parameterless constructor, like in the following snippet:
 
 <!-- snippet: inherit-from-endpoint-configuration -->
 <a id='snippet-inherit-from-endpoint-configuration'></a>
@@ -155,7 +155,7 @@ public static class MyServiceConfigurationBuilder
 
 ### Define endpoints used in each test
 
-To define an endpoint in tests a class inheriting from `EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
+To define an endpoint in tests a class inheriting from `NServiceBus.AcceptanceTesting.EndpointConfigurationBuilder` needs to be created for each endpoint that needs to be used in a test. The best place to define such classes is as nested classes within the test class itself:
 
 <!-- snippet: endpoints-used-in-each-test -->
 <a id='snippet-endpoints-used-in-each-test'></a>
@@ -182,7 +182,7 @@ public class When_sending_AMessage
 <sup><a href='/src/Snippets/EndpointsSnippets.cs#L11-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-endpoints-used-in-each-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by creating a custom endpoint template:
+The sample defines two endpoints, `MyServiceEndpoint` and `MyOtherServiceEndpoint`. `MyServiceEndpoint` uses the "inherit from EndpointConfiguration" approach to reference the production endpoint configuration. `MyOtherServiceEndpoint` uses the "builder class" by inheriting from `NServiceBus.IntegrationTesting.EndpointTemplate`:
 
 <!-- snippet: my-other-service-template -->
 <a id='snippet-my-other-service-template'></a>
@@ -201,7 +201,88 @@ class MyOtherServiceTemplate : EndpointTemplate
 <sup><a href='/src/Snippets/EndpointsSnippets.cs#L37-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-my-other-service-template' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Using both approaches the endpoint configuration can be customized according to the environment needs, if needed.
+The "builder class" approach allows specific modifications of the `EndpointConfiguration` for the tests. Although modifications should be kept to a minimum they are reasonable for a few aspects:
+
+- Retries
+  - Retries should be reduced or even disabled for tests.
+  - Otherwise (with the default retry configuration) the IntegrationTests throw a "Some failed messages were not handled by the recoverability feature."-Exception because of a fixed 30 sec timeout in the `NServiceBus.AcceptanceTests.ScenarioRunner`.
+- Cleaning up the queues via `PurgeOnStartup(true)`
+
+#### Generic host support
+
+NServiceBus endpoints can be [hosted using the generic host](https://docs.particular.net/samples/hosting/generic-host/). When using the generic host the endpoint lifecycle and configuration are controlled by the host. The following is a sample endpoint hosted using the generic host:
+
+<!-- snippet: basic-generic-host-endpoint -->
+<a id='snippet-basic-generic-host-endpoint'></a>
+```cs
+public static void Main(string[] args)
+{
+    CreateHostBuilder(args).Build().Run();
+}
+
+public static IHostBuilder CreateHostBuilder(string[] args)
+{
+    var builder = Host.CreateDefaultBuilder(args);
+    builder.UseConsoleLifetime();
+
+    builder.UseNServiceBus(ctx =>
+    {
+        var config = new EndpointConfiguration("endpoint-name");
+        config.UseTransport<LearningTransport>();
+
+        return config;
+    });
+
+    return builder;
+}
+```
+<sup><a href='/src/Snippets/GenericHostSnippets.cs#L27-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-basic-generic-host-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+> For more information about hosting NServiceBus using the generic host refer to the [official documentation](https://docs.particular.net/samples/hosting/generic-host/). 
+
+Before using generic host hosted endpoints with `NServiceBus.IntegrationTesting`, a minor change to the above snippet is required:
+
+<!-- snippet: basic-generic-host-endpoint-with-config-previewer -->
+<a id='snippet-basic-generic-host-endpoint-with-config-previewer'></a>
+```cs
+public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfiguration> configPreview)
+{
+    var builder = Host.CreateDefaultBuilder(args);
+    builder.UseConsoleLifetime();
+
+    builder.UseNServiceBus(ctx =>
+    {
+        var config = new EndpointConfiguration("endpoint-name");
+        config.UseTransport<LearningTransport>();
+
+        configPreview?.Invoke(config);
+        
+        return config;
+    });
+
+    return builder;
+}
+```
+<sup><a href='/src/Snippets/GenericHostSnippets.cs#L50-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-basic-generic-host-endpoint-with-config-previewer' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The testing engine needs to access the endpoint configuration before it's initialized to register the needed tests behaviors. The creation of the `IHostBuilder` needs to be tweaked to invoke a callback delegate that the test engine injects at tests runtime. 
+
+Finally, the endpoint can be added to the scenario using the `WithGenericHostEndpoint` configuration method:
+
+<!-- snippet: with-generic-host-endpoint -->
+<a id='snippet-with-generic-host-endpoint'></a>
+```cs
+_ = await Scenario.Define<IntegrationScenarioContext>()
+    .WithGenericHostEndpoint("endpoint-name", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build())
+```
+<sup><a href='/src/Snippets/GenericHostSnippets.cs#L16-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-with-generic-host-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Be sure to pass to the method that creates the `IHostBuilder` the provided `Action<EndpointConfiguration>` parameter. If the endpoint is not configured correctly the following exception will be raised at test time:
+
+> Endpoint \<endpointName\> is not correctly configured to be tested. Make sure to pass the EndpointConfiguration instance to the Action<EndpointConfiguration> provided by WithGenericHostEndpoint tests setup method.
 
 ### Define tests and completion criteria
 
@@ -228,9 +309,9 @@ class MyOtherServiceEndpoint : EndpointConfigurationBuilder{ /* omited */ }
 <sup><a href='/src/Snippets/ScenarioSnippets.cs#L10-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-scenario-skeleton' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-NOTE: The defined `Scenario` must use the `InterationScenarioContext` or a type that inherits from `InterationScenarioContext`.
+NOTE: The defined `Scenario` must use the `IntegrationScenarioContext` or a type that inherits from `IntegrationScenarioContext`.
 
-This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed adn finally invoke `Run` to exercise the `Scenario`.
+This tests aims to verify that when "MyService" sends a message to "MyOtherService" a reply is received by "MyService" and finally that a new saga instance is created. Use the `Define` static method to create a scenario and then add endpoints to the created scenario to append as many endpoints as needed for the scenario. Add a `Done` condition to specify when the test has to be considered completed and finally invoke `Run` to exercise the `Scenario`.
 
 #### Done condition
 
@@ -240,7 +321,7 @@ An end-to-end test execution can only be terminated by 3 events:
 - the test times out
 - there are unhandled exceptions
 
-Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. based on this it's better to consider failed messages as part of the done condition:
+Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. Based on this it's better to consider failed messages as part of the done condition:
 
 <!-- snippet: simple-done-condition -->
 <a id='snippet-simple-done-condition'></a>
@@ -250,10 +331,10 @@ Unhandled exceptions are a sort of problem from the integration testing infrastr
     return ctx.HasFailedMessages();
 })
 ```
-<sup><a href='/src/Snippets/DoneSnippets.cs#L16-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/DoneSnippets.cs#L15-L20' title='Snippet source file'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Such a done condition has to be read has: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
+Such a done condition has to be read as: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
 
 <!-- snippet: complete-done-condition -->
 <a id='snippet-complete-done-condition'></a>
@@ -263,7 +344,7 @@ Such a done condition has to be read has: "If there are one or more failed messa
     return ctx.SagaWasInvoked<ASaga>() || ctx.HasFailedMessages();
 })
 ```
-<sup><a href='/src/Snippets/DoneSnippets.cs#L27-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-complete-done-condition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/DoneSnippets.cs#L26-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-complete-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The integration scenario context, the `c` argument, can be "queried" to gather the status of the test, in this case the done condition is augmented to make so that the test is considered done when a saga of type `ASaga` has been invoked or there are failed messages.
@@ -279,10 +360,10 @@ In the defined callback it's possible to define one or more "when" conditions th
 var context = await Scenario.Define<IntegrationScenarioContext>()
     .WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send(new AMessage())))
 ```
-<sup><a href='/src/Snippets/KickOffSnippets.cs#L15-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-kick-off-choreography' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/KickOffSnippets.cs#L13-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-kick-off-choreography' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads to accommodate many different scenarios.
+The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads (including one with a condition-parameter) to accommodate many different scenarios.
 
 ### Assert on tests results
 
@@ -327,7 +408,7 @@ var context = await Scenario.Define<IntegrationScenarioContext>(ctx =>
 <sup><a href='/src/Snippets/TimeoutsRescheduleSnippets.cs#L16-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-timeouts-reschedule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds insted of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
+The above sample test shows how to inject an NServiceBus Timeout reschedule rule. When the production code, in this case the `ASaga` saga, schedules the `ASaga.MyTimeout` message, the registered NServiceBus Timeout reschedule rule will be invoked and a new delivery constraint is created, in this sample, to make so that the NServiceBus Timeout expires in 5 seconds instead of the default production value. The NServiceBus Timeout reschedule rule receives as arguments the current NServiceBus Timeout message and the current delivery constraint.
 
 ## Limitations
 
@@ -339,7 +420,7 @@ NServiceBus.IntegrationTesting is built on top of the NServiceBus.AcceptanceTest
 
 ### Assembly scanning setup
 
-By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoints is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
+By default NServiceBus endpoints scan and load all assemblies found in the bin directory. This means that if more than one endpoint is loaded into the same process all endpoints will scan the same bin directory and all types related to NServiceBus, such as message handlers and/or sagas, are loaded by all endpoints. This can issues to endpoints running in end-to-end tests. It's suggested to configure the endpoint configuration to scan only a limited set of assemblies, and exclude those not related to the current endpoint. The assembly scanner configuration can be applied directly to the production endpoint configuration or as a customization in the test endpoint template setup.
 
 <!-- snippet: assembly-scanner-config -->
 <a id='snippet-assembly-scanner-config'></a>

@@ -1,22 +1,36 @@
-﻿using NServiceBus;
+﻿using Microsoft.Extensions.Hosting;
+using NServiceBus;
 using System;
-using System.Threading.Tasks;
+using Serilog;
 
 namespace MyService
 {
-    class Program
+    public class Program
     {
-        static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
-            Console.Title = typeof(Program).Namespace;
+            CreateHostBuilder(args).Build().Run();
+        }
 
-            var endpointConfiguration = new MyServiceConfiguration();
-            var endpointInstance = await Endpoint.Start(endpointConfiguration);
+        public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfiguration> configPreview = null)
+        {
+            var builder = Host.CreateDefaultBuilder(args);
+            builder.UseConsoleLifetime();
+            
+            builder.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console());
 
-            Console.WriteLine($"{typeof(Program).Namespace} started. Press any key to stop.");
-            Console.ReadLine();
+            builder.UseNServiceBus(ctx =>
+            {
+                var config = new MyServiceConfiguration();
+                configPreview?.Invoke(config);
 
-            await endpointInstance.Stop();
+                return config;
+            });
+
+            return builder;
         }
     }
 }

@@ -3,7 +3,7 @@ using NServiceBus;
 
 namespace MyService
 {
-    public class MyServiceConfiguration : EndpointConfiguration
+    class MyServiceConfiguration : EndpointConfiguration
     {
         public MyServiceConfiguration()
             : base("MyService")
