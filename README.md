@@ -327,7 +327,7 @@ Unhandled exceptions are a sort of problem from the integration testing infrastr
     return ctx.HasFailedMessages();
 })
 ```
-<sup><a href='/src/Snippets/DoneSnippets.cs#L16-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/DoneSnippets.cs#L15-L20' title='Snippet source file'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Such a done condition has to be read as: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
@@ -340,7 +340,7 @@ Such a done condition has to be read as: "If there are one or more failed messag
     return ctx.SagaWasInvoked<ASaga>() || ctx.HasFailedMessages();
 })
 ```
-<sup><a href='/src/Snippets/DoneSnippets.cs#L27-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-complete-done-condition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/DoneSnippets.cs#L26-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-complete-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The integration scenario context, the `c` argument, can be "queried" to gather the status of the test, in this case the done condition is augmented to make so that the test is considered done when a saga of type `ASaga` has been invoked or there are failed messages.
@@ -356,7 +356,7 @@ In the defined callback it's possible to define one or more "when" conditions th
 var context = await Scenario.Define<IntegrationScenarioContext>()
     .WithEndpoint<MyServiceEndpoint>(builder => builder.When(session => session.Send(new AMessage())))
 ```
-<sup><a href='/src/Snippets/KickOffSnippets.cs#L15-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-kick-off-choreography' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/KickOffSnippets.cs#L13-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-kick-off-choreography' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The above code snippet makes so that when "MyServiceEndpoint" is started `AMessage` is sent. `When` has multiple overloads (including one with a condition-parameter) to accommodate many different scenarios.
