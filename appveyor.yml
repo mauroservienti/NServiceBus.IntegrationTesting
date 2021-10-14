@@ -1,5 +1,7 @@
 version: '{build}'
-image: ubuntu2004
+image:
+- ubuntu2004
+- Visual Studio 2019
 
 skip_branch_with_pr: true
 pull_requests:
@@ -15,17 +17,6 @@ branches:
   - /release-.*/
   - /^\d+\.\d+\.\d+(-\S*)?$/
 
-skip_commits:
-  files:
-    - '**/*.source.md'
-
-before_build:
-- sh: sudo curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-- sh: sudo chmod +x /usr/local/bin/docker-compose
-
-build_script:
-- sh: ./build.sh
-
 artifacts:
   - path: ./**/*.nupkg
     type: NuGetPackage
@@ -34,3 +25,27 @@ artifacts:
 
 test: off
 deploy: off
+
+for:
+-
+  matrix:
+    only:
+      - image: ubuntu2004
+
+  before_build:
+  - sh: sudo curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  - sh: sudo chmod +x /usr/local/bin/docker-compose
+
+  build_script:
+  - sh: ./build.sh
+
+-
+  matrix:
+    only:
+      - image: Visual Studio 2019
+
+  before_build:
+  - cmd: docker-switch-linux
+
+  build_script:
+  - cmd: .\build.cmd
