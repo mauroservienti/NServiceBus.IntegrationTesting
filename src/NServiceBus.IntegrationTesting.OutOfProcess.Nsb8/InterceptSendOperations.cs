@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
+namespace NServiceBus.IntegrationTesting.OutOfProcess
 {
     class InterceptSendOperations : Behavior<IOutgoingSendContext>
     {

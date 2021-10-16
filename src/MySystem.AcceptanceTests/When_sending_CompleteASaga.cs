@@ -1,5 +1,4 @@
 using MyMessages.Messages;
-using MyService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
@@ -30,7 +29,7 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithOutOfProcessEndpoint("MyService", EndpointRunner.FromprojectReference("MyService.TestProxy"), behavior =>
+                .WithOutOfProcessEndpoint("MyService", EndpointLifetime.FromSolutionProject("MyService.TestProxy"), behavior =>
                 {
                     behavior.When(session =>
                     {

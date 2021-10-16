@@ -7,10 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\MyService\MyService.csproj" />
+    <ProjectReference Include="..\NServiceBus.IntegrationTesting.OutOfProcess.Nsb8\NServiceBus.IntegrationTesting.OutOfProcess.Nsb8.csproj" />
   </ItemGroup>
 
 </Project>

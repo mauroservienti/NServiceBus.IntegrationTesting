@@ -37,6 +37,10 @@
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj" />
+    </ItemGroup>
+
     <Target Name="AppVeyorPullRequestsTarget" AfterTargets="MinVer" Condition="'$(APPVEYOR_PULL_REQUEST_NUMBER)' != ''">
         <PropertyGroup>
             <PackageVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)-pr.$(APPVEYOR_PULL_REQUEST_NUMBER).build-id.$(APPVEYOR_BUILD_ID).$(MinVerPreRelease)</PackageVersion>
