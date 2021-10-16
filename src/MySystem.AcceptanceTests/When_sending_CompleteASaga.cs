@@ -30,7 +30,7 @@ namespace MySystem.AcceptanceTests
         {
             var theExpectedIdentifier = Guid.NewGuid();
             var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithGenericHostEndpoint("MyService", configPreview => Program.CreateHostBuilder(new string[0], configPreview).Build(), behavior =>
+                .WithOutOfProcessEndpoint("MyService", EndpointRunner.FromprojectReference("MyService.TestProxy"), behavior =>
                 {
                     behavior.When(session =>
                     {
