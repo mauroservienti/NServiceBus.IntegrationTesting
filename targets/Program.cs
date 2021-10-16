@@ -12,6 +12,8 @@ internal class Program
         var sourceDir = "src";
 
         var sdk = new DotnetSdkManager();
+        var isUnix = Environment.OSVersion.Platform == PlatformID.Unix;
+        var unixFx = "netcoreapp3.1";
 
         Target("default", DependsOn("test"));
 
@@ -21,7 +23,7 @@ internal class Program
 
         Target("test", DependsOn("build"),
             Directory.EnumerateFiles(sourceDir, "*Tests.csproj", SearchOption.AllDirectories),
-            proj => Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" --configuration Release --no-build"));
+            proj => Run(sdk.GetDotnetCliPath(), $"test \"{proj}\" {(isUnix ? "--framework " + unixFx : "")} --configuration Release --no-build"));
 
         RunTargetsAndExit(args);
     }
