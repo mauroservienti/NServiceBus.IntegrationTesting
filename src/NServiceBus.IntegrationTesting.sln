@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29020.237
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31808.319
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyService", "MyService\MyService.csproj", "{AB7F9FB9-B79B-47BF-A42E-CD6DB62E0E40}"
 EndProject
@@ -15,11 +15,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTest
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.AssemblyScanner.Extensions", "NServiceBus.AssemblyScanner.Extensions\NServiceBus.AssemblyScanner.Extensions.csproj", "{DA921CE7-6B53-4196-8567-B0197E773043}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting.Tests", "NServiceBus.IntegrationTesting.Tests\NServiceBus.IntegrationTesting.Tests.csproj", "{18A4490B-641E-471C-9A53-02C4AAB69551}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTesting.Tests", "NServiceBus.IntegrationTesting.Tests\NServiceBus.IntegrationTesting.Tests.csproj", "{18A4490B-641E-471C-9A53-02C4AAB69551}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snippets", "Snippets\Snippets.csproj", "{927BC675-5940-43C6-BB97-96DA64CBA6D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snippets", "Snippets\Snippets.csproj", "{927BC675-5940-43C6-BB97-96DA64CBA6D0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting.Tests.TestEndpoint", "NServiceBus.IntegrationTesting.Tests.TestEndpoint\NServiceBus.IntegrationTesting.Tests.TestEndpoint.csproj", "{A830D9C2-07D2-49F3-996A-9AE9EE85B38B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTesting.Tests.TestEndpoint", "NServiceBus.IntegrationTesting.Tests.TestEndpoint\NServiceBus.IntegrationTesting.Tests.TestEndpoint.csproj", "{A830D9C2-07D2-49F3-996A-9AE9EE85B38B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyService.TestProxy", "MyService.TestProxy\MyService.TestProxy.csproj", "{B97F3CE4-5247-4490-93F0-DD382A3209C2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{A830D9C2-07D2-49F3-996A-9AE9EE85B38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A830D9C2-07D2-49F3-996A-9AE9EE85B38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A830D9C2-07D2-49F3-996A-9AE9EE85B38B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B97F3CE4-5247-4490-93F0-DD382A3209C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B97F3CE4-5247-4490-93F0-DD382A3209C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B97F3CE4-5247-4490-93F0-DD382A3209C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B97F3CE4-5247-4490-93F0-DD382A3209C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
