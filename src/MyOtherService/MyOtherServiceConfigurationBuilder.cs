@@ -4,7 +4,7 @@ namespace MyOtherService
 {
     public static class MyOtherServiceConfigurationBuilder
     {
-        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
+        public static EndpointConfiguration Build(string endpointName)
         {
             var config = new EndpointConfiguration(endpointName);
             var scanner = config.AssemblyScanner();
@@ -14,9 +14,7 @@ namespace MyOtherService
             config.UsePersistence<LearningPersistence>();
             config.EnableInstallers();
 
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
+            var transportConfig = config.UseTransport<LearningTransport>();
 
             config.SendFailedMessagesTo("error");
 

@@ -25,10 +25,4 @@
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="docker-compose.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

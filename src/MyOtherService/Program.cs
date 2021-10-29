@@ -10,9 +10,7 @@ namespace MyOtherService
         {
             Console.Title = typeof(Program).Namespace;
 
-            var endpointConfiguration = MyOtherServiceConfigurationBuilder.Build( 
-                typeof(Program).Namespace,
-                "host=localhost;username=guest;password=guest");
+            var endpointConfiguration = MyOtherServiceConfigurationBuilder.Build(typeof(Program).Namespace);
             var endpointInstance = await Endpoint.Start(endpointConfiguration);
 
             Console.WriteLine($"{typeof(Program).Namespace} started. Press any key to stop.");

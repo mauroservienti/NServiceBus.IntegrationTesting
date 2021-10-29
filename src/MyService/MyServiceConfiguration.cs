@@ -15,9 +15,7 @@ namespace MyService
             this.UsePersistence<LearningPersistence>();
             this.EnableInstallers();
 
-            var transportConfig = this.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString("host=localhost;username=guest;password=guest");
+            var transportConfig = this.UseTransport<LearningTransport>();
 
             transportConfig.Routing()
                 .RouteToEndpoint(typeof(AMessage), "MyOtherService");
