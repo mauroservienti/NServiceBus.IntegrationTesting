@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
+    <TargetFrameworks>net48</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="7.4.4" />
-    <PackageReference Include="nunit" Version="3.13.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+    <PackageReference Include="NServiceBus" Version="7.5.0" />
+    <PackageReference Include="nunit" Version="3.13.2" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.4.4" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="7.5.0" />
     <PackageReference Include="SimpleExec" Version="6.4.0" />
   </ItemGroup>
 
@@ -23,12 +23,6 @@
     <ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
     <ProjectReference Include="..\MyService\MyService.csproj" />
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="docker-compose.yml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,6 @@
-﻿using MyMessages.Messages;
+﻿using System;
+using Microsoft.Data.SqlClient;
+using MyMessages.Messages;
 using NServiceBus;
 
 namespace MyService
@@ -8,17 +10,26 @@ namespace MyService
         public MyServiceConfiguration()
             : base("MyService")
         {
+            var connectionString = "Data Source=.;Initial Catalog=db;User ID=sa;Password=YourStrong@Passw0rd;Max Pool Size=80";
+            
             var scanner = this.AssemblyScanner();
-            scanner.IncludeOnly("MyService.dll", "MyMessages.dll");
+            scanner.IncludeOnly("MyService.dll", 
+                "MyMessages.dll",
+                "NServiceBus.Transport.SqlServer.dll",
+                "NServiceBus.Persistence.Sql.dll");
 
             this.UseSerialization<NewtonsoftSerializer>();
-            this.UsePersistence<LearningPersistence>();
             this.EnableInstallers();
+            
+            this.EnableOutbox();
+            
+            var persistence = this.UsePersistence<SqlPersistence>();
+            persistence.SqlDialect<SqlDialect.MsSqlServer>();
+            persistence.ConnectionBuilder(() => new SqlConnection(connectionString));
 
-            var transportConfig = this.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString("host=localhost;username=guest;password=guest");
-
+            var transportConfig = this.UseTransport<SqlServerTransport>()
+                .ConnectionString(connectionString);
+            transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
             transportConfig.Routing()
                 .RouteToEndpoint(typeof(AMessage), "MyOtherService");
 

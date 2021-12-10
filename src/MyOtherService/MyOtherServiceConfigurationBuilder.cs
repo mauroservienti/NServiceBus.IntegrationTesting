@@ -1,22 +1,33 @@
-﻿using NServiceBus;
+﻿using Microsoft.Data.SqlClient;
+using NServiceBus;
 
 namespace MyOtherService
 {
     public static class MyOtherServiceConfigurationBuilder
     {
-        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
+        public static EndpointConfiguration Build(string endpointName)
         {
+            var connectionString = "Data Source=.;Initial Catalog=db;User ID=sa;Password=YourStrong@Passw0rd;Max Pool Size=80";
+            
             var config = new EndpointConfiguration(endpointName);
             var scanner = config.AssemblyScanner();
-            scanner.IncludeOnly("MyOtherService.dll", "MyMessages.dll");
+            scanner.IncludeOnly("MyOtherService.dll", 
+                "MyMessages.dll",
+                "NServiceBus.Transport.SqlServer.dll",
+                "NServiceBus.Persistence.Sql.dll");
 
             config.UseSerialization<NewtonsoftSerializer>();
-            config.UsePersistence<LearningPersistence>();
             config.EnableInstallers();
 
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
+            config.EnableOutbox();
+            
+            var persistence = config.UsePersistence<SqlPersistence>();
+            persistence.SqlDialect<SqlDialect.MsSqlServer>();
+            persistence.ConnectionBuilder(() => new SqlConnection(connectionString));
+
+            var transportConfig = config.UseTransport<SqlServerTransport>()
+                .ConnectionString(connectionString);
+            transportConfig.Transactions(TransportTransactionMode.SendsAtomicWithReceive);
 
             config.SendFailedMessagesTo("error");
 
