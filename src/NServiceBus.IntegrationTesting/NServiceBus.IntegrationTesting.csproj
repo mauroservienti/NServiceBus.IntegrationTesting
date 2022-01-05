@@ -39,6 +39,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj" />
+      <ProjectReference Include="..\NServiceBus.IntegrationTesting.OutOfProcess\NServiceBus.IntegrationTesting.OutOfProcess.csproj" />
     </ItemGroup>
 
     <Target Name="AppVeyorPullRequestsTarget" AfterTargets="MinVer" Condition="'$(APPVEYOR_PULL_REQUEST_NUMBER)' != ''">

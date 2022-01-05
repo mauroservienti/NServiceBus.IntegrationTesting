@@ -1,4 +1,5 @@
-﻿using NServiceBus.IntegrationTesting.OutOfProcess;
+﻿using Grpc.Core;
+using NServiceBus.IntegrationTesting.OutOfProcess;
 
 namespace NServiceBus
 {
@@ -6,6 +7,8 @@ namespace NServiceBus
     {
         public static void EnableOutOfProcessIntegrationTesting(this EndpointConfiguration builder, string endpointName)
         {
+            _ = new RemoteEndpointServer();
+
             var integrationScenarioContextClient = new IntegrationScenarioContextClient();
 
             builder.Pipeline.Register(new InterceptSendOperations(endpointName, integrationScenarioContextClient), "Intercept send operations reporting them to the remote test engine.");

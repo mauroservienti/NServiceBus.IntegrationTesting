@@ -6,12 +6,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NServiceBus.AcceptanceTesting.Support;
+using NServiceBus.IntegrationTesting.OutOfProcess;
 using NServiceBus.Logging;
 
 namespace NServiceBus.IntegrationTesting
 {
     class OutOfProcessEndpointRunner : ComponentRunner
     {
+        RemoteEndpointClient remoteEndpoint;
         static ILog Logger = LogManager.GetLogger<EndpointRunner>();
         private Process process;
         private Task<string> outputTask;
@@ -22,6 +24,7 @@ namespace NServiceBus.IntegrationTesting
 
         public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IWhenDefinition> whens)
         {
+            remoteEndpoint = new RemoteEndpointClient();
             Name = endpointName;
             this.runDescriptor = runDescriptor;
             this.process = process;
@@ -106,8 +109,7 @@ namespace NServiceBus.IntegrationTesting
             // ScenarioContext.CurrentEndpoint = Name;
             try
             {
-                //TODO: replace this with a signal sent to the remote IntegrationScenarioContext that will do Environment.Exit();
-                process.Kill();
+                await remoteEndpoint.Stop();
 
                 var output = await outputTask;
                 var error = await errorTask;

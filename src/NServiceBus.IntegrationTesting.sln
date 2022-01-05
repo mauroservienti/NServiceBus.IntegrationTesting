@@ -23,11 +23,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTest
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyService.TestProxy", "MyService.TestProxy\MyService.TestProxy.csproj", "{B97F3CE4-5247-4490-93F0-DD382A3209C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting.OutOfProcess.Nsb8", "NServiceBus.IntegrationTesting.OutOfProcess.Nsb8\NServiceBus.IntegrationTesting.OutOfProcess.Nsb8.csproj", "{E79EB2FD-6C56-4DAF-8E4B-D819D5F7EC0B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTesting.OutOfProcess.Nsb8", "NServiceBus.IntegrationTesting.OutOfProcess.Nsb8\NServiceBus.IntegrationTesting.OutOfProcess.Nsb8.csproj", "{E79EB2FD-6C56-4DAF-8E4B-D819D5F7EC0B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting.OutOfProcess", "NServiceBus.IntegrationTesting.OutOfProcess\NServiceBus.IntegrationTesting.OutOfProcess.csproj", "{AEF55741-1636-427C-8CD0-AF6494B8F9A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTesting.OutOfProcess", "NServiceBus.IntegrationTesting.OutOfProcess\NServiceBus.IntegrationTesting.OutOfProcess.csproj", "{AEF55741-1636-427C-8CD0-AF6494B8F9A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NServiceBus.IntegrationTesting.Model", "NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj", "{ABC00FEA-AE54-43F5-BCFC-85AEEA90E006}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NServiceBus.IntegrationTesting.Model", "NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj", "{ABC00FEA-AE54-43F5-BCFC-85AEEA90E006}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
