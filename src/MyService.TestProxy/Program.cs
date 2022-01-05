@@ -21,6 +21,7 @@ namespace MyService.TestProxy
 
             var builder = MyService.Program.CreateHostBuilder(args, endpointConfiguration => 
             {
+                //TODO: get the endpoint name from command line args
                 endpointConfiguration.EnableOutOfProcessIntegrationTesting("MyService");
             });
 
