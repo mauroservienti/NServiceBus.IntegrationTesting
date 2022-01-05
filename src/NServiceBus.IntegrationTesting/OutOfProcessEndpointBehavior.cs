@@ -26,7 +26,7 @@ namespace NServiceBus.IntegrationTesting
         {
             var process = new Process();
             process.StartInfo.FileName = @"dotnet";
-            process.StartInfo.Arguments = $"run --project \"{reference.GetProjectFilePath()}\" \"--integrationTest {endpointName}\"";
+            process.StartInfo.Arguments = $"run --project \"{reference.GetProjectFilePath()}\" --integrationTest --endpointName={endpointName}";
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.RedirectStandardError = true;
