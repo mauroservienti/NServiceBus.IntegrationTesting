@@ -14,6 +14,11 @@ namespace MyService.TestProxy
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
+            foreach (var item in args)
+            {
+                Console.WriteLine("Argument: " + item);
+            }
+
             var builder = MyService.Program.CreateHostBuilder(args, endpointConfiguration => 
             {
                 endpointConfiguration.EnableOutOfProcessIntegrationTesting("MyService");

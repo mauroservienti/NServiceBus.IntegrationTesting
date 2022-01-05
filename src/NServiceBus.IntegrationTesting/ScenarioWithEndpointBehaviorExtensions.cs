@@ -18,12 +18,12 @@ namespace NServiceBus.IntegrationTesting
             return scenarioWithEndpoint;
         }
 
-        public static IScenarioWithEndpointBehavior<TContext> WithOutOfProcessEndpoint<TContext>(this IScenarioWithEndpointBehavior<TContext> scenarioWithEndpoint, string endpointName, EndpointLifetime lifetime, Action<OutOfProcessEndpointBehaviorBuilder<TContext>> behavior = null) where TContext : IntegrationScenarioContext
+        public static IScenarioWithEndpointBehavior<TContext> WithOutOfProcessEndpoint<TContext>(this IScenarioWithEndpointBehavior<TContext> scenarioWithEndpoint, string endpointName, EndpointReference endpointReference, Action<OutOfProcessEndpointBehaviorBuilder<TContext>> behavior = null) where TContext : IntegrationScenarioContext
         {
             var behaviorBuilder = new OutOfProcessEndpointBehaviorBuilder<TContext>();
             behavior?.Invoke(behaviorBuilder);
 
-            scenarioWithEndpoint.WithComponent(new OutOfProcesEndpointBehavior(endpointName, lifetime, behaviorBuilder.Whens));
+            scenarioWithEndpoint.WithComponent(new OutOfProcessEndpointBehavior(endpointName, endpointReference, behaviorBuilder.Whens));
 
             return scenarioWithEndpoint;
         }
