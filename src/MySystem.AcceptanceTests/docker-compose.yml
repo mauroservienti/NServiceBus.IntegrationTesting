@@ -3,7 +3,7 @@ services:
   rabbit:
      container_name: mysystem_acceptancetests_rabbit
      hostname: rabbit
-     image: rabbitmq:3.6.6-management
+     image: rabbitmq:3.8-management
      environment:
         - RABBITMQ_DEFAULT_USER=guest
         - RABBITMQ_DEFAULT_PASS=guest
