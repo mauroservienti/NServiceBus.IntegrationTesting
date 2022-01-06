@@ -19,7 +19,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
         public async Task Stop()
         {
             //cannot await: stopping the remote process kills the server
-            //that kills the stream tat blows up the client if awaits
+            //that kills the stream that blows up the client if this awaits
             _ = client.StopAsync(new Google.Protobuf.WellKnownTypes.Empty());
             await channel.ShutdownAsync();
         }
@@ -31,6 +31,10 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             {
                 var current = response.ResponseStream.Current;
                 await onStarted(current);
+
+                //EndpointStarted is fired only once. Don't need to stay
+                //connected to this stream any longer
+                return;
             }
         }
     }
