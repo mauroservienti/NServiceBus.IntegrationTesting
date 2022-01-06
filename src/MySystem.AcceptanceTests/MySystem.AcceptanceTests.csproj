@@ -6,12 +6,12 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1897" />
+  <ItemGroup>	  
+    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1902" />
     <PackageReference Include="nunit" Version="3.13.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1897" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1902" />
     <PackageReference Include="SimpleExec" Version="8.0.0" />
   </ItemGroup>
 
