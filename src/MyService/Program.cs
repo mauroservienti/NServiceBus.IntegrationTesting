@@ -12,7 +12,7 @@ namespace MyService
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args, Action<EndpointConfiguration> configPreview = null)
+        public static IHostBuilder CreateHostBuilder(string[] args)
         {
             var builder = Host.CreateDefaultBuilder(args);
             builder.UseConsoleLifetime();
@@ -25,8 +25,6 @@ namespace MyService
             builder.UseNServiceBus(ctx =>
             {
                 var config = new MyServiceConfiguration();
-                configPreview?.Invoke(config);
-
                 return config;
             });
 
