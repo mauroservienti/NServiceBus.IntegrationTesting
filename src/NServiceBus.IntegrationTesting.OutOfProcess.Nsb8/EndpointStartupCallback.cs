@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NServiceBus.Features;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,7 +9,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
     {
         protected override void Setup(FeatureConfigurationContext context)
         {
-            context.RegisterStartupTask( container =>
+            context.RegisterStartupTask(container =>
             {
                 var server = container.GetService<RemoteEndpointServerV8>();
                 return new CallbackStartupTask(server);
