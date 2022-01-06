@@ -1,10 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NServiceBus.AcceptanceTesting.Support;
 
 namespace NServiceBus.IntegrationTesting
