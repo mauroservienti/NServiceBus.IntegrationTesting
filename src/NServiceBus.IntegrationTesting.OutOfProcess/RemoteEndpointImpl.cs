@@ -8,7 +8,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 {
     class RemoteEndpointImpl : RemoteEndpointBase
     {
-        bool endpoitStarted;
+        bool endpointStarted;
         readonly string endpointName;
 
         public RemoteEndpointImpl(string endpointName)
@@ -25,7 +25,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 
         public override async Task EndpointStarted(Empty request, IServerStreamWriter<EndpointStartedEvent> responseStream, ServerCallContext context)
         {
-            while (!endpoitStarted)
+            while (!endpointStarted)
             {
                 await Task.Delay(500);
             }
@@ -38,7 +38,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 
         internal void NotifyEndpointStarted()
         {
-            endpoitStarted = true;
+            endpointStarted = true;
         }
     }
 }
