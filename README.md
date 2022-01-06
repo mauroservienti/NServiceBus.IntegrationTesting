@@ -75,7 +75,7 @@ It's important to make sure that each endpoint configuration works as expected, 
 
 ### Testing message routing
 
-[Message routing](https://docs.particular.net/nservicebus/messaging/routing) is part of the endpoint configuration and is what makes a choreography successful, the only way to test correctness of the message routing set up is to exercise the choreography so that endpoints will use the production routing configuration to exchange messages, and to subscribe to events. If the routing configuration is wrong or is missing pieces the choreography tests wil fail.
+[Message routing](https://docs.particular.net/nservicebus/messaging/routing) is part of the endpoint configuration and is what makes a choreography successful, the only way to test correctness of the message routing set up is to exercise the choreography so that endpoints will use the production routing configuration to exchange messages, and to subscribe to events. If the routing configuration is wrong or is missing pieces the choreography tests will fail.
 
 ### Testing saga message mappings
 
@@ -85,18 +85,18 @@ In theory, it's possible to assert on [saga message mappings](https://docs.parti
 
 Defining an NServiceBus integration test is a multi-step process, composed of:
 
-- Make sure endpoints configuration can be istantiated by tests
+- Make sure endpoints configuration can be instantiated by tests
 - Define endpoints used in each test; and if needed customize each endpoint configuration to adapt to the test environment
 - Define tests and completion criteria
 - Assert on tests results
 
-### Make sure endpoints configuration can be istantiated by tests
+### Make sure endpoints configuration can be instantiated by tests
 
 One of the goals of end-to-end testing a NServiceBus endpoint is to make sure that what gets tested is the real production code, not a copy of it crafted for the tests. The production endpoint configuration has to be used in tests. To make sure that the testing infrastructure can instantiate the endpoint configuration there are a couple of options, with many variations.
 
 #### Inherit from EndpointConfiguration
 
-It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure can automatically instantiate it, the class must have a parameterless constructor, like in the following snippet:
+It's possible to create a class that inherits from `EndpointConfiguration` and then use it in both the production endpoint and the tests. To make so that the testing infrastructure can automatically instantiate it, the class must have a parameter-less constructor, like in the following snippet:
 
 <!-- snippet: inherit-from-endpoint-configuration -->
 <a id='snippet-inherit-from-endpoint-configuration'></a>
@@ -310,7 +310,7 @@ An end-to-end test execution can only be terminated by 3 events:
 - the test times out
 - there are unhandled exceptions
 
-Unhandled exceptions are a sort of problem from the integration testing infrastructure perspecive as most of the times they'll result in messages being retried and eventually ending up in the error queue. Based on this it's better to consider failed messages as part of the done condition:
+Unhandled exceptions are a sort of problem from the integration testing infrastructure perspective as most of the times they'll result in messages being retried and eventually ending up in the error queue. Based on this it's better to consider failed messages as part of the done condition:
 
 <!-- snippet: simple-done-condition -->
 <a id='snippet-simple-done-condition'></a>
@@ -323,7 +323,7 @@ Unhandled exceptions are a sort of problem from the integration testing infrastr
 <sup><a href='/src/Snippets/DoneSnippets.cs#L15-L20' title='Snippet source file'>snippet source</a> | <a href='#snippet-simple-done-condition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Such a done condition has to be read as: "If there are one or more failed messages the test is done, proceed to evaulate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invokation can be expressed as a done condition in the following way:
+Such a done condition has to be read as: "If there are one or more failed messages the test is done, proceed to evaluate the assertions". Obviously this is not enough. In the identified test case scenario the test is done when a saga is invoked (specifically is created, more on this later). A saga invocation can be expressed as a done condition in the following way:
 
 <!-- snippet: complete-done-condition -->
 <a id='snippet-complete-done-condition'></a>
@@ -453,7 +453,7 @@ The above extension method is far from being complete and doesn't handle all the
 
 ## How to install
 
-Using a package manager add a nuget reference to [NServiceBus.IntegrationTesting](https://www.nuget.org/packages/NServiceBus.IntegrationTesting/).
+Using a package manager add a NuGet reference to [NServiceBus.IntegrationTesting](https://www.nuget.org/packages/NServiceBus.IntegrationTesting/).
 
 ## Background
 
