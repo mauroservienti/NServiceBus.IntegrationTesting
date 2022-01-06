@@ -1,13 +1,20 @@
-﻿using Grpc.Core;
-using NServiceBus.IntegrationTesting.OutOfProcess;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace NServiceBus
+namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
 {
-    public static class EndpointConfigurationExtensions
+    class AutoConfiguration : INeedInitialization
     {
-        public static void EnableOutOfProcessIntegrationTesting(this EndpointConfiguration builder, string endpointName)
+        public void Customize(EndpointConfiguration builder)
         {
-            _ = new RemoteEndpointServer();
+            CommandLine.EnsureIsIntegrationTest();
+
+            var endpointName = CommandLine.GetEndpointName();
+
+            var remoteEndpointServer = new RemoteEndpointServerV8(endpointName);
+
+            builder.RegisterComponents(services => services.AddSingleton(remoteEndpointServer));
+
+            builder.EnableFeature<EndpointStartupCallback>();
 
             var integrationScenarioContextClient = new IntegrationScenarioContextClient();
 

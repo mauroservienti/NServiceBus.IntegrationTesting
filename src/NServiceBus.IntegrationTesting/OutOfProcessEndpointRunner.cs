@@ -19,7 +19,7 @@ namespace NServiceBus.IntegrationTesting
         private Task<string> outputTask;
         private Task<string> errorTask;
         readonly RunDescriptor runDescriptor;
-        private readonly EndpointReference reference;
+        bool remoteEndpointStarted;
         readonly IList<IWhenDefinition> whens;
 
         public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IWhenDefinition> whens)
@@ -40,7 +40,7 @@ namespace NServiceBus.IntegrationTesting
             outputTask = process.StandardOutput.ReadToEndAsync();
             errorTask = process.StandardError.ReadToEndAsync();
 
-            EnsureEndpointIsConfiguredForTests();
+            await ConnectToRemoteEndpoint();
 
             //build the remote session proxy
             IMessageSession messageSession = null;
@@ -98,9 +98,15 @@ namespace NServiceBus.IntegrationTesting
             }
         }
 
-        private void EnsureEndpointIsConfiguredForTests()
+        private Task ConnectToRemoteEndpoint()
         {
-            //TODO: ensure can communicate with remote process
+            return remoteEndpoint.OnEndpointStarted(e => 
+            {
+                Logger.Info($"Remote endpoint '{e.EndpointName}' started.");
+
+                remoteEndpointStarted = true;
+                return Task.CompletedTask;
+            });
         }
 
         public override async Task Stop()
@@ -109,6 +115,11 @@ namespace NServiceBus.IntegrationTesting
             // ScenarioContext.CurrentEndpoint = Name;
             try
             {
+                while (!remoteEndpointStarted)
+                {
+                    await Task.Delay(500);
+                }
+
                 await remoteEndpoint.Stop();
 
                 var output = await outputTask;

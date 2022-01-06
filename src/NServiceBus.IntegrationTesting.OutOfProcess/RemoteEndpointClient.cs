@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using System;
 using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
@@ -21,6 +22,16 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             //that kills the stream tat blows up the client if awaits
             _ = client.StopAsync(new Google.Protobuf.WellKnownTypes.Empty());
             await channel.ShutdownAsync();
+        }
+
+        public async Task OnEndpointStarted(Func<EndpointStartedEvent, Task> onStarted)
+        {
+            var response = client.EndpointStarted(new Google.Protobuf.WellKnownTypes.Empty());
+            while (await response.ResponseStream.MoveNext())
+            {
+                var current = response.ResponseStream.Current;
+                await onStarted(current);
+            }
         }
     }
 }
