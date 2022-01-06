@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.IntegrationTesting.OutOfProcess;
 using NServiceBus.Logging;
@@ -39,12 +40,12 @@ namespace NServiceBus.IntegrationTesting
 
             outputTask = process.StandardOutput.ReadToEndAsync();
             errorTask = process.StandardError.ReadToEndAsync();
-
-            await ConnectToRemoteEndpoint();
+            
+            await ConnectToRemoteEndpointWithRetries();
 
             //build the remote session proxy
             IMessageSession messageSession = null;
-            
+
             //TODO: How to access ScenarioContext.CurrentEndpoint
             // ScenarioContext.CurrentEndpoint = Name;
             try
@@ -98,60 +99,101 @@ namespace NServiceBus.IntegrationTesting
             }
         }
 
-        private Task ConnectToRemoteEndpoint()
+        private async Task ConnectToRemoteEndpointWithRetries()
         {
-            return remoteEndpoint.OnEndpointStarted(e => 
-            {
-                Logger.Info($"Remote endpoint '{e.EndpointName}' started.");
+            var connected = false;
+            
+            //TODO: should this be configurable?
+            var maxAttempts = 10;
+            var attempts = 0;
 
-                remoteEndpointStarted = true;
-                return Task.CompletedTask;
-            });
+            while (!connected)
+            {
+                try
+                {
+                    Logger.Debug($"Connecting to remote endpoint: '{Name}' - Attempt {attempts + 1}");
+                    await remoteEndpoint.OnEndpointStarted(e =>
+                    {
+                        Logger.Info($"Remote endpoint '{e.EndpointName}' started.");
+
+                        remoteEndpointStarted = true;
+                        return Task.CompletedTask;
+                    });
+
+                    connected = true;
+                }
+                catch (Exception ex) when ((ex is RpcException rpcEx) && rpcEx.StatusCode == StatusCode.Unavailable)
+                {
+                    attempts++;
+                    if (attempts > maxAttempts)
+                    {
+                        Logger.Error($"Failed to connect to remote endpoint '{Name}' after {attempts + 1} attempts.", rpcEx);
+                        throw;
+                    }
+
+                    Logger.Debug($"Failed to connect to remote endpoint '{Name}', waiting to retry.");
+                    //TODO: should this be configurable?
+                    await Task.Delay(500);
+                }
+            }
         }
 
         public override async Task Stop()
         {
             //TODO: How to access ScenarioContext.CurrentEndpoint
             // ScenarioContext.CurrentEndpoint = Name;
+
+            List<Exception> errors = new();
             try
             {
-                while (!remoteEndpointStarted)
+                if (!remoteEndpointStarted)
                 {
-                    await Task.Delay(500);
+                    Logger.Warn($"Remote endpoint '{Name}' never published the started event. Killing the process.");
+                    process.Kill();
                 }
-
-                await remoteEndpoint.Stop();
-
-                var output = await outputTask;
-                var error = await errorTask;
-
-                if (output != string.Empty)
+                else
                 {
-                    Console.WriteLine(output);
+                    Logger.Info($"Attempt to gracefully shutdown remote endpoint '{Name}'.");
+                    await remoteEndpoint.Stop();
                 }
-
-                if (error != string.Empty)
-                {
-                    throw new Exception(error);
-                }
-
-                process.Dispose();
-                process = null;
             }
             catch (Exception ex)
             {
-                Logger.Error("Failed to stop endpoint " + Name, ex);
-                throw;
+                Logger.Error($"Failed to stop remote endpoint {Name}.", ex);
+                errors.Add(ex);
             }
 
-            ThrowOnFailedMessages();
+            var output = await outputTask;
+            var error = await errorTask;
+
+            if (output != string.Empty)
+            {
+                Logger.Info(output);
+            }
+
+            if (error != string.Empty)
+            {
+                Logger.Error(error);
+                errors.Add(new Exception(error));
+            }
+
+            process.Dispose();
+            process = null;
+
+            errors.AddRange(GetFailedMessagesExceptions());
+
+            if (errors.Any())
+            {
+                throw new AggregateException(errors.ToArray());
+            }
         }
 
-        void ThrowOnFailedMessages()
+        IEnumerable<Exception> GetFailedMessagesExceptions()
         {
             foreach (var failedMessage in runDescriptor.ScenarioContext.FailedMessages.Where(kvp => kvp.Key == Name))
             {
-                throw new MessageFailedException(failedMessage.Value.First(), runDescriptor.ScenarioContext);
+                Logger.Error($"Message failed: {failedMessage.Value.First()}");
+                yield return new MessageFailedException(failedMessage.Value.First(), runDescriptor.ScenarioContext);
             }
         }
     }
