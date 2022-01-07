@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
+    <ProjectReference Include="..\NServiceBus.IntegrationTesting.OutOfProcess.Nsb8\NServiceBus.IntegrationTesting.OutOfProcess.Nsb8.csproj" />
+  </ItemGroup>
+
+</Project>
