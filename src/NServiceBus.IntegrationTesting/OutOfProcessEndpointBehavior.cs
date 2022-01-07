@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -8,14 +9,14 @@ namespace NServiceBus.IntegrationTesting
     class OutOfProcessEndpointBehavior : IComponentBehavior
     {
         readonly EndpointReference reference;
-        readonly IList<IWhenDefinition> whens;
+        readonly IList<IRemoteEndpointWhenDefinition> remoteWhens;
         readonly string endpointName;
 
-        public OutOfProcessEndpointBehavior(string endpointName, EndpointReference reference, IList<IWhenDefinition> whens)
+        public OutOfProcessEndpointBehavior(string endpointName, EndpointReference reference, IList<IRemoteEndpointWhenDefinition> remoteWhens)
         {
             this.endpointName = endpointName;
             this.reference = reference;
-            this.whens = whens;
+            this.remoteWhens = remoteWhens;
         }
 
         public Task<ComponentRunner> CreateRunner(RunDescriptor runDescriptor)
@@ -30,7 +31,7 @@ namespace NServiceBus.IntegrationTesting
             process.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             process.StartInfo.CreateNoWindow = true;
 
-            var runner = new OutOfProcessEndpointRunner(runDescriptor, endpointName, process, whens);
+            var runner = new OutOfProcessEndpointRunner(runDescriptor, endpointName, process, remoteWhens);
             return Task.FromResult((ComponentRunner)runner);
         }
     }

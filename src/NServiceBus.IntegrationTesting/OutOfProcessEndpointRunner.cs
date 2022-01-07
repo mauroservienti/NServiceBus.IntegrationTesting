@@ -21,15 +21,15 @@ namespace NServiceBus.IntegrationTesting
         private Task<string> errorTask;
         readonly RunDescriptor runDescriptor;
         bool remoteEndpointStarted;
-        readonly IList<IWhenDefinition> whens;
+        readonly IList<IRemoteEndpointWhenDefinition> remoteWhens;
 
-        public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IWhenDefinition> whens)
+        public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IRemoteEndpointWhenDefinition> remoteWhens)
         {
             remoteEndpoint = new RemoteEndpointClient();
             Name = endpointName;
             this.runDescriptor = runDescriptor;
             this.process = process;
-            this.whens = whens;
+            this.remoteWhens = remoteWhens;
         }
 
         public override string Name { get; }
@@ -55,11 +55,11 @@ namespace NServiceBus.IntegrationTesting
             // ScenarioContext.CurrentEndpoint = Name;
 
             //build the remote session proxy
-            IMessageSession messageSession = null;
+            IRemoteMessageSessionProxy messageSessionProxy = null;
 
             try
             {
-                if (whens.Count != 0)
+                if (remoteWhens.Count != 0)
                 {
                     await Task.Run(async () =>
                     {
@@ -67,7 +67,7 @@ namespace NServiceBus.IntegrationTesting
 
                         while (!token.IsCancellationRequested)
                         {
-                            if (executedWhens.Count == whens.Count)
+                            if (executedWhens.Count == remoteWhens.Count)
                             {
                                 break;
                             }
@@ -77,7 +77,7 @@ namespace NServiceBus.IntegrationTesting
                                 break;
                             }
 
-                            foreach (var when in whens)
+                            foreach (var when in remoteWhens)
                             {
                                 if (token.IsCancellationRequested)
                                 {
@@ -89,7 +89,7 @@ namespace NServiceBus.IntegrationTesting
                                     continue;
                                 }
 
-                                if (await when.ExecuteAction(runDescriptor.ScenarioContext, messageSession).ConfigureAwait(false))
+                                if (await when.ExecuteAction((IntegrationScenarioContext)runDescriptor.ScenarioContext, messageSessionProxy).ConfigureAwait(false))
                                 {
                                     executedWhens.Add(when.Id);
                                 }

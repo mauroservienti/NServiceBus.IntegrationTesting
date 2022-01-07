@@ -6,46 +6,46 @@ using NServiceBus.AcceptanceTesting.Support;
 
 namespace NServiceBus.IntegrationTesting
 {
-    public class OutOfProcessEndpointBehaviorBuilder<TContext> where TContext : ScenarioContext
+    public class OutOfProcessEndpointBehaviorBuilder<TContext> where TContext : IntegrationScenarioContext
     {
-        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<IMessageSession, TContext, Task> action)
+        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<IRemoteMessageSessionProxy, TContext, Task> action)
         {
             return When(c => true, action);
         }
 
-        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<IMessageSession, Task> action)
+        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<IRemoteMessageSessionProxy, Task> action)
         {
             return When(c => true, action);
         }
 
-        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<TContext, Task<bool>> condition, Func<IMessageSession, Task> action)
+        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<TContext, Task<bool>> condition, Func<IRemoteMessageSessionProxy, Task> action)
         {
-            Whens.Add(new WhenDefinition<TContext>(condition, action));
+            Whens.Add(new RemoteEndpointWhenDefinition<TContext>(condition, action));
 
             return this;
         }
 
-        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Predicate<TContext> condition, Func<IMessageSession, Task> action)
+        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Predicate<TContext> condition, Func<IRemoteMessageSessionProxy, Task> action)
         {
-            Whens.Add(new WhenDefinition<TContext>(ctx => Task.FromResult(condition(ctx)), action));
+            Whens.Add(new RemoteEndpointWhenDefinition<TContext>(ctx => Task.FromResult(condition(ctx)), action));
 
             return this;
         }
 
-        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<TContext, Task<bool>> condition, Func<IMessageSession, TContext, Task> action)
+        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Func<TContext, Task<bool>> condition, Func<IRemoteMessageSessionProxy, TContext, Task> action)
         {
-            Whens.Add(new WhenDefinition<TContext>(condition, action));
+            Whens.Add(new RemoteEndpointWhenDefinition<TContext>(condition, action));
 
             return this;
         }
 
-        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Predicate<TContext> condition, Func<IMessageSession, TContext, Task> action)
+        public OutOfProcessEndpointBehaviorBuilder<TContext> When(Predicate<TContext> condition, Func<IRemoteMessageSessionProxy, TContext, Task> action)
         {
-            Whens.Add(new WhenDefinition<TContext>(ctx => Task.FromResult(condition(ctx)), action));
+            Whens.Add(new RemoteEndpointWhenDefinition<TContext>(ctx => Task.FromResult(condition(ctx)), action));
 
             return this;
         }
 
-        public IList<IWhenDefinition> Whens { get; } = new List<IWhenDefinition>();
+        public IList<IRemoteEndpointWhenDefinition> Whens { get; } = new List<IRemoteEndpointWhenDefinition>();
     }
 }

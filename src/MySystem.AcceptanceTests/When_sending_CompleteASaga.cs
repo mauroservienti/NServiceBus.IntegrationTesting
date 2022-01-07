@@ -23,13 +23,23 @@ namespace MySystem.AcceptanceTests
             DockerCompose.Down();
         }
 
+        class Context : IntegrationScenarioContext 
+        {
+            public bool WhenExecuted { get; set; }
+        }
+
         [Test]
         public async Task ASaga_is_completed()
         {
             var theExpectedIdentifier = Guid.NewGuid();
-            var context = await Scenario.Define<IntegrationScenarioContext>()
+            var context = await Scenario.Define<Context>()
                 .WithOutOfProcessEndpoint("MyService", EndpointReference.FromSolutionProject("MyService.TestProxy"), behavior =>
                 {
+                    behavior.When((remoteSession, ctx) => 
+                    {
+                        ctx.WhenExecuted = true; 
+                        return Task.CompletedTask;
+                    });
                     //behavior.When(session =>
                     //{
                     //    return session.Send("MyService", new StartASaga() {AnIdentifier = theExpectedIdentifier});
@@ -45,7 +55,7 @@ namespace MySystem.AcceptanceTests
                 })
                 .Done(ctx =>
                 {
-                    return true;
+                    return ctx.WhenExecuted;
                     //return ctx.HasFailedMessages() || ctx.InvokedSagas.Any(s => s.SagaType == typeof(ASaga) && s.IsCompleted);
                 })
                 .Run();
@@ -56,6 +66,7 @@ namespace MySystem.AcceptanceTests
 
             //Assert.IsNotNull(newSaga);
             //Assert.IsNotNull(completedSaga);
+            Assert.True(context.WhenExecuted);
             Assert.False(context.HasFailedMessages());
             Assert.False(context.HasHandlingErrors());
         }
