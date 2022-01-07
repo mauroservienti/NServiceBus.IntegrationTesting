@@ -124,7 +124,7 @@ namespace NServiceBus.IntegrationTesting
                     Logger.Debug($"Connecting to remote endpoint: '{Name}' - Attempt {attempts + 1}");
                     await remoteEndpoint.OnEndpointStarted(e =>
                     {
-                        Logger.Info($"Remote endpoint '{e.EndpointName}' started.");
+                        Logger.Info($"Received EndpointStarted event from remote endpoint '{e.EndpointName}'.");
 
                         remoteEndpointStarted = true;
                         return Task.CompletedTask;
@@ -151,6 +151,7 @@ namespace NServiceBus.IntegrationTesting
 
         public override async Task Stop()
         {
+            Logger.Debug($"OutOfProcess runner for remote endpoint '{Name}' stop requested.");
             //TODO: How to access ScenarioContext.CurrentEndpoint
             // ScenarioContext.CurrentEndpoint = Name;
 
@@ -161,11 +162,13 @@ namespace NServiceBus.IntegrationTesting
                 {
                     Logger.Warn($"Remote endpoint '{Name}' never published the started event. Killing the process.");
                     process.Kill();
+                    Logger.Warn($"Remote endpoint '{Name}' killed.");
                 }
                 else
                 {
                     Logger.Info($"Attempt to gracefully shutdown remote endpoint '{Name}'.");
                     await remoteEndpoint.Stop();
+                    Logger.Info($"Remote endpoint '{Name}' gracefully shutdown.");
                 }
             }
             catch (Exception ex)
@@ -197,6 +200,8 @@ namespace NServiceBus.IntegrationTesting
             {
                 throw new AggregateException(errors.ToArray());
             }
+
+            Logger.Debug($"OutOfProcess runner for remote endpoint '{Name}' stop completed.");
         }
 
         IEnumerable<Exception> GetFailedMessagesExceptions()
