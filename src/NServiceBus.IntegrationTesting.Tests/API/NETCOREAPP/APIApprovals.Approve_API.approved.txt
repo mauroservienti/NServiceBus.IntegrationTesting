@@ -11,6 +11,10 @@ namespace NServiceBus.IntegrationTesting
         public static void RegisterRequiredPipelineBehaviors(this NServiceBus.EndpointConfiguration builder, string endpointName, NServiceBus.IntegrationTesting.IntegrationScenarioContext integrationScenarioContext) { }
         public static void RegisterScenarioContext(this NServiceBus.EndpointConfiguration builder, NServiceBus.AcceptanceTesting.ScenarioContext scenarioContext) { }
     }
+    public class EndpointReference
+    {
+        public static NServiceBus.IntegrationTesting.EndpointReference FromSolutionProject(string projectName) { }
+    }
     public abstract class EndpointTemplate : NServiceBus.AcceptanceTesting.Support.IEndpointSetupTemplate
     {
         protected EndpointTemplate() { }
@@ -42,15 +46,16 @@ namespace NServiceBus.IntegrationTesting
         public NServiceBus.IntegrationTesting.GenericHostEndpointBehaviorBuilder<TContext> When(System.Predicate<TContext> condition, System.Func<NServiceBus.IMessageSession, System.Threading.Tasks.Task> action) { }
         public NServiceBus.IntegrationTesting.GenericHostEndpointBehaviorBuilder<TContext> When(System.Predicate<TContext> condition, System.Func<NServiceBus.IMessageSession, TContext, System.Threading.Tasks.Task> action) { }
     }
-    public class HandlerInvocation : NServiceBus.IntegrationTesting.Invocation
-    {
-        public HandlerInvocation() { }
-        public System.Type HandlerType { get; }
-    }
     public interface IHandleTestCompletion
     {
         System.Threading.Tasks.Task OnTestCompleted(NServiceBus.AcceptanceTesting.Support.RunSummary summary);
     }
+    public interface IRemoteEndpointWhenDefinition
+    {
+        System.Guid Id { get; }
+        System.Threading.Tasks.Task<bool> ExecuteAction(NServiceBus.IntegrationTesting.IntegrationScenarioContext context, NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy session);
+    }
+    public interface IRemoteMessageSessionProxy { }
     public class IntegrationScenarioContext : NServiceBus.AcceptanceTesting.ScenarioContext
     {
         public IntegrationScenarioContext() { }
@@ -69,54 +74,23 @@ namespace NServiceBus.IntegrationTesting
         public bool SagaWasInvoked<TSaga>()
             where TSaga : NServiceBus.Saga { }
     }
-    public abstract class Invocation
+    public class OutOfProcessEndpointBehaviorBuilder<TContext>
+        where TContext : NServiceBus.IntegrationTesting.IntegrationScenarioContext
     {
-        protected Invocation() { }
-        public string EndpointName { get; }
-        public System.Exception HandlingError { get; }
-        public object Message { get; }
-        public System.Type MessageType { get; }
-    }
-    public abstract class OutgoingMessageOperation
-    {
-        protected OutgoingMessageOperation() { }
-        public System.Collections.Generic.Dictionary<string, string> MessageHeaders { get; }
-        public string MessageId { get; }
-        public object MessageInstance { get; }
-        public System.Type MessageType { get; }
-        public System.Exception OperationError { get; }
-        public string SenderEndpoint { get; }
-    }
-    public class PublishOperation : NServiceBus.IntegrationTesting.OutgoingMessageOperation
-    {
-        public PublishOperation() { }
-    }
-    public class ReplyOperation : NServiceBus.IntegrationTesting.OutgoingMessageOperation
-    {
-        public ReplyOperation() { }
-    }
-    public class RequestTimeoutOperation : NServiceBus.IntegrationTesting.SendOperation
-    {
-        public RequestTimeoutOperation() { }
-        public string SagaId { get; }
-        public string SagaTypeAssemblyQualifiedName { get; }
-    }
-    public class SagaInvocation : NServiceBus.IntegrationTesting.Invocation
-    {
-        public SagaInvocation() { }
-        public bool IsCompleted { get; }
-        public bool IsNew { get; }
-        public bool NotFound { get; }
-        public NServiceBus.IContainSagaData SagaData { get; }
-        public System.Type SagaType { get; }
+        public OutOfProcessEndpointBehaviorBuilder() { }
+        public System.Collections.Generic.IList<NServiceBus.IntegrationTesting.IRemoteEndpointWhenDefinition> Whens { get; }
+        public NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext> When(System.Func<NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy, System.Threading.Tasks.Task> action) { }
+        public NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext> When(System.Func<NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy, TContext, System.Threading.Tasks.Task> action) { }
+        public NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext> When(System.Func<TContext, System.Threading.Tasks.Task<bool>> condition, System.Func<NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy, System.Threading.Tasks.Task> action) { }
+        public NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext> When(System.Func<TContext, System.Threading.Tasks.Task<bool>> condition, System.Func<NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy, TContext, System.Threading.Tasks.Task> action) { }
+        public NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext> When(System.Predicate<TContext> condition, System.Func<NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy, System.Threading.Tasks.Task> action) { }
+        public NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext> When(System.Predicate<TContext> condition, System.Func<NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy, TContext, System.Threading.Tasks.Task> action) { }
     }
     public static class ScenarioWithEndpointBehaviorExtensions
     {
         public static NServiceBus.AcceptanceTesting.Support.IScenarioWithEndpointBehavior<TContext> WithGenericHostEndpoint<TContext>(this NServiceBus.AcceptanceTesting.Support.IScenarioWithEndpointBehavior<TContext> scenarioWithEndpoint, string endpointName, System.Func<System.Action<NServiceBus.EndpointConfiguration>, Microsoft.Extensions.Hosting.IHost> hostBuilder, System.Action<NServiceBus.IntegrationTesting.GenericHostEndpointBehaviorBuilder<TContext>> behavior = null)
             where TContext : NServiceBus.AcceptanceTesting.ScenarioContext { }
-    }
-    public class SendOperation : NServiceBus.IntegrationTesting.OutgoingMessageOperation
-    {
-        public SendOperation() { }
+        public static NServiceBus.AcceptanceTesting.Support.IScenarioWithEndpointBehavior<TContext> WithOutOfProcessEndpoint<TContext>(this NServiceBus.AcceptanceTesting.Support.IScenarioWithEndpointBehavior<TContext> scenarioWithEndpoint, string endpointName, NServiceBus.IntegrationTesting.EndpointReference endpointReference, System.Action<NServiceBus.IntegrationTesting.OutOfProcessEndpointBehaviorBuilder<TContext>> behavior = null)
+            where TContext : NServiceBus.IntegrationTesting.IntegrationScenarioContext { }
     }
 }
