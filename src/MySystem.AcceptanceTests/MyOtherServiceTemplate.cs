@@ -1,4 +1,6 @@
-﻿using MyOtherService;
+﻿#if NET48_OR_GREATER
+
+using MyOtherService;
 using NServiceBus;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.IntegrationTesting;
@@ -18,3 +20,5 @@ namespace MySystem.AcceptanceTests
         }
     }
 }
+
+#endif

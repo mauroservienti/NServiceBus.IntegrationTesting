@@ -1,10 +1,9 @@
-using MyMessages.Messages;
-using NServiceBus;
+#if NET48_OR_GREATER
+
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace MySystem.AcceptanceTests
@@ -79,3 +78,5 @@ namespace MySystem.AcceptanceTests
         }
     }
 }
+
+#endif

@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
-
+    <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -17,10 +16,11 @@
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.20" />
+	<ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
+    <ProjectReference Include="..\MyMessages\MyMessages.csproj" />
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
   </ItemGroup>
 
