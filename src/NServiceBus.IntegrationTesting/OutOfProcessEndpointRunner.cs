@@ -103,8 +103,9 @@ namespace NServiceBus.IntegrationTesting
         {
             var connected = false;
             
-            //TODO: should this be configurable?
-            var maxAttempts = 10;
+            //NServiceBus ATT comes with a default hardcoded 2 minutes endpoints startup timeout
+            var maxAttempts = 240;
+            var msDelayBetweenAttempts = 500;
             var attempts = 0;
 
             while (!connected)
@@ -132,8 +133,7 @@ namespace NServiceBus.IntegrationTesting
                     }
 
                     Logger.Debug($"Failed to connect to remote endpoint '{Name}', waiting to retry.");
-                    //TODO: should this be configurable?
-                    await Task.Delay(500);
+                    await Task.Delay(msDelayBetweenAttempts);
                 }
             }
         }
