@@ -12,26 +12,27 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
             context.RegisterStartupTask(container =>
             {
                 var server = container.GetService<RemoteEndpointServerV8>();
-                return new CallbackStartupTask(server);
+                var client = container.GetService<TestRunnerClient>();
+                return new CallbackStartupTask(server, client);
             });
         }
     }
 
     class CallbackStartupTask : FeatureStartupTask
     {
-        readonly RemoteEndpointServerV8 _server;
+        readonly RemoteEndpointServerV8 server;
+        readonly TestRunnerClient client;
 
-        public CallbackStartupTask(RemoteEndpointServerV8 server)
+        public CallbackStartupTask(RemoteEndpointServerV8 server, TestRunnerClient client)
         {
-            _server = server;
+            this.server = server;
+            this.client = client;
         }
 
         protected override Task OnStart(IMessageSession session, CancellationToken cancellationToken = default)
         {
-            _server.RegisterMessageSession(session);
-            _server.NotifyEndpointStarted();
-
-            return Task.CompletedTask;
+            server.RegisterMessageSession(session);
+            return client.OnEndpointStarted();
         }
 
         protected override Task OnStop(IMessageSession session, CancellationToken cancellationToken = default)

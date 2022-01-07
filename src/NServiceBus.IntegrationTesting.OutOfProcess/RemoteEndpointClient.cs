@@ -1,10 +1,10 @@
 ﻿using Grpc.Core;
-using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
 {
-    public class RemoteEndpointClient
+    public class RemoteEndpointClient : IRemoteMessageSessionProxy
     {
         private Channel channel;
         private RemoteEndpoint.RemoteEndpointClient client;
@@ -24,18 +24,21 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             await channel.ShutdownAsync();
         }
 
-        public async Task OnEndpointStarted(Func<EndpointStartedEvent, Task> onStarted)
+        public async Task Send<TMessage>(string destination, TMessage message)
         {
-            var response = client.EndpointStarted(new Google.Protobuf.WellKnownTypes.Empty());
-            while (await response.ResponseStream.MoveNext())
+            var sendRequest = new SendRequest()
             {
-                var current = response.ResponseStream.Current;
-                await onStarted(current);
+                Destination = destination,
+                JsonMessage = JsonSerializer.Serialize(message),
+                JsonMessageType = message.GetType().AssemblyQualifiedName
+            };
 
-                //EndpointStarted is fired only once. Don't need to stay
-                //connected to this stream any longer
-                return;
-            }
+            await client.SendAsync(sendRequest);
+        }
+
+        public Task Send<TMessage>(TMessage message)
+        {
+            return Send(null, message);
         }
     }
 }

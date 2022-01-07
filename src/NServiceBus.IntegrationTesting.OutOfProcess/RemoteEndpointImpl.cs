@@ -8,12 +8,11 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 {
     class RemoteEndpointImpl : RemoteEndpointBase
     {
-        bool endpointStarted;
-        readonly string endpointName;
+        readonly Func<SendRequest, Task> onSendRequest;
 
-        public RemoteEndpointImpl(string endpointName)
+        public RemoteEndpointImpl(Func<SendRequest, Task> onSendRequest)
         {
-            this.endpointName = endpointName;
+            this.onSendRequest = onSendRequest;
         }
 
         public override Task<Empty> Stop(Empty request, ServerCallContext context)
@@ -23,22 +22,11 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             return Task.FromResult(new Empty());
         }
 
-        public override async Task EndpointStarted(Empty request, IServerStreamWriter<EndpointStartedEvent> responseStream, ServerCallContext context)
+        public override async Task<Empty> Send(SendRequest request, ServerCallContext context)
         {
-            while (!endpointStarted)
-            {
-                await Task.Delay(500);
-            }
+            await onSendRequest(request);
 
-            await responseStream.WriteAsync(new EndpointStartedEvent() 
-            { 
-                EndpointName = endpointName 
-            });
-        }
-
-        internal void NotifyEndpointStarted()
-        {
-            endpointStarted = true;
+            return new Empty();
         }
     }
 }

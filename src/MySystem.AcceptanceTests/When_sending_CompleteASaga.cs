@@ -40,9 +40,9 @@ namespace MySystem.AcceptanceTests
                         ctx.WhenExecuted = true; 
                         return Task.CompletedTask;
                     });
-                    //behavior.When(session =>
+                    //behavior.When(remoteSession =>
                     //{
-                    //    return session.Send("MyService", new StartASaga() {AnIdentifier = theExpectedIdentifier});
+                    //    return remoteSession.Send("MyService", new StartASaga() { AnIdentifier = theExpectedIdentifier });
                     //});
                     //behavior.When(condition: ctx =>
                     //{

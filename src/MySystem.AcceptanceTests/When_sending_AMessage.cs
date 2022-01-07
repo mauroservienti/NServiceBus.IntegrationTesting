@@ -1,5 +1,6 @@
 #if NET48_OR_GREATER
 
+using MyMessages.Messages;
 using NServiceBus.AcceptanceTesting;
 using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
@@ -40,7 +41,7 @@ namespace MySystem.AcceptanceTests
                         ctx.RemoteWhenExecuted = true;
                         return Task.CompletedTask;
                     });
-                    //behavior.When(session => session.Send(new AMessage() { AnIdentifier = theExpectedIdentifier }));
+                    //behavior.When(remoteSession => remoteSession.Send(new AMessage() { AnIdentifier = theExpectedIdentifier }));
                 })
                 .WithEndpoint<MyOtherServiceEndpoint>(behavior => 
                 {

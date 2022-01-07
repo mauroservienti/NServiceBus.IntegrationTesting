@@ -15,6 +15,7 @@ namespace NServiceBus.IntegrationTesting
     class OutOfProcessEndpointRunner : ComponentRunner
     {
         RemoteEndpointClient remoteEndpoint;
+        private TestRunnerServer testRunnerServer;
         static ILog Logger = LogManager.GetLogger<EndpointRunner>();
         private Process process;
         private Task<string> outputTask;
@@ -26,8 +27,21 @@ namespace NServiceBus.IntegrationTesting
         public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IRemoteEndpointWhenDefinition> remoteWhens)
         {
             remoteEndpoint = new RemoteEndpointClient();
-            Name = endpointName;
+            testRunnerServer = new TestRunnerServer
+            ( 
+                onEndpointStarted: e => 
+                {
+                    Logger.Info($"Received EndpointStarted event from remote endpoint '{e.EndpointName}'.");
+                    remoteEndpointStarted = true;
+                },
+                onOutgoingMessageOperation: operation => 
+                {
+                    ((IntegrationScenarioContext)runDescriptor.ScenarioContext).AddOutogingOperation(operation);
+                }
+            );
+
             this.runDescriptor = runDescriptor;
+            Name = endpointName;
             this.process = process;
             this.remoteWhens = remoteWhens;
         }
@@ -41,7 +55,7 @@ namespace NServiceBus.IntegrationTesting
             outputTask = process.StandardOutput.ReadToEndAsync();
             errorTask = process.StandardError.ReadToEndAsync();
             
-            await ConnectToRemoteEndpointWithRetries();
+            //await ConnectToRemoteEndpointWithRetries();
 
             while (!remoteEndpointStarted)
             {
@@ -53,9 +67,6 @@ namespace NServiceBus.IntegrationTesting
 
             //TODO: How to access ScenarioContext.CurrentEndpoint
             // ScenarioContext.CurrentEndpoint = Name;
-
-            //build the remote session proxy
-            IRemoteMessageSessionProxy messageSessionProxy = null;
 
             try
             {
@@ -89,7 +100,7 @@ namespace NServiceBus.IntegrationTesting
                                     continue;
                                 }
 
-                                if (await when.ExecuteAction((IntegrationScenarioContext)runDescriptor.ScenarioContext, messageSessionProxy).ConfigureAwait(false))
+                                if (await when.ExecuteAction((IntegrationScenarioContext)runDescriptor.ScenarioContext, remoteEndpoint).ConfigureAwait(false))
                                 {
                                     executedWhens.Add(when.Id);
                                 }
@@ -108,46 +119,54 @@ namespace NServiceBus.IntegrationTesting
             }
         }
 
-        private async Task ConnectToRemoteEndpointWithRetries()
-        {
-            var connected = false;
+        //private async Task ConnectToRemoteEndpointWithRetries()
+        //{
+        //    var connected = false;
             
-            //NServiceBus ATT comes with a default hardcoded 2 minutes endpoints startup timeout
-            var maxAttempts = 240;
-            var msDelayBetweenAttempts = 500;
-            var attempts = 0;
+        //    //NServiceBus ATT comes with a default hardcoded 2 minutes endpoints startup timeout
+        //    var maxAttempts = 240;
+        //    var msDelayBetweenAttempts = 500;
+        //    var attempts = 0;
 
-            while (!connected)
-            {
-                try
-                {
-                    Logger.Debug($"Connecting to remote endpoint: '{Name}' - Attempt {attempts + 1}");
-                    await remoteEndpoint.OnEndpointStarted(e =>
-                    {
-                        Logger.Info($"Received EndpointStarted event from remote endpoint '{e.EndpointName}'.");
+        //    while (!connected)
+        //    {
+        //        try
+        //        {
+        //            Logger.Debug($"Connecting to remote endpoint: '{Name}' - Attempt {attempts + 1}");
+        //            await remoteEndpoint.OnEndpointStarted(e =>
+        //            {
+                        
 
-                        remoteEndpointStarted = true;
-                        return Task.CompletedTask;
-                    });
+        //                remoteEndpointStarted = true;
+        //                return Task.CompletedTask;
+        //            });
 
-                    connected = true;
-                }
-                catch (Exception ex) when ((ex is RpcException rpcEx) && rpcEx.StatusCode == StatusCode.Unavailable)
-                {
-                    attempts++;
-                    if (attempts > maxAttempts)
-                    {
-                        Logger.Error($"Failed to connect to remote endpoint '{Name}' after {attempts + 1} attempts.", rpcEx);
-                        throw;
-                    }
+        //            connected = true;
+        //        }
+        //        catch (Exception ex) when ((ex is RpcException rpcEx) && rpcEx.StatusCode == StatusCode.Unavailable)
+        //        {
+        //            attempts++;
+        //            if (attempts > maxAttempts)
+        //            {
+        //                Logger.Error($"Failed to connect to remote endpoint '{Name}' after {attempts + 1} attempts.", rpcEx);
+        //                throw;
+        //            }
 
-                    Logger.Debug($"Failed to connect to remote endpoint '{Name}', waiting to retry.");
-                    await Task.Delay(msDelayBetweenAttempts);
-                }
-            }
+        //            Logger.Debug($"Failed to connect to remote endpoint '{Name}', waiting to retry.");
+        //            await Task.Delay(msDelayBetweenAttempts);
+        //        }
+        //    }
 
-            Logger.Debug($"Connected to remote endpoint: '{Name}'.");
-        }
+        //    Logger.Debug($"Connected to remote endpoint: '{Name}'.");
+        //    Logger.Debug($"Attaching remote endpoint '{Name}' OutgoingMessageOperation stream.");
+        //    await remoteEndpoint.OnOutgoingMessageOperation(outgoingMessageOperation => 
+        //    {
+        //        ((IntegrationScenarioContext)runDescriptor.ScenarioContext).AddOutogingOperation(outgoingMessageOperation);
+
+        //        return Task.CompletedTask;
+        //    });
+        //    Logger.Debug($"Remote endpoint '{Name}' OutgoingMessageOperation stream attached.");
+        //}
 
         public override async Task Stop()
         {

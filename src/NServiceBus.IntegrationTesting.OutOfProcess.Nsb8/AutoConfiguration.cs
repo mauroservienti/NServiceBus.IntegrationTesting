@@ -10,15 +10,16 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
 
             var endpointName = CommandLine.GetEndpointName();
 
-            var remoteEndpointServer = new RemoteEndpointServerV8(endpointName);
+            var remoteEndpointServer = new RemoteEndpointServerV8();
+            remoteEndpointServer.Start();
+
+            var testRunnerClient = new TestRunnerClient(endpointName);
 
             builder.RegisterComponents(services => services.AddSingleton(remoteEndpointServer));
-
+            builder.RegisterComponents(services => services.AddSingleton(testRunnerClient));
             builder.EnableFeature<EndpointStartupCallback>();
 
-            var integrationScenarioContextClient = new IntegrationScenarioContextClient();
-
-            builder.Pipeline.Register(new InterceptSendOperations(endpointName, integrationScenarioContextClient), "Intercept send operations reporting them to the remote test engine.");
+            builder.Pipeline.Register(new InterceptSendOperations(endpointName, testRunnerClient), "Intercept send operations streaming them to the remote test engine.");
             //builder.Pipeline.Register(new InterceptPublishOperations(endpointName, integrationScenarioContextClient), "Intercept publish operations reporting them to the remote test engine.");
             //builder.Pipeline.Register(new InterceptReplyOperations(endpointName, integrationScenarioContextClient), "Intercept reply operations reporting them to the remote test engine.");
             //builder.Pipeline.Register(new InterceptInvokedHandlers(endpointName, integrationScenarioContextClient), "Intercept invoked Message Handlers and Sagas reporting them to the remote test engine.");

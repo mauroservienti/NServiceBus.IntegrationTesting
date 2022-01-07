@@ -1,31 +1,24 @@
 ﻿using Grpc.Core;
+using System;
+using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
 {
     public abstract class RemoteEndpointServer
     {
-        private readonly RemoteEndpointImpl remoteEndpoint;
-        readonly Server server;
+        Server server;
 
-        protected RemoteEndpointServer(string endpointName)
+        public void Start()
         {
-            remoteEndpoint = new RemoteEndpointImpl(endpointName);
-            EndpointName = endpointName;
-
             server = new Server
             {
-                Services = { RemoteEndpoint.BindService(remoteEndpoint) },
+                Services = { RemoteEndpoint.BindService(new RemoteEndpointImpl(OnSendRequest)) },
                 //TODO: replace with configurable port
                 Ports = { new ServerPort("localhost", 30051, ServerCredentials.Insecure) }
             };
             server.Start();
         }
 
-        public string EndpointName { get; }
-
-        public void NotifyEndpointStarted()
-        {
-            remoteEndpoint.NotifyEndpointStarted();
-        }
+        protected abstract Func<SendRequest, Task> OnSendRequest { get; }
     }
 }

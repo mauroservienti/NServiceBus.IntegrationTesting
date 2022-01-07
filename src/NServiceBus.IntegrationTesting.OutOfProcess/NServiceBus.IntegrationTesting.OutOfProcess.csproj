@@ -1,21 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
+	</PropertyGroup>
 
-  <ItemGroup>
-	  <PackageReference Include="Google.Protobuf" Version="3.19.1" />
-	  <PackageReference Include="Grpc" Version="2.43.0" />
-	  <PackageReference Include="Grpc.Tools" Version="2.43.0" PrivateAssets="All" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" Version="3.19.1" />
+		<PackageReference Include="Grpc" Version="2.43.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.43.0" PrivateAssets="All" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
+		<PackageReference Include="System.Text.Json" Version="6.0.1" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Protobuf Include="../protos/RemoteEndpoint.proto" Link="RemoteEndpoint.proto" />
+		<Protobuf Include="../protos/TestRunner.proto" Link="TestRunner.proto" />
 	</ItemGroup>
 
 </Project>
