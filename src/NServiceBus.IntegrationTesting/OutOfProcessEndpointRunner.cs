@@ -43,11 +43,20 @@ namespace NServiceBus.IntegrationTesting
             
             await ConnectToRemoteEndpointWithRetries();
 
-            //build the remote session proxy
-            IMessageSession messageSession = null;
+            while (!remoteEndpointStarted)
+            {
+                Logger.Debug($"Waiting for remote endpoint '{Name}' to start.");
+                await Task.Delay(100);
+            }
+
+            Logger.Info($"Remote endpoint '{Name}' started. Executing whens.");
 
             //TODO: How to access ScenarioContext.CurrentEndpoint
             // ScenarioContext.CurrentEndpoint = Name;
+
+            //build the remote session proxy
+            IMessageSession messageSession = null;
+
             try
             {
                 if (whens.Count != 0)
@@ -93,7 +102,7 @@ namespace NServiceBus.IntegrationTesting
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to execute Whens on endpoint{Name}", ex);
+                Logger.Error($"Failed to execute Whens on endpoint {Name}", ex);
 
                 throw;
             }
@@ -136,6 +145,8 @@ namespace NServiceBus.IntegrationTesting
                     await Task.Delay(msDelayBetweenAttempts);
                 }
             }
+
+            Logger.Debug($"Connected to remote endpoint: '{Name}'.");
         }
 
         public override async Task Stop()
