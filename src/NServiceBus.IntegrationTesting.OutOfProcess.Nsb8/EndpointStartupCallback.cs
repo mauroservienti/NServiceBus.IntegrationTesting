@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using NServiceBus.Features;
+using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,7 +14,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
             context.RegisterStartupTask(container =>
             {
                 var server = container.GetService<RemoteEndpointServerV8>();
-                var client = container.GetService<TestRunnerClient>();
+                var client = container.GetService<OutOfProcessEndpointRunnerClient>();
                 return new CallbackStartupTask(server, client);
             });
         }
@@ -21,9 +23,9 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
     class CallbackStartupTask : FeatureStartupTask
     {
         readonly RemoteEndpointServerV8 server;
-        readonly TestRunnerClient client;
+        readonly OutOfProcessEndpointRunnerClient client;
 
-        public CallbackStartupTask(RemoteEndpointServerV8 server, TestRunnerClient client)
+        public CallbackStartupTask(RemoteEndpointServerV8 server, OutOfProcessEndpointRunnerClient client)
         {
             this.server = server;
             this.client = client;

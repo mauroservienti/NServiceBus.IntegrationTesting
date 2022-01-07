@@ -14,21 +14,23 @@ namespace NServiceBus.IntegrationTesting
 {
     class OutOfProcessEndpointRunner : ComponentRunner
     {
+        static ILog Logger = LogManager.GetLogger<OutOfProcessEndpointRunner>();
+
         RemoteEndpointClient remoteEndpoint;
-        private TestRunnerServer testRunnerServer;
-        static ILog Logger = LogManager.GetLogger<EndpointRunner>();
-        private Process process;
-        private Task<string> outputTask;
-        private Task<string> errorTask;
+        OutOfProcessEndpointRunnerServer outOfProcessEndpointRunnerServer;
+        Process process;
+        Task<string> outputTask;
+        Task<string> errorTask;
         readonly RunDescriptor runDescriptor;
         bool remoteEndpointStarted;
         readonly IList<IRemoteEndpointWhenDefinition> remoteWhens;
 
-        public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IRemoteEndpointWhenDefinition> remoteWhens)
+        public OutOfProcessEndpointRunner(RunDescriptor runDescriptor, string endpointName, Process process, IList<IRemoteEndpointWhenDefinition> remoteWhens, int runnerPort, int endpointPort)
         {
-            remoteEndpoint = new RemoteEndpointClient();
-            testRunnerServer = new TestRunnerServer
+            remoteEndpoint = new RemoteEndpointClient(endpointPort);
+            outOfProcessEndpointRunnerServer = new OutOfProcessEndpointRunnerServer
             ( 
+                port: runnerPort,
                 onEndpointStarted: e => 
                 {
                     Logger.Info($"Received EndpointStarted event from remote endpoint '{e.EndpointName}'.");
@@ -37,6 +39,13 @@ namespace NServiceBus.IntegrationTesting
                 onOutgoingMessageOperation: operation => 
                 {
                     ((IntegrationScenarioContext)runDescriptor.ScenarioContext).AddOutogingOperation(operation);
+                },
+                onSetContextProperty: property => 
+                {
+                    ((IntegrationScenarioContext)runDescriptor.ScenarioContext).SetProperty(
+                        property.EndpointName, 
+                        property.PropertyName, 
+                        property.PropertyValue);
                 }
             );
 
@@ -212,6 +221,9 @@ namespace NServiceBus.IntegrationTesting
 
             process.Dispose();
             process = null;
+
+            await outOfProcessEndpointRunnerServer.Stop();
+            outOfProcessEndpointRunnerServer = null;
 
             errors.AddRange(GetFailedMessagesExceptions());
 

@@ -10,14 +10,15 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
 
             var endpointName = CommandLine.GetEndpointName();
 
-            var remoteEndpointServer = new RemoteEndpointServerV8();
+            var remoteEndpointServer = new RemoteEndpointServerV8(CommandLine.GetEndpointPort());
             remoteEndpointServer.Start();
 
-            var testRunnerClient = new TestRunnerClient(endpointName);
+            var testRunnerClient = new OutOfProcessEndpointRunnerClient(endpointName, CommandLine.GetRunnerPort());
 
             builder.RegisterComponents(services => services.AddSingleton(remoteEndpointServer));
             builder.RegisterComponents(services => services.AddSingleton(testRunnerClient));
             builder.EnableFeature<EndpointStartupCallback>();
+            builder.EnableFeature<DebuggerAttachedCallback>();
 
             builder.Pipeline.Register(new InterceptSendOperations(endpointName, testRunnerClient), "Intercept send operations streaming them to the remote test engine.");
             //builder.Pipeline.Register(new InterceptPublishOperations(endpointName, integrationScenarioContextClient), "Intercept publish operations reporting them to the remote test engine.");

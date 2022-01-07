@@ -31,5 +31,29 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 
             return endpointName;
         }
+
+        public static int GetRunnerPort()
+        {
+            var runnerPort = Environment.CommandLine
+                .Split(' ')
+                .Where(x => x.StartsWith("--runnerPort="))
+                .Single()
+                .Split('=')
+                .Last();
+
+            return int.Parse(runnerPort);
+        }
+
+        public static int GetEndpointPort()
+        {
+            var endpointPort = Environment.CommandLine
+                .Split(' ')
+                .Where(x => x.StartsWith("--endpointPort="))
+                .Single()
+                .Split('=')
+                .Last();
+
+            return int.Parse(endpointPort);
+        }
     }
 }

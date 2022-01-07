@@ -7,9 +7,9 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
     class InterceptSendOperations : Behavior<IOutgoingSendContext>
     {
         readonly string endpointName;
-        readonly TestRunnerClient testRunnerClient;
+        readonly OutOfProcessEndpointRunnerClient testRunnerClient;
 
-        public InterceptSendOperations(string endpointName, TestRunnerClient testRunnerClient)
+        public InterceptSendOperations(string endpointName, OutOfProcessEndpointRunnerClient testRunnerClient)
         {
             this.endpointName = endpointName;
             this.testRunnerClient = testRunnerClient;

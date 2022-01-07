@@ -9,10 +9,10 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
         private Channel channel;
         private RemoteEndpoint.RemoteEndpointClient client;
 
-        public RemoteEndpointClient()
+        public RemoteEndpointClient(int port)
         {
             //TODO: replace with configurable port
-            channel = new Channel("127.0.0.1:30051", ChannelCredentials.Insecure);
+            channel = new Channel($"127.0.0.1:{port}", ChannelCredentials.Insecure);
             client = new RemoteEndpoint.RemoteEndpointClient(channel);
         }
 

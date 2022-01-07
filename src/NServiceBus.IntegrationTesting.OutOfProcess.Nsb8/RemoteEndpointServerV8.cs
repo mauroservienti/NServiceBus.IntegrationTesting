@@ -8,20 +8,28 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess.Nsb8
     {
         private IMessageSession messageSession;
 
-        public RemoteEndpointServerV8()
+        public RemoteEndpointServerV8(int port)
+            : base(port)
         {
-            OnSendRequest= r =>
+            OnSendRequest= async r =>
             {
                 var messageType = Type.GetType(r.JsonMessageType);
                 var message = JsonSerializer.Deserialize(r.JsonMessage, messageType);
 
-                if (string.IsNullOrWhiteSpace(r.Destination))
+                try
                 {
-                    return messageSession.Send(message);
+                    if (string.IsNullOrWhiteSpace(r.Destination))
+                    {
+                        await messageSession.Send(message).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await messageSession.Send(r.Destination, message).ConfigureAwait(false);
+                    }
                 }
-                else
+                catch (Exception ex) 
                 {
-                    return messageSession.Send(r.Destination, message);
+                    throw;
                 }
             };
         }

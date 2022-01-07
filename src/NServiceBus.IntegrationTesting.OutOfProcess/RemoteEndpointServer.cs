@@ -7,6 +7,12 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
     public abstract class RemoteEndpointServer
     {
         Server server;
+        private readonly int port;
+
+        protected RemoteEndpointServer(int port)
+        {
+            this.port = port;
+        }
 
         public void Start()
         {
@@ -14,7 +20,7 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             {
                 Services = { RemoteEndpoint.BindService(new RemoteEndpointImpl(OnSendRequest)) },
                 //TODO: replace with configurable port
-                Ports = { new ServerPort("localhost", 30051, ServerCredentials.Insecure) }
+                Ports = { new ServerPort("localhost", port, ServerCredentials.Insecure) }
             };
             server.Start();
         }

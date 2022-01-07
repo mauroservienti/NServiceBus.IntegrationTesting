@@ -55,13 +55,13 @@ namespace NServiceBus.IntegrationTesting
         System.Guid Id { get; }
         System.Threading.Tasks.Task<bool> ExecuteAction(NServiceBus.IntegrationTesting.IntegrationScenarioContext context, NServiceBus.IntegrationTesting.IRemoteMessageSessionProxy session);
     }
-    public interface IRemoteMessageSessionProxy { }
     public class IntegrationScenarioContext : NServiceBus.AcceptanceTesting.ScenarioContext
     {
         public IntegrationScenarioContext() { }
         public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.HandlerInvocation> InvokedHandlers { get; }
         public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.SagaInvocation> InvokedSagas { get; }
         public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.OutgoingMessageOperation> OutgoingMessageOperations { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> GetProperties(string endpointName) { }
         public bool HandlerWasInvoked<THandler>() { }
         public bool HasFailedMessages() { }
         public bool HasHandlingErrors() { }

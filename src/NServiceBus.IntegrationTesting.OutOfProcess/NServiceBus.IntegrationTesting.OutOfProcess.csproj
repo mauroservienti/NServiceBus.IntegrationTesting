@@ -20,7 +20,7 @@
 
 	<ItemGroup>
 		<Protobuf Include="../protos/RemoteEndpoint.proto" Link="RemoteEndpoint.proto" />
-		<Protobuf Include="../protos/TestRunner.proto" Link="TestRunner.proto" />
+		<Protobuf Include="../protos/OutOfProcessEndpointRunner.proto" Link="OutOfProcessEndpointRunner.proto" />
 	</ItemGroup>
 
 </Project>

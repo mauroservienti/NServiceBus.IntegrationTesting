@@ -3,20 +3,60 @@ using NServiceBus.DelayedDelivery;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace NServiceBus.IntegrationTesting
 {
     public class IntegrationScenarioContext : ScenarioContext
     {
-        readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new ConcurrentBag<HandlerInvocation>();
-        readonly ConcurrentBag<SagaInvocation> invokedSagas = new ConcurrentBag<SagaInvocation>();
-        readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new ConcurrentBag<OutgoingMessageOperation>();
-        readonly Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>>();
+        static readonly object syncRoot = new object();
+        readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new();
+        readonly ConcurrentBag<SagaInvocation> invokedSagas = new();
+        readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new();
+        readonly Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new();
+        readonly Dictionary<string, Dictionary<string, string>> properties = new();
+        readonly Dictionary<string, (int runnerPort, int endpointPort)> ports = new();
 
         public IEnumerable<HandlerInvocation> InvokedHandlers { get { return invokedHandlers; } }
+
+        internal (int runnerPort, int endpointPort) GetCommunicationPorts(string endpointName)
+        {
+            if (ports.Count == 0)
+            {
+                var p = (runnerPort: 30050, endpointPort: 40050);
+                ports.Add(endpointName, p);
+
+                return p;
+            }
+
+            if (ports.TryGetValue(endpointName, out var port)) 
+            {
+                return port;
+            }
+
+            var last = ports.Last();
+            var newPorts = (runnerPort: last.Value.runnerPort + 1, endpointPort: last.Value.endpointPort + 1);
+            ports.Add(endpointName, newPorts);
+
+            return newPorts;
+        }
+
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
         public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
+
+        public IReadOnlyDictionary<string, string> GetProperties(string endpointName)
+        {
+            lock (syncRoot)
+            {
+                if (!properties.TryGetValue(endpointName, out var endpointProps))
+                {
+                    endpointProps = new Dictionary<string, string>();
+                }
+
+                return endpointProps;
+            }
+        }
 
         internal HandlerInvocation CaptureInvokedHandler(HandlerInvocation invocation)
         {
@@ -38,6 +78,20 @@ namespace NServiceBus.IntegrationTesting
         internal bool TryGetTimeoutRescheduleRule(Type timeoutMessageType, out Func<object, DoNotDeliverBefore, DoNotDeliverBefore> rule)
         {
             return timeoutRescheduleRules.TryGetValue(timeoutMessageType, out rule);
+        }
+
+        internal void SetProperty(string endpointName, string propertyName, string propertyValue)
+        {
+            lock (syncRoot)
+            {
+                if (!properties.TryGetValue(endpointName, out var endpointProps))
+                {
+                    endpointProps = new Dictionary<string, string>();
+                    properties[endpointName] = endpointProps;
+                }
+
+                endpointProps[propertyName] = propertyValue;
+            }
         }
 
         internal void AddOutogingOperation(OutgoingMessageOperation outgoingMessageOperation)
