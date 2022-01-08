@@ -38,7 +38,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\NServiceBus.IntegrationTesting.Model\NServiceBus.IntegrationTesting.Model.csproj" />
       <ProjectReference Include="..\NServiceBus.IntegrationTesting.OutOfProcess\NServiceBus.IntegrationTesting.OutOfProcess.csproj" />
     </ItemGroup>
 

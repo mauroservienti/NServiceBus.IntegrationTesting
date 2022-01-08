@@ -36,9 +36,9 @@ namespace NServiceBus.IntegrationTesting
                     Logger.Info($"Received EndpointStarted event from remote endpoint '{e.EndpointName}'.");
                     remoteEndpointStarted = true;
                 },
-                onOutgoingMessageOperation: operation => 
+                onRemoteSendMessageOperation: operation => 
                 {
-                    ((IntegrationScenarioContext)runDescriptor.ScenarioContext).AddOutogingOperation(operation);
+                    ((IntegrationScenarioContext)runDescriptor.ScenarioContext).AddRemoteOperation(operation);
                 },
                 onSetContextProperty: property => 
                 {

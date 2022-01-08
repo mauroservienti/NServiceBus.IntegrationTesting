@@ -1,5 +1,7 @@
 ﻿using NServiceBus.Pipeline;
 using System;
+using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
@@ -17,27 +19,43 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 
         public override async Task Invoke(IOutgoingSendContext context, Func<Task> next)
         {
-            OutgoingMessageOperation outgoingOperation;
+            RemoteRequestTimeoutOperation requestTimeoutOp = null;
+            RemoteSendMessageOperation sendOp = null;
+
             if (context.Headers.ContainsKey(Headers.IsSagaTimeoutMessage) && context.Headers[Headers.IsSagaTimeoutMessage] == bool.TrueString)
             {
-                outgoingOperation = new RequestTimeoutOperation()
+                requestTimeoutOp = new RemoteRequestTimeoutOperation()
                 {
+                    SenderEndpoint = endpointName,
+                    MessageInstanceJson = JsonSerializer.Serialize(context.Message.Instance, context.Message.MessageType),
+                    MessageId = context.MessageId,
+                    MessageTypeAssemblyQualifiedName = context.Message.MessageType.AssemblyQualifiedName,
                     SagaId = context.Headers[Headers.SagaId],
                     SagaTypeAssemblyQualifiedName = context.Headers[Headers.SagaType]
                 };
+                requestTimeoutOp.MessageHeaders.AddRange(context.Headers.Select(kvp => new Header()
+                {
+                    Key = kvp.Key,
+                    Value = kvp.Value ?? ""
+                }));
             }
             else
             {
-                outgoingOperation = new SendOperation();
+                sendOp = new RemoteSendMessageOperation()
+                {
+                    SenderEndpoint = endpointName,
+                    MessageInstanceJson = JsonSerializer.Serialize(context.Message.Instance, context.Message.MessageType),
+                    MessageId = context.MessageId,
+                    MessageTypeAssemblyQualifiedName = context.Message.MessageType.AssemblyQualifiedName
+                };
+                sendOp.MessageHeaders.AddRange(context.Headers.Select(kvp => new Header()
+                {
+                    Key = kvp.Key,
+                    Value = kvp.Value ?? ""
+                }));
             }
 
-            outgoingOperation.SenderEndpoint = endpointName;
-            outgoingOperation.MessageId = context.MessageId;
-            outgoingOperation.MessageType = context.Message.MessageType;
-            outgoingOperation.MessageInstance = context.Message.Instance;
-            outgoingOperation.MessageHeaders = context.Headers;
-
-            await testRunnerClient.RecordOutgoingMessageOperation(outgoingOperation);
+            Exception ex = null;
 
             try
             {
@@ -45,8 +63,29 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             }
             catch (Exception sendError)
             {
-                outgoingOperation.OperationError = sendError;
+                ex = sendError;
                 throw;
+            }
+            finally
+            {
+                if (context.Headers.ContainsKey(Headers.IsSagaTimeoutMessage) && context.Headers[Headers.IsSagaTimeoutMessage] == bool.TrueString)
+                {
+                    if (ex != null)
+                    {
+                        requestTimeoutOp.OperationErrorTypeAssemblyQualifiedName = ex.GetType().AssemblyQualifiedName;
+                        requestTimeoutOp.OperationErrorJson = JsonSerializer.Serialize(ex);
+                    }
+                    await testRunnerClient.RecordRequestTimeoutOperation(requestTimeoutOp);
+                }
+                else
+                {
+                    if (ex != null)
+                    {
+                        sendOp.OperationErrorTypeAssemblyQualifiedName = ex.GetType().AssemblyQualifiedName;
+                        sendOp.OperationErrorJson = JsonSerializer.Serialize(ex);
+                    }
+                    await testRunnerClient.RecordSendMessageOperation(sendOp);
+                }
             }
         }
     }

@@ -8,27 +8,54 @@ package NServiceBus.IntegrationTesting.TestRunner;
 
 service OutOfProcessEndpointRunner {
     rpc OnEndpointStarted (EndpointStartedEvent) returns (google.protobuf.Empty);
-    rpc RecordOutgoingMessageOperation (OutgoingMessageOperationEvent) returns (google.protobuf.Empty);
     rpc SetContextProperty(SetContextPropertyRequest) returns (google.protobuf.Empty);
+    rpc RecordSendMessageOperation (RemoteSendMessageOperation) returns (google.protobuf.Empty);
+    rpc RecordRequestTimeoutOperation (RemoteRequestTimeoutOperation) returns (google.protobuf.Empty);
+    rpc RecordInvokedHandler(RemoteHandlerInvocation) returns (google.protobuf.Empty);
 }
 
 message EndpointStartedEvent {
     string endpointName = 1;
 }
 
-message OutgoingMessageOperationEvent {
-    string operationTypeAssemblyQualifiedName = 1;
+message RemoteSendMessageOperation {
     string senderEndpoint = 2;
     string messageId = 3;
     string messageTypeAssemblyQualifiedName = 4;
     string messageInstanceJson = 5;
-    string messageHeadersJson = 6;
+    repeated Header messageHeaders = 6;
     string operationErrorJson = 7;
     string operationErrorTypeAssemblyQualifiedName = 8;
+}
+
+message RemoteRequestTimeoutOperation {
+    string senderEndpoint = 2;
+    string messageId = 3;
+    string messageTypeAssemblyQualifiedName = 4;
+    string messageInstanceJson = 5;
+    repeated Header messageHeaders = 6;
+    string operationErrorJson = 7;
+    string operationErrorTypeAssemblyQualifiedName = 8;
+    string sagaId = 9;
+    string sagaTypeAssemblyQualifiedName = 10;
+}
+
+message RemoteHandlerInvocation{
+    string handlerTypeAssemblyQualifiedName = 1;
+    string endpointName = 2;
+    string messageTypeAssemblyQualifiedName = 3;
+    string messageInstanceJson = 4;
+    string handlingErrorJson = 5;
+    string handlingErrorTypeAssemblyQualifiedName = 6;
 }
 
 message SetContextPropertyRequest{
     string propertyName = 1;
     string propertyValue = 2;
     string endpointName = 3;
+}
+
+message Header{
+    string key = 1;
+    string value = 2;
 }

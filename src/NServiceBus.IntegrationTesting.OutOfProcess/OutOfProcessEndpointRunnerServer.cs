@@ -11,13 +11,13 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 
         public OutOfProcessEndpointRunnerServer(
             int port,
-            Action<EndpointStartedEvent> onEndpointStarted, 
-            Action<OutgoingMessageOperation> onOutgoingMessageOperation, 
+            Action<EndpointStartedEvent> onEndpointStarted,
+            Action<RemoteSendMessageOperation> onRemoteSendMessageOperation, 
             Action<(string EndpointName, string PropertyName, string PropertyValue)> onSetContextProperty)
         {
             testRunner = new OutOfProcessEndpointRunnerImpl(
-                onEndpointStarted, 
-                onOutgoingMessageOperation, 
+                onEndpointStarted,
+                onRemoteSendMessageOperation, 
                 onSetContextProperty);
 
             server = new Server

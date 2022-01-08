@@ -11,17 +11,17 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
     class OutOfProcessEndpointRunnerImpl : OutOfProcessEndpointRunnerBase
     {
         readonly Action<EndpointStartedEvent> onEndpointStarted;
-        readonly Action<OutgoingMessageOperation> onOutgoingMessageOperation;
+        readonly Action<RemoteSendMessageOperation> onRemoteSendMessageOperation;
         private readonly Action<(string EndpointName, string PropertyName, string PropertyValue)> onSetContextProperty;
 
         public OutOfProcessEndpointRunnerImpl(
             Action<EndpointStartedEvent> onEndpointStarted, 
-            Action<OutgoingMessageOperation> onOutgoingMessageOperation, 
+            Action<RemoteSendMessageOperation> onRemoteSendMessageOperation,
             Action<(string EndpointName, string PropertyName, string PropertyValue)> onSetContextProperty
         )
         {
             this.onEndpointStarted = onEndpointStarted;
-            this.onOutgoingMessageOperation = onOutgoingMessageOperation;
+            this.onRemoteSendMessageOperation = onRemoteSendMessageOperation;
             this.onSetContextProperty = onSetContextProperty;
         }
 
@@ -32,27 +32,9 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             return Task.FromResult(new Empty());
         }
 
-        public override Task<Empty> RecordOutgoingMessageOperation(OutgoingMessageOperationEvent request, ServerCallContext context)
+        public override Task<Empty> RecordSendMessageOperation(RemoteSendMessageOperation request, ServerCallContext context)
         {
-            var operationType = System.Type.GetType(request.OperationTypeAssemblyQualifiedName);
-            var operation = (OutgoingMessageOperation)Activator.CreateInstance(operationType);
-
-            operation.SenderEndpoint = request.SenderEndpoint;
-            operation.MessageId = request.MessageId;
-            operation.MessageType = !string.IsNullOrWhiteSpace(request.MessageTypeAssemblyQualifiedName)
-                ? System.Type.GetType(request.MessageTypeAssemblyQualifiedName) 
-                : null;
-            operation.MessageInstance = !string.IsNullOrWhiteSpace(request.MessageInstanceJson)
-                ? JsonSerializer.Deserialize(request.MessageInstanceJson, operation.MessageType)
-                : null;
-            operation.MessageHeaders = !string.IsNullOrWhiteSpace(request.MessageHeadersJson)
-                ? (Dictionary<string, string>)JsonSerializer.Deserialize(request.MessageHeadersJson, typeof(Dictionary<string, string>))
-                : null;
-            operation.OperationError = !string.IsNullOrWhiteSpace(request.OperationErrorJson)
-                ? (Exception)JsonSerializer.Deserialize(request.OperationErrorJson, System.Type.GetType(request.OperationErrorTypeAssemblyQualifiedName))
-                : null;
-
-            onOutgoingMessageOperation(operation);
+            onRemoteSendMessageOperation(request);
 
             return Task.FromResult(new Empty());
         }

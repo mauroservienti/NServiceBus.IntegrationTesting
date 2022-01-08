@@ -1,4 +1,6 @@
 ﻿using Grpc.Core;
+using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
@@ -25,30 +27,19 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
             });
         }
 
-        public async Task RecordOutgoingMessageOperation(OutgoingMessageOperation outgoingMessageOperation)
+        public async Task RecordSendMessageOperation(RemoteSendMessageOperation request)
         {
-            var request = new OutgoingMessageOperationEvent()
-            {
-                OperationTypeAssemblyQualifiedName = outgoingMessageOperation.GetType().AssemblyQualifiedName,
-                SenderEndpoint = outgoingMessageOperation.SenderEndpoint,
-                //MessageInstanceJson = outgoingMessageOperation.MessageInstance != null
-                //                ? JsonSerializer.Serialize(outgoingMessageOperation.MessageInstance)
-                //                : null,
-                MessageId = outgoingMessageOperation.MessageId,
-                //MessageHeadersJson = outgoingMessageOperation.MessageHeaders != null
-                //                ? JsonSerializer.Serialize(outgoingMessageOperation.MessageHeaders)
-                //                : null,
-                MessageTypeAssemblyQualifiedName = outgoingMessageOperation.MessageType != null
-                                ? outgoingMessageOperation.MessageType.AssemblyQualifiedName
-                                : null,
-                //OperationErrorTypeAssemblyQualifiedName = outgoingMessageOperation.OperationError != null
-                //                ? outgoingMessageOperation.OperationError.GetType().AssemblyQualifiedName
-                //                : null,
-                //OperationErrorJson = outgoingMessageOperation.OperationError != null
-                //                ? JsonSerializer.Serialize(outgoingMessageOperation.OperationError)
-                //                : null
-            };
-            _ = await client.RecordOutgoingMessageOperationAsync(request);
+            _ = await client.RecordSendMessageOperationAsync(request);
+        }
+
+        public async Task RecordRequestTimeoutOperation(RemoteRequestTimeoutOperation request)
+        {
+            _ = await client.RecordRequestTimeoutOperationAsync(request);
+        }
+
+        public async Task RecordInvokedHandler(RemoteHandlerInvocation request)
+        {
+            _ = await client.RecordInvokedHandlerAsync(request);
         }
 
         public async Task SetContextProperty(string propertyName, string propertyValue)

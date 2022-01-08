@@ -1,5 +1,6 @@
 ﻿using NServiceBus.AcceptanceTesting;
 using NServiceBus.DelayedDelivery;
+using NServiceBus.IntegrationTesting.OutOfProcess;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace NServiceBus.IntegrationTesting
         readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new();
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new();
         readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new();
+        readonly ConcurrentBag<RemoteSendMessageOperation> remoteSendMessageOperations = new();
         readonly Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new();
         readonly Dictionary<string, Dictionary<string, string>> properties = new();
         readonly Dictionary<string, (int runnerPort, int endpointPort)> ports = new();
@@ -42,8 +44,14 @@ namespace NServiceBus.IntegrationTesting
             return newPorts;
         }
 
+        internal void AddRemoteOperation(RemoteSendMessageOperation operation)
+        {
+            remoteSendMessageOperations.Add(operation);
+        }
+
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
         public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
+        public IEnumerable<RemoteSendMessageOperation> RemoteSendMessageOperations { get { return remoteSendMessageOperations; } }
 
         public IReadOnlyDictionary<string, string> GetProperties(string endpointName)
         {

@@ -21,10 +21,10 @@ namespace MySystem.AcceptanceTests
                 .WithOutOfProcessEndpoint(EndpointName, EndpointReference.FromSolutionProject("MyService.TestProxy"), behavior =>
                 {
                     behavior.When(
-                        //condition: ctx => 
+                        //condition: ctx =>
                         //{
                         //    return ctx.GetProperties(EndpointName).ContainsKey(Properties.DebuggerAttached);
-                        //}, 
+                        //},
                         action: remoteSession =>
                         {
                             return remoteSession.Send(EndpointName, new ALonleyMessage() { AnIdentifier = theExpectedIdentifier });
@@ -32,7 +32,7 @@ namespace MySystem.AcceptanceTests
                 })
                 .Done(c =>
                 {
-                    return c.OutgoingMessageOperations.Any(op => op.MessageType == typeof(ALonleyMessage)) || c.HasFailedMessages();
+                    return c.RemoteSendMessageOperations.Any(op => op.MessageTypeAssemblyQualifiedName == typeof(ALonleyMessage).AssemblyQualifiedName) || c.HasFailedMessages();
                 })
                 .Run();
 
