@@ -14,10 +14,8 @@ namespace MyOtherService
             config.UsePersistence<LearningPersistence>();
             config.EnableInstallers();
 
-            var transportConfig = config.UseTransport<RabbitMQTransport>();
-            transportConfig.UseConventionalRoutingTopology();
-            transportConfig.ConnectionString(rabbitMqConnectionString);
-
+            config.UseTransport<LearningTransport>();
+            
             config.SendFailedMessagesTo("error");
 
             config.Conventions()

@@ -12,18 +12,6 @@ namespace MySystem.AcceptanceTests
 {
     public class When_requesting_a_timeout
     {
-        [OneTimeSetUp]
-        public async Task Setup()
-        {
-            await DockerCompose.Up();
-        }
-
-        [OneTimeTearDown]
-        public void Teardown()
-        {
-            DockerCompose.Down();
-        }
-
         [Test]
         public async Task It_should_be_rescheduled_and_handled()
         {
