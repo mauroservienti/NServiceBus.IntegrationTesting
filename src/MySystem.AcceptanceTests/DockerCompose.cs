@@ -17,7 +17,7 @@ namespace MySystem.AcceptanceTests
         public static async Task Up()
         {
             Run("docker-compose", "up -d", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
-            //Run("docker", "ps -a");
+            Run("docker", "ps -a");
 
             static async Task<bool> statusChecker()
             {
