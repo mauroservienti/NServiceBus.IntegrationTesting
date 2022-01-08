@@ -9,7 +9,6 @@
   <ItemGroup>
     <PackageReference Include="NServiceBus.Newtonsoft.Json" Version="3.0.0-alpha.155" />
     <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1902" />
-	<PackageReference Include="NServiceBus.RabbitMQ" Version="7.0.0-alpha.506" />
   </ItemGroup>
 
   <ItemGroup>
