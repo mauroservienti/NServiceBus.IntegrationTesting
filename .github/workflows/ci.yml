@@ -12,15 +12,6 @@ on:
 env:
   DOTNET_NOLOGO: true
 jobs:
-  setup-rabbit:
-    name: Setup RabbitMQ
-    runs-on: ubuntu-latest
-    services:
-      rabbit:
-        image: rabbitmq:3.8-management
-        ports:
-        - 5672:5672
-        - 15672:15672
   build:
     name: Build and test on ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -32,6 +23,13 @@ jobs:
           - os: ubuntu-20.04
             name: Linux
       fail-fast: false
+    steps:
+      - uses: getong/rabbitmq-action@v1.2
+        with:
+          rabbitmq version: '3.8'
+          host port: 5672
+          rabbitmq user: 'guest'
+          rabbitmq password: 'guest'
     steps:
       - name: Checkout
         uses: actions/checkout@v2.4.0
