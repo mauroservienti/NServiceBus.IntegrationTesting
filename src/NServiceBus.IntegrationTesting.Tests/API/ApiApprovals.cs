@@ -20,7 +20,11 @@ namespace NServiceBus.IntegrationTesting.Tests.API
 #endif
         public void Approve_API()
         {
-            var publicApi = typeof(IntegrationScenarioContext).Assembly.GeneratePublicApi();
+            var publicApi = typeof(IntegrationScenarioContext).Assembly.GeneratePublicApi(new ApiGeneratorOptions
+            {
+                ExcludeAttributes = new[] { "System.Runtime.Versioning.TargetFrameworkAttribute", "System.Reflection.AssemblyMetadataAttribute" }
+            });
+
             Approvals.Verify(publicApi);
         }
     }

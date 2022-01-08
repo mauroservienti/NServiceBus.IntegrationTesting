@@ -116,13 +116,15 @@ public class MyServiceConfiguration : EndpointConfiguration
         this.SendFailedMessagesTo("error");
         this.EnableInstallers();
 
-        var transportConfig = this.UseTransport<RabbitMQTransport>();
-        transportConfig.UseConventionalRoutingTopology();
-        transportConfig.ConnectionString("host=localhost");
+        /*
+         * Any NServiceBus suppported transport can be used. Tests in this 
+         * repostory are using the LearningTransport for the setup simplicity
+         */
+        this.UseTransport<LearningTransport>();
     }
 }
 ```
-<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L5-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-inherit-from-endpoint-configuration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L5-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-inherit-from-endpoint-configuration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using the above approach can be problematic when configuration values need to be read from an external source, like for example a configuration file. If this is the case the same external configuration source, most of the times with different values, needs to be available in tests too.
@@ -136,21 +138,23 @@ In case configuration values need to be passed to the endpoint configuration the
 ```cs
 public static class MyServiceConfigurationBuilder
 {
-    public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
+    public static EndpointConfiguration Build(string endpointName)
     {
         var config = new EndpointConfiguration(endpointName);
         config.SendFailedMessagesTo("error");
         config.EnableInstallers();
 
-        var transportConfig = config.UseTransport<RabbitMQTransport>();
-        transportConfig.UseConventionalRoutingTopology();
-        transportConfig.ConnectionString(rabbitMqConnectionString);
+        /*
+         * Any NServiceBus suppported transport can be used. Tests in this 
+         * repostory are using the LearningTransport for the setup simplicity
+         */
+        config.UseTransport<LearningTransport>();
 
         return config;
     }
 }
 ```
-<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L21-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-use-builder-class' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/ConfigurationSnippets.cs#L23-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-use-builder-class' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Define endpoints used in each test
