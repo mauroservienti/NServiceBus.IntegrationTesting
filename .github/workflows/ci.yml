@@ -30,7 +30,6 @@ jobs:
           host port: 5672
           rabbitmq user: 'guest'
           rabbitmq password: 'guest'
-    steps:
       - name: Checkout
         uses: actions/checkout@v2.4.0
         with:
