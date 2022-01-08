@@ -12,6 +12,15 @@ on:
 env:
   DOTNET_NOLOGO: true
 jobs:
+  setup-rabbit:
+    name: Setup RabbitMQ
+    runs-on: ubuntu-latest
+    services:
+      rabbit:
+        image: rabbitmq:3.8-management
+        ports:
+        - 5672:5672
+        - 15672:15672
   build:
     name: Build and test on ${{ matrix.name }}
     runs-on: ${{ matrix.os }}

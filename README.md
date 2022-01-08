@@ -455,6 +455,10 @@ The above extension method is far from being complete and doesn't handle all the
 
 Using a package manager add a NuGet reference to [NServiceBus.IntegrationTesting](https://www.nuget.org/packages/NServiceBus.IntegrationTesting/).
 
+## Running tests
+
+Running tests requires a RabbitMQ instance listening on the default 5672 port. 
+
 ## Background
 
 For more information on the genesis of this package refer to the [Exploring NServiceBus Integration Testing options](https://milestone.topics.it/2019/07/04/exploring-nservicebus-integration-testing-options.html) article.

@@ -11,18 +11,6 @@ namespace MySystem.AcceptanceTests
 {
     public class When_sending_ALonleyMessage_out_of_process
     {
-        [OneTimeSetUp]
-        public async Task Setup()
-        {
-            await DockerCompose.Up();
-        }
-
-        [OneTimeTearDown]
-        public void Teardown()
-        {
-            DockerCompose.Down();
-        }
-
         [Test]
         public async Task The_message_is_sent_as_expected()
         {

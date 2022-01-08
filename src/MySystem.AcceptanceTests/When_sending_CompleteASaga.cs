@@ -11,18 +11,6 @@ namespace MySystem.AcceptanceTests
 {
     public class When_sending_CompleteASaga
     {
-        [OneTimeSetUp]
-        public async Task Setup()
-        {
-            await DockerCompose.Up();
-        }
-
-        [OneTimeTearDown]
-        public void Teardown()
-        {
-            DockerCompose.Down();
-        }
-
         class Context : IntegrationScenarioContext 
         {
             public bool WhenExecuted { get; set; }
