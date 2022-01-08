@@ -11,6 +11,10 @@ namespace ConfigurationSnippets
             this.SendFailedMessagesTo("error");
             this.EnableInstallers();
 
+            /*
+             * Any NServiceBus suppported transport can be used. Tests in this 
+             * repostory are using the LearningTransport for the setup simplicity
+             */
             this.UseTransport<LearningTransport>();
         }
     }
@@ -25,6 +29,10 @@ namespace ConfigurationSnippets
             config.SendFailedMessagesTo("error");
             config.EnableInstallers();
 
+            /*
+             * Any NServiceBus suppported transport can be used. Tests in this 
+             * repostory are using the LearningTransport for the setup simplicity
+             */
             config.UseTransport<LearningTransport>();
 
             return config;
