@@ -1,6 +1,4 @@
-[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/mauroservienti/NServiceBus.IntegrationTesting.git")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NServiceBus.IntegrationTesting.Tests")]
-[assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8", FrameworkDisplayName=".NET Framework 4.8")]
 namespace NServiceBus.IntegrationTesting
 {
     public class EmptyTestCompletionHandler : NServiceBus.IntegrationTesting.IHandleTestCompletion
