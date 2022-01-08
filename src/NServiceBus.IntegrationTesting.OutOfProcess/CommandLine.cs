@@ -7,17 +7,14 @@ namespace NServiceBus.IntegrationTesting.OutOfProcess
 {
     public static class CommandLine
     {
-        public static void EnsureIsIntegrationTest()
+        public static bool IsIntegrationTest()
         {
             var integrationTest = Environment.CommandLine
                 .Split(' ')
                 .Where(x => x == "--integrationTest")
                 .SingleOrDefault();
 
-            if (string.IsNullOrWhiteSpace(integrationTest))
-            {
-                throw new ArgumentException("This library is designed for integration tests usage. If this is not an integration test remove the library dependency.");
-            }
+            return integrationTest != null;
         }
 
         public static string GetEndpointName()
