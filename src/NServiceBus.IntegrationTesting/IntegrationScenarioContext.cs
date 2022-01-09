@@ -1,10 +1,9 @@
 ﻿using NServiceBus.AcceptanceTesting;
 using NServiceBus.DelayedDelivery;
-using NServiceBus.IntegrationTesting.OutOfProcess;
+using NServiceBus.IntegrationTesting.OutOfProcess.Grpc;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace NServiceBus.IntegrationTesting
@@ -15,7 +14,7 @@ namespace NServiceBus.IntegrationTesting
         readonly ConcurrentBag<HandlerInvocation> invokedHandlers = new();
         readonly ConcurrentBag<SagaInvocation> invokedSagas = new();
         readonly ConcurrentBag<OutgoingMessageOperation> outgoingMessageOperations = new();
-        readonly ConcurrentBag<RemoteSendMessageOperation> remoteSendMessageOperations = new();
+        readonly ConcurrentBag<RemoteOutgoingMessageOperation> remoteOutgoingMessageOperations = new();
         readonly Dictionary<Type, Func<object, DoNotDeliverBefore, DoNotDeliverBefore>> timeoutRescheduleRules = new();
         readonly Dictionary<string, Dictionary<string, string>> properties = new();
         readonly Dictionary<string, (int runnerPort, int endpointPort)> ports = new();
@@ -46,12 +45,21 @@ namespace NServiceBus.IntegrationTesting
 
         internal void AddRemoteOperation(RemoteSendMessageOperation operation)
         {
-            remoteSendMessageOperations.Add(operation);
+            remoteOutgoingMessageOperations.Add(new RemoteSendOperation
+            {
+                SenderEndpoint = operation.SenderEndpoint,
+                MessageId = operation.MessageId,
+                MessageInstanceJson = operation.MessageInstanceJson,
+                MessageTypeAssemblyQualifiedName = operation.MessageTypeAssemblyQualifiedName,
+                MessageHeaders = operation.MessageHeaders.ToDictionary(x => x.Key, x => x.Value),
+                OperationErrorJson = operation.OperationErrorJson,
+                OperationErrorTypeAssemblyQualifiedName = operation.OperationErrorTypeAssemblyQualifiedName
+            });
         }
 
         public IEnumerable<SagaInvocation> InvokedSagas { get { return invokedSagas; } }
         public IEnumerable<OutgoingMessageOperation> OutgoingMessageOperations { get { return outgoingMessageOperations; } }
-        public IEnumerable<RemoteSendMessageOperation> RemoteSendMessageOperations { get { return remoteSendMessageOperations; } }
+        public IEnumerable<RemoteOutgoingMessageOperation> RemoteOutgoingMessageOperations { get { return remoteOutgoingMessageOperations; } }
 
         public IReadOnlyDictionary<string, string> GetProperties(string endpointName)
         {
