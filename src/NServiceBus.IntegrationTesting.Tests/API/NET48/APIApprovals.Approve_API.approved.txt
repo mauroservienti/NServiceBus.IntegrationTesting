@@ -66,7 +66,7 @@ namespace NServiceBus.IntegrationTesting
         public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.HandlerInvocation> InvokedHandlers { get; }
         public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.SagaInvocation> InvokedSagas { get; }
         public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.OutgoingMessageOperation> OutgoingMessageOperations { get; }
-        public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.OutOfProcess.RemoteSendMessageOperation> RemoteSendMessageOperations { get; }
+        public System.Collections.Generic.IEnumerable<NServiceBus.IntegrationTesting.RemoteOutgoingMessageOperation> RemoteOutgoingMessageOperations { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GetProperties(string endpointName) { }
         public bool HandlerWasInvoked<THandler>() { }
         public bool HasFailedMessages() { }
@@ -113,6 +113,35 @@ namespace NServiceBus.IntegrationTesting
     public class PublishOperation : NServiceBus.IntegrationTesting.OutgoingMessageOperation
     {
         public PublishOperation() { }
+    }
+    public abstract class RemoteOutgoingMessageOperation
+    {
+        protected RemoteOutgoingMessageOperation() { }
+        public System.Collections.Generic.Dictionary<string, string> MessageHeaders { get; set; }
+        public string MessageId { get; set; }
+        public string MessageInstanceJson { get; set; }
+        public string MessageTypeAssemblyQualifiedName { get; set; }
+        public string OperationErrorJson { get; set; }
+        public string OperationErrorTypeAssemblyQualifiedName { get; set; }
+        public string SenderEndpoint { get; set; }
+    }
+    public class RemotePublishOperation : NServiceBus.IntegrationTesting.RemoteOutgoingMessageOperation
+    {
+        public RemotePublishOperation() { }
+    }
+    public class RemoteReplyOperation : NServiceBus.IntegrationTesting.RemoteOutgoingMessageOperation
+    {
+        public RemoteReplyOperation() { }
+    }
+    public class RemoteRequestTimeoutOperation : NServiceBus.IntegrationTesting.RemoteSendOperation
+    {
+        public RemoteRequestTimeoutOperation() { }
+        public string SagaId { get; set; }
+        public string SagaTypeAssemblyQualifiedName { get; set; }
+    }
+    public class RemoteSendOperation : NServiceBus.IntegrationTesting.RemoteOutgoingMessageOperation
+    {
+        public RemoteSendOperation() { }
     }
     public class ReplyOperation : NServiceBus.IntegrationTesting.OutgoingMessageOperation
     {
