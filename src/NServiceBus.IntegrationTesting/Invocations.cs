@@ -4,23 +4,23 @@ namespace NServiceBus.IntegrationTesting
 {
     public abstract class Invocation
     {
-        public string EndpointName { get; internal set; }
-        public object Message { get; internal set; }
-        public Type MessageType { get; internal set; }
-        public Exception HandlingError { get; internal set; }
+        public string EndpointName { get; set; }
+        public object Message { get; set; }
+        public Type MessageType { get; set; }
+        public Exception HandlingError { get; set; }
     }
 
     public class HandlerInvocation : Invocation
     {
-        public Type HandlerType { get; internal set; }
+        public Type HandlerType { get; set; }
     }
 
     public class SagaInvocation : Invocation
     {
-        public Type SagaType { get; internal set; }
-        public bool NotFound { get; internal set; }
-        public bool IsNew { get; internal set; }
-        public bool IsCompleted { get; internal set; }
-        public IContainSagaData SagaData { get; internal set; }
+        public Type SagaType { get; set; }
+        public bool NotFound { get; set; }
+        public bool IsNew { get; set; }
+        public bool IsCompleted { get; set; }
+        public object SagaData { get; set; }
     }
 }

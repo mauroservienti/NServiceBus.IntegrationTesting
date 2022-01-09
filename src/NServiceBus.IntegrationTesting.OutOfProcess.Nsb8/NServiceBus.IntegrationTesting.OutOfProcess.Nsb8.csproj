@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
@@ -6,6 +6,10 @@
 
   <ItemGroup>
     <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1902" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NServiceBus.IntegrationTesting.OutOfProcess\NServiceBus.IntegrationTesting.OutOfProcess.csproj" />
   </ItemGroup>
 
 </Project>

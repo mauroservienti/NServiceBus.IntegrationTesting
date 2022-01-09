@@ -5,12 +5,12 @@ namespace NServiceBus.IntegrationTesting
 {
     public abstract class OutgoingMessageOperation
     {
-        public string SenderEndpoint { get; internal set; }
-        public string MessageId { get; internal set; }
-        public Type MessageType { get; internal set; }
-        public object MessageInstance { get; internal set; }
-        public Dictionary<string, string> MessageHeaders { get; internal set; }
-        public Exception OperationError { get; internal set; }
+        public string SenderEndpoint { get; set; }
+        public string MessageId { get; set; }
+        public Type MessageType { get; set; }
+        public object MessageInstance { get; set; }
+        public Dictionary<string, string> MessageHeaders { get; set; }
+        public Exception OperationError { get; set; }
     }
 
     public class SendOperation : OutgoingMessageOperation { }
@@ -21,7 +21,7 @@ namespace NServiceBus.IntegrationTesting
 
     public class RequestTimeoutOperation : SendOperation 
     {
-        public string SagaId { get; internal set; }
-        public string SagaTypeAssemblyQualifiedName { get; internal set; }
+        public string SagaId { get; set; }
+        public string SagaTypeAssemblyQualifiedName { get; set; }
     }
 }

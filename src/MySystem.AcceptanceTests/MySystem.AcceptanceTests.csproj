@@ -2,26 +2,25 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;net48</TargetFrameworks>
-
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1897" />
+  <ItemGroup>	  
+    <PackageReference Include="NServiceBus" Version="8.0.0-alpha.1902" />
     <PackageReference Include="nunit" Version="3.13.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1897" />
+    <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.0-alpha.1902" />
     <PackageReference Include="SimpleExec" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.20" />
+	<ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyOtherService\MyOtherService.csproj" />
-    <ProjectReference Include="..\MyService\MyService.csproj" />
+    <ProjectReference Include="..\MyMessages\MyMessages.csproj" />
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
   </ItemGroup>
 

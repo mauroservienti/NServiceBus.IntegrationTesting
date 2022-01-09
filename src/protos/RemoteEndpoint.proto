@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "NServiceBus.IntegrationTesting.OutOfProcess.Grpc";
+package NServiceBus.IntegrationTesting.RemoteEndpoint;
+
+service RemoteEndpoint {
+    rpc Stop (google.protobuf.Empty) returns (google.protobuf.Empty);
+    rpc Send(SendRequest) returns (google.protobuf.Empty);
+}
+
+message SendRequest{
+    string destination = 1;
+    string jsonMessage = 2;
+    string jsonMessageType = 3;
+}

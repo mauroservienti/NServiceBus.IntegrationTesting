@@ -11,7 +11,11 @@ namespace ConfigurationSnippets
             this.SendFailedMessagesTo("error");
             this.EnableInstallers();
 
-            this.UseTransport(new RabbitMQTransport(Topology.Conventional, "host=localhost"));
+            /*
+             * Any NServiceBus suppported transport can be used. Tests in this 
+             * repostory are using the LearningTransport for the setup simplicity
+             */
+            this.UseTransport(new LearningTransport());
         }
     }
     // end-snippet
@@ -19,13 +23,17 @@ namespace ConfigurationSnippets
     // begin-snippet: use-builder-class
     public static class MyServiceConfigurationBuilder
     {
-        public static EndpointConfiguration Build(string endpointName, string rabbitMqConnectionString)
+        public static EndpointConfiguration Build(string endpointName)
         {
             var config = new EndpointConfiguration(endpointName);
             config.SendFailedMessagesTo("error");
             config.EnableInstallers();
 
-            config.UseTransport(new RabbitMQTransport(Topology.Conventional, rabbitMqConnectionString));
+            /*
+             * Any NServiceBus suppported transport can be used. Tests in this 
+             * repostory are using the LearningTransport for the setup simplicity
+             */
+            config.UseTransport(new LearningTransport());
 
             return config;
         }
