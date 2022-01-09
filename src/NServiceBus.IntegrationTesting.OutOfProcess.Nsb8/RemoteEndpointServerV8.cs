@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NServiceBus.IntegrationTesting.OutOfProcess.Grpc;
+using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 

@@ -32,7 +32,7 @@ namespace MySystem.AcceptanceTests
                 })
                 .Done(c =>
                 {
-                    return c.RemoteSendMessageOperations.Any(op => op.MessageTypeAssemblyQualifiedName == typeof(ALonleyMessage).AssemblyQualifiedName) || c.HasFailedMessages();
+                    return c.RemoteOutgoingMessageOperations.Any(op => op.MessageTypeAssemblyQualifiedName == typeof(ALonleyMessage).AssemblyQualifiedName) || c.HasFailedMessages();
                 })
                 .Run();
 

@@ -1,4 +1,5 @@
-﻿using NServiceBus.Pipeline;
+﻿using NServiceBus.IntegrationTesting.OutOfProcess.Grpc;
+using NServiceBus.Pipeline;
 using System;
 using System.Linq;
 using System.Text.Json;

@@ -1,10 +1,11 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using NServiceBus.IntegrationTesting.OutOfProcess.Grpc;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static NServiceBus.IntegrationTesting.OutOfProcess.OutOfProcessEndpointRunner;
+using static NServiceBus.IntegrationTesting.OutOfProcess.Grpc.OutOfProcessEndpointRunner;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
 {

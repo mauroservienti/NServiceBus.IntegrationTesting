@@ -1,8 +1,9 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using NServiceBus.IntegrationTesting.OutOfProcess.Grpc;
 using System;
 using System.Threading.Tasks;
-using static NServiceBus.IntegrationTesting.OutOfProcess.RemoteEndpoint;
+using static NServiceBus.IntegrationTesting.OutOfProcess.Grpc.RemoteEndpoint;
 
 namespace NServiceBus.IntegrationTesting.OutOfProcess
 {

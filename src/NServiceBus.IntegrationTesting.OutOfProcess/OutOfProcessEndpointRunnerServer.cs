@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using NServiceBus.IntegrationTesting.OutOfProcess.Grpc;
 using System;
 using System.Threading.Tasks;
 
