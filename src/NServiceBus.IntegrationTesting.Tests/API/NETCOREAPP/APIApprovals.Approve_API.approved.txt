@@ -14,21 +14,21 @@ namespace NServiceBus.IntegrationTesting
     public abstract class EndpointTemplate : NServiceBus.AcceptanceTesting.Support.IEndpointSetupTemplate
     {
         protected EndpointTemplate() { }
-        public System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> GetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointCustomizationConfiguration, System.Action<NServiceBus.EndpointConfiguration> configurationBuilderCustomization) { }
-        protected abstract System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> OnGetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointCustomizationConfiguration, System.Action<NServiceBus.EndpointConfiguration> configurationBuilderCustomization);
+        public System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> GetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointCustomizationConfiguration, System.Func<NServiceBus.EndpointConfiguration, System.Threading.Tasks.Task> configurationBuilderCustomization) { }
+        protected abstract System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> OnGetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointCustomizationConfiguration, System.Func<NServiceBus.EndpointConfiguration, System.Threading.Tasks.Task> configurationBuilderCustomization);
     }
     public class EndpointTemplate<T> : NServiceBus.IntegrationTesting.EndpointTemplate
         where T : NServiceBus.EndpointConfiguration, new ()
     {
         public EndpointTemplate() { }
-        protected override System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> OnGetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointCustomizationConfiguration, System.Action<NServiceBus.EndpointConfiguration> configurationBuilderCustomization) { }
+        protected override System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> OnGetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointCustomizationConfiguration, System.Func<NServiceBus.EndpointConfiguration, System.Threading.Tasks.Task> configurationBuilderCustomization) { }
     }
     public class EndpointTemplate<T, C> : NServiceBus.IntegrationTesting.EndpointTemplate<T>
         where T : NServiceBus.EndpointConfiguration, new ()
         where C : NServiceBus.IntegrationTesting.IHandleTestCompletion, new ()
     {
         public EndpointTemplate() { }
-        protected override System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> OnGetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointConfiguration, System.Action<NServiceBus.EndpointConfiguration> configurationBuilderCustomization) { }
+        protected override System.Threading.Tasks.Task<NServiceBus.EndpointConfiguration> OnGetConfiguration(NServiceBus.AcceptanceTesting.Support.RunDescriptor runDescriptor, NServiceBus.AcceptanceTesting.Support.EndpointCustomizationConfiguration endpointConfiguration, System.Func<NServiceBus.EndpointConfiguration, System.Threading.Tasks.Task> configurationBuilderCustomization) { }
     }
     public class GenericHostEndpointBehaviorBuilder<TContext>
         where TContext : NServiceBus.AcceptanceTesting.ScenarioContext
