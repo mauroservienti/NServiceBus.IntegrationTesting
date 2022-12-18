@@ -11,7 +11,7 @@ namespace MyService
             var scanner = this.AssemblyScanner();
             scanner.IncludeOnly("MyService.dll", "MyMessages.dll");
 
-            this.UseSerialization<NewtonsoftSerializer>();
+            this.UseSerialization<NewtonsoftJsonSerializer>();
             this.UsePersistence<LearningPersistence>();
             this.EnableInstallers();
 
