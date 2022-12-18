@@ -7,7 +7,7 @@ namespace NServiceBus.IntegrationTesting
 {
     public abstract class EndpointTemplate : IEndpointSetupTemplate
     {
-        public async Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+        public async Task<EndpointConfiguration> GetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Func<EndpointConfiguration, Task> configurationBuilderCustomization)
         {
             var configuration = await OnGetConfiguration(runDescriptor, endpointCustomizationConfiguration, configurationBuilderCustomization);
 
@@ -17,18 +17,18 @@ namespace NServiceBus.IntegrationTesting
             configuration.RegisterRequiredPipelineBehaviors(endpointCustomizationConfiguration.EndpointName, (IntegrationScenarioContext)runDescriptor.ScenarioContext);
             configuration.RegisterScenarioContext(runDescriptor.ScenarioContext);
 
-            configurationBuilderCustomization(configuration);
+            await configurationBuilderCustomization(configuration);
 
             return configuration;
         }
 
-        protected abstract Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization);
+        protected abstract Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Func<EndpointConfiguration, Task> configurationBuilderCustomization);
     }
 
     public class EndpointTemplate<T> : EndpointTemplate
         where T : EndpointConfiguration, new()
     {
-        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Func<EndpointConfiguration, Task> configurationBuilderCustomization)
         {
             var configuration = new T();
 
@@ -40,7 +40,7 @@ namespace NServiceBus.IntegrationTesting
         where T : EndpointConfiguration, new()
         where C : IHandleTestCompletion, new()
     {
-        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointConfiguration, Func<EndpointConfiguration, Task> configurationBuilderCustomization)
         {
             runDescriptor.OnTestCompleted(summary =>
             {

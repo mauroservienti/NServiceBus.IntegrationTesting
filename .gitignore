@@ -30,3 +30,6 @@ x86/
 
 # Visual Studio cache/options directory
 .vs/
+
+# JetBrains Rider cache/options directory
+.idea/

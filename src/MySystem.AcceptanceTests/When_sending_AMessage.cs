@@ -12,18 +12,17 @@ namespace MySystem.AcceptanceTests
 {
     public class When_sending_AMessage
     {
-        //TODO: renable when a compatible combination of alphas is available
-        //[OneTimeSetUp]
-        //public async Task Setup()
-        //{
-        //    await DockerCompose.Up();
-        //}
+        [OneTimeSetUp]
+        public async Task Setup()
+        {
+            await DockerCompose.Up();
+        }
 
-        //[OneTimeTearDown]
-        //public void Teardown()
-        //{
-        //    DockerCompose.Down();
-        //}
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+            DockerCompose.Down();
+        }
 
         [Test]
         public async Task AReplyMessage_is_received_and_ASaga_is_started()
