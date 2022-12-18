@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Net.Http;
-using Targets;
 using static Bullseye.Targets;
 using static SimpleExec.Command;
 
