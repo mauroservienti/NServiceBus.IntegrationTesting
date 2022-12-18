@@ -37,7 +37,7 @@ namespace EndpointsSnippets
     // begin-snippet: my-other-service-template
     class MyOtherServiceTemplate : EndpointTemplate
     {
-        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Action<EndpointConfiguration> configurationBuilderCustomization)
+        protected override Task<EndpointConfiguration> OnGetConfiguration(RunDescriptor runDescriptor, EndpointCustomizationConfiguration endpointCustomizationConfiguration, Func<EndpointConfiguration, Task> configurationBuilderCustomization)
         {
             var config = MyOtherServiceConfigurationBuilder.Build(
                 "MyOtherService",
