@@ -33,3 +33,6 @@ x86/
 
 # JetBrains Rider cache/options directory
 .idea/
+
+# macOS garbage
+.DS_Store
