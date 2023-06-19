@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net48</TargetFrameworks>
@@ -26,7 +26,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
         <PackageReference Include="NServiceBus" Version="8.0.3" />
-        <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.0.3" />
+        <PackageReference Include="NServiceBus.AcceptanceTesting" Version="8.1.1" />
     </ItemGroup>
 
     <ItemGroup>
