@@ -19,7 +19,14 @@ namespace MySystem.AcceptanceTests
             await RunAsync("docker", "compose up -d", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
             await RunAsync("docker", "ps -a");
 
-            static async Task<bool> statusChecker()
+            while (!await StatusChecker())
+            {
+                await Task.Delay(500);
+            }
+
+            return;
+
+            static async Task<bool> StatusChecker()
             {
                 try
                 {
@@ -31,10 +38,6 @@ namespace MySystem.AcceptanceTests
                 {
                     return false;
                 }
-            }
-            while (!await statusChecker())
-            {
-                await Task.Delay(500);
             }
         }
 
