@@ -23,18 +23,9 @@ namespace MySystem.AcceptanceTests
             {
                 try
                 {
-                    var managementUrl = "http://localhost:15672/";
-#if NETCOREAPP
                     using var client = new HttpClient();
-                    var response = await client.GetAsync(managementUrl);
+                    var response = await client.GetAsync("http://localhost:15672/");
                     return response.IsSuccessStatusCode;
-#endif
-
-#if NET48
-                    var request = HttpWebRequest.Create(managementUrl);
-                    var response = await request.GetResponseAsync();
-                    return ((HttpWebResponse)response).StatusCode == HttpStatusCode.OK;
-#endif
                 }
                 catch
                 {
