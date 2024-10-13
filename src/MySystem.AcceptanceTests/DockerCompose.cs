@@ -16,7 +16,7 @@ namespace MySystem.AcceptanceTests
     {
         public static async Task Up()
         {
-            Run("docker-compose", "up -d", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
+            Run("docker", "compose up -d", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
             Run("docker", "ps -a");
 
             static async Task<bool> statusChecker()
@@ -49,7 +49,7 @@ namespace MySystem.AcceptanceTests
 
         public static void Down()
         {
-            Run("docker-compose", "down", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
+            Run("docker", "compose down", workingDirectory: AppDomain.CurrentDomain.BaseDirectory);
         }
     }
 }
