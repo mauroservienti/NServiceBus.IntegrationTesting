@@ -38,9 +38,9 @@ namespace MySystem.AcceptanceTests
             .Done(ctx => ctx.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>() || ctx.HasFailedMessages())
             .Run();
 
-            Assert.True(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>());
-            Assert.False(context.HasFailedMessages());
-            Assert.False(context.HasHandlingErrors());
+            Assert.That(context.MessageWasProcessedBySaga<ASaga.MyTimeout, ASaga>(), Is.True);
+            Assert.That(context.HasFailedMessages(), Is.False);
+            Assert.That(context.HasHandlingErrors(), Is.False);
         }
     }
 }

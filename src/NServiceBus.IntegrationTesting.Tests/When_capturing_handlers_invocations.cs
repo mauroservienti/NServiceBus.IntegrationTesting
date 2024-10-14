@@ -49,7 +49,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(TestMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<TestMessage, TestMessageHandler>());
+            Assert.That(scenarioContext.MessageWasProcessedByHandler<TestMessage, TestMessageHandler>(), Is.True);
         }
 
         [Test]
@@ -65,7 +65,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(InheritedMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessedByHandler<IMessageInterface, MessageInterfaceHandler>());
+            Assert.That(scenarioContext.MessageWasProcessedByHandler<IMessageInterface, MessageInterfaceHandler>(), Is.True);
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(TestMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessed<TestMessage>());
+            Assert.That(scenarioContext.MessageWasProcessed<TestMessage>(), Is.True);
         }
 
         [Test]
@@ -97,7 +97,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(InheritedMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessed<IMessageInterface>());
+            Assert.That(scenarioContext.MessageWasProcessed<IMessageInterface>(), Is.True);
         }
     }
 }
