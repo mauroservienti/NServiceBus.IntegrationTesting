@@ -34,8 +34,9 @@ namespace MyService
 
         protected override void ConfigureHowToFindSaga(SagaPropertyMapper<ASagaData> mapper)
         {
-            mapper.ConfigureMapping<StartASaga>(m => m.AnIdentifier).ToSaga(s => s.AnIdentifier);
-            mapper.ConfigureMapping<CompleteASaga>(m => m.AnIdentifier).ToSaga(s => s.AnIdentifier);
+            mapper.MapSaga(s => s.AnIdentifier)
+                .ToMessage<StartASaga>(m => m.AnIdentifier)
+                .ToMessage<CompleteASaga>(m => m.AnIdentifier);
         }
 
         public class MyTimeout { }
