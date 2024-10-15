@@ -54,10 +54,10 @@ namespace MySystem.AcceptanceTests
             var newSaga = invokedSagas.SingleOrDefault(s => s.IsNew);
             var completedSaga = invokedSagas.SingleOrDefault(s => s.IsCompleted);
 
-            Assert.IsNotNull(newSaga);
-            Assert.IsNotNull(completedSaga);
-            Assert.False(context.HasFailedMessages());
-            Assert.False(context.HasHandlingErrors());
+            Assert.That(newSaga, Is.Not.Null);
+            Assert.That(completedSaga, Is.Not.Null);
+            Assert.That(context.HasFailedMessages(), Is.False);
+            Assert.That(context.HasHandlingErrors(), Is.False);
         }
     }
 }

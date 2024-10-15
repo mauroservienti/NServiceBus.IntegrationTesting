@@ -17,6 +17,7 @@ namespace NServiceBus.IntegrationTesting.Tests.TestEndpoint
             builder.UseNServiceBus(ctx =>
             {
                 var config = new EndpointConfiguration("NServiceBus.IntegrationTesting.Tests.TestEndpoint");
+                config.UseSerialization<SystemJsonSerializer>();
                 config.UseTransport(new LearningTransport());
 
                 config.AssemblyScanner().ExcludeAssemblies("NServiceBus.IntegrationTesting.Tests.dll");

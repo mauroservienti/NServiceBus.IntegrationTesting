@@ -10,7 +10,7 @@ namespace MyOtherService
             var scanner = config.AssemblyScanner();
             scanner.IncludeOnly("MyOtherService.dll", "MyMessages.dll");
 
-            config.UseSerialization<NewtonsoftJsonSerializer>();
+            config.UseSerialization<SystemJsonSerializer>();
             config.UsePersistence<LearningPersistence>();
             config.EnableInstallers();
 

@@ -27,7 +27,7 @@ namespace NServiceBus.IntegrationTesting
 
         public override string Name { get; }
 
-        public override async Task Start(CancellationToken token)
+        public override async Task Start(CancellationToken token = default)
         {
             await host.StartAsync(token);
 
@@ -100,13 +100,13 @@ namespace NServiceBus.IntegrationTesting
             }
         }
 
-        public override async Task Stop()
+        public override async Task Stop(CancellationToken cancellationToken = default)
         {
             //TODO: How to access ScenarioContext.CurrentEndpoint
             // ScenarioContext.CurrentEndpoint = Name;
             try
             {
-                await host.StopAsync();
+                await host.StopAsync(cancellationToken);
             }
             catch (Exception ex)
             {

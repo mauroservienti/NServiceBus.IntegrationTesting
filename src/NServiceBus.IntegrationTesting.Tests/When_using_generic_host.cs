@@ -25,7 +25,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                     .Run();
             });
 
-            Assert.AreEqual(expectedMessage, ex.Message);
+            Assert.That(ex.Message, Is.EqualTo(expectedMessage));
         }
     }
 }

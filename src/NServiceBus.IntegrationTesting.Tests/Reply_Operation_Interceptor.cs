@@ -23,8 +23,8 @@ namespace NServiceBus.IntegrationTesting.Tests
 
             var operation = scenarioContext.OutgoingMessageOperations.SingleOrDefault() as ReplyOperation;
 
-            Assert.AreEqual(1, scenarioContext.OutgoingMessageOperations.Count());
-            Assert.IsNotNull(operation);
+            Assert.That(scenarioContext.OutgoingMessageOperations.Count(), Is.EqualTo(1));
+            Assert.That(operation, Is.Not.Null);
         }
     }
 }

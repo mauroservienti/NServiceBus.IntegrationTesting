@@ -39,11 +39,11 @@ namespace MySystem.AcceptanceTests
 
             var invokedSaga = context.InvokedSagas.Single(s => s.SagaType == typeof(ASaga));
 
-            Assert.True(invokedSaga.IsNew);
-            Assert.AreEqual("MyService", invokedSaga.EndpointName);
-            Assert.True(((ASagaData)invokedSaga.SagaData).AnIdentifier == theExpectedIdentifier);
-            Assert.False(context.HasFailedMessages());
-            Assert.False(context.HasHandlingErrors());
+            Assert.That(invokedSaga.IsNew, Is.True);
+            Assert.That("MyService", Is.EqualTo(invokedSaga.EndpointName));
+            Assert.That(((ASagaData)invokedSaga.SagaData).AnIdentifier, Is.EqualTo(theExpectedIdentifier));
+            Assert.That(context.HasFailedMessages(), Is.False);
+            Assert.That(context.HasHandlingErrors(), Is.False);
         }
 
         class MyOtherServiceEndpoint : EndpointConfigurationBuilder
