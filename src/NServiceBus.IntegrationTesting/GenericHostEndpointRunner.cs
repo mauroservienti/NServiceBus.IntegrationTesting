@@ -27,7 +27,7 @@ namespace NServiceBus.IntegrationTesting
 
         public override string Name { get; }
 
-        public override async Task Start(CancellationToken token)
+        public override async Task Start(CancellationToken token = default)
         {
             await host.StartAsync(token);
 
