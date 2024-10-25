@@ -50,7 +50,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 Message = new TestMessage(), EndpointName = "fake-endpoint", SagaType = typeof(TestSaga), MessageType = typeof(TestMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessedBySaga<TestMessage, TestSaga>());
+            Assert.That(scenarioContext.MessageWasProcessedBySaga<TestMessage, TestSaga>(), Is.True);
         }
 
         [Test]
@@ -62,7 +62,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 Message = new InheritedMessage(), EndpointName = "fake-endpoint", SagaType = typeof(TestSaga), MessageType = typeof(InheritedMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessedBySaga<IMessageInterface, TestSaga>());
+            Assert.That(scenarioContext.MessageWasProcessedBySaga<IMessageInterface, TestSaga>(), Is.True);
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(TestMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessed<TestMessage>());
+            Assert.That(scenarioContext.MessageWasProcessed<TestMessage>(), Is.True);
         }
 
         [Test]
@@ -94,7 +94,7 @@ namespace NServiceBus.IntegrationTesting.Tests
                 MessageType = typeof(InheritedMessage)
             });
 
-            Assert.IsTrue(scenarioContext.MessageWasProcessed<IMessageInterface>());
+            Assert.That(scenarioContext.MessageWasProcessed<IMessageInterface>(), Is.True);
         }
     }
 }

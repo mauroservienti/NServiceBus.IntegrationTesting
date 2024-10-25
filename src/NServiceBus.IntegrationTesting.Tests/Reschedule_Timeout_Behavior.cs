@@ -37,7 +37,7 @@ namespace NServiceBus.IntegrationTesting.Tests
             await sut.Invoke(context, () => Task.CompletedTask).ConfigureAwait(false);
 
             var rescheduledDoNotDeliverBefore = properties.DoNotDeliverBefore;
-            Assert.AreEqual(expectedDeliveryAt, rescheduledDoNotDeliverBefore.At);
+            Assert.That(rescheduledDoNotDeliverBefore.At, Is.EqualTo(expectedDeliveryAt));
         }
     }
 }

@@ -23,8 +23,8 @@ namespace NServiceBus.IntegrationTesting.Tests
 
             var sendOperation = scenarioContext.OutgoingMessageOperations.SingleOrDefault() as SendOperation;
 
-            Assert.AreEqual(1, scenarioContext.OutgoingMessageOperations.Count());
-            Assert.IsNotNull(sendOperation);
+            Assert.That(scenarioContext.OutgoingMessageOperations.Count(), Is.EqualTo(1));
+            Assert.That(sendOperation, Is.Not.Null);
         }
 
         [Test]
@@ -47,10 +47,10 @@ namespace NServiceBus.IntegrationTesting.Tests
 
             var requestTimeoutOperation = scenarioContext.OutgoingMessageOperations.SingleOrDefault() as RequestTimeoutOperation;
 
-            Assert.AreEqual(1, scenarioContext.OutgoingMessageOperations.Count());
-            Assert.IsNotNull(requestTimeoutOperation);
-            Assert.AreEqual(expectedSagaId, requestTimeoutOperation.SagaId);
-            Assert.AreEqual(expectedSagaType, requestTimeoutOperation.SagaTypeAssemblyQualifiedName);
+            Assert.That(scenarioContext.OutgoingMessageOperations.Count(), Is.EqualTo(1));
+            Assert.That(requestTimeoutOperation, Is.Not.Null);
+            Assert.That(requestTimeoutOperation.SagaId, Is.EqualTo(expectedSagaId));
+            Assert.That(requestTimeoutOperation.SagaTypeAssemblyQualifiedName, Is.EqualTo(expectedSagaType));
         }
     }
 }

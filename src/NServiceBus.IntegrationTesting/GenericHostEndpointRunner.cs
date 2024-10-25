@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Logging;
 
@@ -27,65 +29,54 @@ namespace NServiceBus.IntegrationTesting
 
         public override string Name { get; }
 
-        public override async Task Start(CancellationToken token)
+        public override async Task ComponentsStarted(CancellationToken token = default)
+        {
+            await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+            var messageSession = host.Services.GetRequiredService<IMessageSession>();
+
+            var executedWhens = new HashSet<Guid>();
+
+            while (true)
+            {
+                if (executedWhens.Count == whens.Count)
+                {
+                    break;
+                }
+
+                foreach (var when in whens)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    if (executedWhens.Contains(when.Id))
+                    {
+                        continue;
+                    }
+
+                    if (await when.ExecuteAction(runDescriptor.ScenarioContext, messageSession).ConfigureAwait(false))
+                    {
+                        executedWhens.Add(when.Id);
+                    }
+                }
+
+                await Task.Yield(); // enforce yield current context, tight loop could introduce starvation
+            }
+        }
+
+        public override async Task Start(CancellationToken token = default)
         {
             await host.StartAsync(token);
 
             EnsureEndpointIsConfiguredForTests();
+            
+            SetCurrentEndpointNameUsingReflection();
+        }
 
-            var messageSession = host.Services.GetRequiredService<IMessageSession>();
+        void SetCurrentEndpointNameUsingReflection()
+        {
+            var pi = typeof(ScenarioContext)
+                .GetProperty("CurrentEndpoint", BindingFlags.Static|BindingFlags.NonPublic);
 
-            //TODO: How to access ScenarioContext.CurrentEndpoint
-            // ScenarioContext.CurrentEndpoint = Name;
-            try
-            {
-                if (whens.Count != 0)
-                {
-                    await Task.Run(async () =>
-                    {
-                        var executedWhens = new HashSet<Guid>();
-
-                        while (!token.IsCancellationRequested)
-                        {
-                            if (executedWhens.Count == whens.Count)
-                            {
-                                break;
-                            }
-
-                            if (token.IsCancellationRequested)
-                            {
-                                break;
-                            }
-
-                            foreach (var when in whens)
-                            {
-                                if (token.IsCancellationRequested)
-                                {
-                                    break;
-                                }
-
-                                if (executedWhens.Contains(when.Id))
-                                {
-                                    continue;
-                                }
-
-                                if (await when.ExecuteAction(runDescriptor.ScenarioContext, messageSession).ConfigureAwait(false))
-                                {
-                                    executedWhens.Add(when.Id);
-                                }
-                            }
-
-                            await Task.Yield(); // enforce yield current context, tight loop could introduce starvation
-                        }
-                    }, token).ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to execute Whens on endpoint{Name}", ex);
-
-                throw;
-            }
+            pi?.SetValue(null, Name);
         }
 
         private void EnsureEndpointIsConfiguredForTests()
@@ -100,13 +91,13 @@ namespace NServiceBus.IntegrationTesting
             }
         }
 
-        public override async Task Stop()
+        public override async Task Stop(CancellationToken cancellationToken = default)
         {
-            //TODO: How to access ScenarioContext.CurrentEndpoint
-            // ScenarioContext.CurrentEndpoint = Name;
+            SetCurrentEndpointNameUsingReflection();
+
             try
             {
-                await host.StopAsync();
+                await host.StopAsync(cancellationToken);
             }
             catch (Exception ex)
             {
