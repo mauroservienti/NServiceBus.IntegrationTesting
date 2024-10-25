@@ -23,4 +23,12 @@
     <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="API\APIApprovals.Approve_API.approved.txt">
+      <ParentExtension>.cs</ParentExtension>
+      <ParentFile>APIApprovals</ParentFile>
+      <DependentUpon>APIApprovals.cs</DependentUpon>
+    </None>
+  </ItemGroup>
+
 </Project>
