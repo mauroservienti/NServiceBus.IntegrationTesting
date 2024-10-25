@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NServiceBus.AcceptanceTesting;
 using NServiceBus.AcceptanceTesting.Support;
 using NServiceBus.Logging;
 
@@ -66,8 +68,15 @@ namespace NServiceBus.IntegrationTesting
 
             EnsureEndpointIsConfiguredForTests();
             
-            //TODO: How to access ScenarioContext.CurrentEndpoint
-            // ScenarioContext.CurrentEndpoint = Name;
+            SetCurrentEndpointNameUsingReflection();
+        }
+
+        void SetCurrentEndpointNameUsingReflection()
+        {
+            var pi = typeof(ScenarioContext)
+                .GetProperty("CurrentEndpoint", BindingFlags.Static|BindingFlags.NonPublic);
+
+            pi?.SetValue(null, Name);
         }
 
         private void EnsureEndpointIsConfiguredForTests()
@@ -84,8 +93,8 @@ namespace NServiceBus.IntegrationTesting
 
         public override async Task Stop(CancellationToken cancellationToken = default)
         {
-            //TODO: How to access ScenarioContext.CurrentEndpoint
-            // ScenarioContext.CurrentEndpoint = Name;
+            SetCurrentEndpointNameUsingReflection();
+
             try
             {
                 await host.StopAsync(cancellationToken);
