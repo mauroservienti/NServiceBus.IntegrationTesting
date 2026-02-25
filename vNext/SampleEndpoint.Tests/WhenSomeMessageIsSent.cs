@@ -1,0 +1,163 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Networks;
+using NServiceBus.IntegrationTesting.Containers;
+using NUnit.Framework;
+using Testcontainers.RabbitMq;
+
+namespace SampleEndpoint.Tests;
+
+/// <summary>
+/// Proves the full multi-endpoint gRPC agent channel works end-to-end
+/// with both endpoints running as Docker containers.
+///
+/// Flow:
+///   1. A shared Docker network is created.
+///   2. RabbitMQ starts in a container on that network (alias "rabbitmq").
+///   3. The gRPC test host server starts in-process, bound to 0.0.0.0 on a dynamic port.
+///   4. Docker images for SampleEndpoint.Testing and AnotherEndpoint.Testing are built.
+///   5. Both endpoints start as containers on the shared network.
+///      Agents dial NSBUS_TESTING_HOST = host.docker.internal:{port}.
+///   6. Test waits for both agents to connect.
+///   7. Test executes the "SomeMessage" scenario on SampleEndpoint:
+///      a. SomeMessageHandler handles SomeMessage → sends AnotherMessage to AnotherEndpoint.
+///      b. AnotherMessageHandler handles AnotherMessage → replies with SomeReply.
+///      c. SomeReplyHandler in SampleEndpoint handles SomeReply.
+///   8. Test asserts on all three handler invocations.
+/// </summary>
+[TestFixture]
+public class WhenSomeMessageIsSent
+{
+    static INetwork _network = null!;
+    static RabbitMqContainer _rabbitMq = null!;
+    static TestHostServer _testHost = null!;
+    static IContainer _sampleEndpointContainer = null!;
+    static IContainer _anotherEndpointContainer = null!;
+
+    [OneTimeSetUp]
+    public static async Task SetUp()
+    {
+        // ── Step 1: Shared Docker network ───────────────────────────────────
+        _network = new NetworkBuilder().Build();
+        await _network.CreateAsync();
+
+        // ── Step 2: RabbitMQ ────────────────────────────────────────────────
+        _rabbitMq = new RabbitMqBuilder()
+            .WithImage("rabbitmq:management")
+            .WithPortBinding(15672)
+            .WithNetwork(_network)
+            .WithNetworkAliases("rabbitmq")
+            .Build();
+        await _rabbitMq.StartAsync();
+
+        // ── Step 3: gRPC test host ───────────────────────────────────────────
+        _testHost = new TestHostServer();
+        await _testHost.StartAsync();
+
+        // ── Step 4: Build Docker images ──────────────────────────────────────
+        var repoRoot = FindRepoRoot();
+        var vNextDir = Path.Combine(repoRoot, "vNext");
+
+        var sampleImage = new ImageFromDockerfileBuilder()
+            .WithDockerfileDirectory(vNextDir)
+            .WithDockerfile("SampleEndpoint.Testing/Dockerfile")
+            .Build();
+
+        var anotherImage = new ImageFromDockerfileBuilder()
+            .WithDockerfileDirectory(vNextDir)
+            .WithDockerfile("AnotherEndpoint.Testing/Dockerfile")
+            .Build();
+
+        await Task.WhenAll(sampleImage.CreateAsync(), anotherImage.CreateAsync());
+
+        // ── Step 5: Start endpoint containers ───────────────────────────────
+        var envVars = new Dictionary<string, string>
+        {
+            ["NSBUS_TESTING_HOST"] = _testHost.ContainerAddress,
+            ["RABBITMQ_CONNECTION_STRING"] =
+                $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}"
+        };
+
+        _sampleEndpointContainer = new ContainerBuilder()
+            .WithImage(sampleImage.FullName)
+            .WithNetwork(_network)
+            .WithEnvironment(envVars)
+            .Build();
+
+        _anotherEndpointContainer = new ContainerBuilder()
+            .WithImage(anotherImage.FullName)
+            .WithNetwork(_network)
+            .WithEnvironment(envVars)
+            .Build();
+
+        await Task.WhenAll(
+            _sampleEndpointContainer.StartAsync(),
+            _anotherEndpointContainer.StartAsync());
+
+        // ── Step 6: Wait for both agents to connect ──────────────────────────
+        using var agentWaitCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+        await Task.WhenAll(
+            _testHost.GrpcService.WaitForAgentAsync("SampleEndpoint", agentWaitCts.Token),
+            _testHost.GrpcService.WaitForAgentAsync("AnotherEndpoint", agentWaitCts.Token));
+    }
+
+    [OneTimeTearDown]
+    public static async Task TearDown()
+    {
+        await Task.WhenAll(
+            _sampleEndpointContainer.StopAsync(),
+            _anotherEndpointContainer.StopAsync());
+
+        await Task.WhenAll(
+            _sampleEndpointContainer.DisposeAsync().AsTask(),
+            _anotherEndpointContainer.DisposeAsync().AsTask());
+
+        await _testHost.DisposeAsync();
+        await _rabbitMq.DisposeAsync();
+        await _network.DeleteAsync();
+    }
+
+    [Test]
+    public async Task The_full_chain_should_be_processed()
+    {
+        // Execute the scenario: SampleEndpoint sends SomeMessage to itself.
+        // SomeMessageHandler → sends AnotherMessage → AnotherMessageHandler → replies SomeReply
+        // → SomeReplyHandler.
+        // The returned correlation ID ties all three handler invocations together,
+        // making this test safe to run concurrently with other tests.
+        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage");
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+        var someMessageInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+            correlationId, "SomeMessageHandler", cts.Token);
+        var anotherMessageInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+            correlationId, "AnotherMessageHandler", cts.Token);
+        var someReplyInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+            correlationId, "SomeReplyHandler", cts.Token);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(someMessageInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(someMessageInvocation.HasError, Is.False);
+
+            Assert.That(anotherMessageInvocation.EndpointName, Is.EqualTo("AnotherEndpoint"));
+            Assert.That(anotherMessageInvocation.HasError, Is.False);
+
+            Assert.That(someReplyInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(someReplyInvocation.HasError, Is.False);
+        });
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !dir.GetDirectories(".git").Any())
+            dir = dir.Parent;
+        return dir?.FullName
+            ?? throw new InvalidOperationException(
+                "Cannot locate repository root. Ensure the test runs inside a git repository.");
+    }
+}

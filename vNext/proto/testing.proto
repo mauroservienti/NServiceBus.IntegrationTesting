@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package nservicebus.integrationtesting.v1;
+
+option csharp_namespace = "NServiceBus.IntegrationTesting.Proto";
+
+// The test host is the gRPC server. Agents embedded in endpoints connect to it.
+service TestHostService {
+    // Agent opens a bidirectional channel to the test host.
+    // Request stream: events flowing from agent to host.
+    // Response stream: commands flowing from host to agent.
+    rpc OpenChannel(stream AgentToHostMessage) returns (stream HostToAgentMessage);
+}
+
+message AgentToHostMessage {
+    oneof payload {
+        ConnectMessage connect = 1;
+        HandlerInvokedMessage handler_invoked = 2;
+    }
+}
+
+message HostToAgentMessage {
+    oneof payload {
+        ReadyMessage ready = 1;
+        ExecuteScenarioMessage execute_scenario = 2;
+    }
+}
+
+message ConnectMessage {
+    string endpoint_name = 1;
+}
+
+message ReadyMessage {}
+
+message HandlerInvokedMessage {
+    string endpoint_name = 1;
+    string handler_type_name = 2;
+    string message_type_name = 3;
+    bool has_error = 4;
+    string error_message = 5;
+    string correlation_id = 6;
+}
+
+message ExecuteScenarioMessage {
+    string scenario_name = 1;
+    map<string, string> args = 2;
+    string correlation_id = 3;
+}
