@@ -125,7 +125,11 @@ public class WhenSomeMessageIsSent
         // → SomeReplyHandler.
         // The returned correlation ID ties all three handler invocations together,
         // making this test safe to run concurrently with other tests.
-        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage");
+        var args = new Dictionary<string, string>
+        {
+            { "ID", Guid.NewGuid().ToString() }
+        };
+        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage", args);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 

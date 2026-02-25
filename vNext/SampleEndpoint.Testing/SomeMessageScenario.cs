@@ -13,6 +13,7 @@ public class SomeMessageScenario : Scenario
         Dictionary<string, string> args,
         CancellationToken cancellationToken = default)
     {
-        await session.Send(new SomeMessage { Id = Guid.NewGuid() });
+        var id = Guid.Parse(args["ID"]);
+        await session.Send(new SomeMessage { Id = id });
     }
 }
