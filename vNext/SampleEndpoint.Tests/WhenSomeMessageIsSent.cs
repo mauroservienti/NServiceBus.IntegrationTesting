@@ -1,10 +1,5 @@
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
-using DotNet.Testcontainers.Networks;
 using NServiceBus.IntegrationTesting.Containers;
 using NUnit.Framework;
-using Testcontainers.PostgreSql;
-using Testcontainers.RabbitMq;
 
 namespace SampleEndpoint.Tests;
 
@@ -31,97 +26,25 @@ namespace SampleEndpoint.Tests;
 [TestFixture]
 public class WhenSomeMessageIsSent
 {
-    static INetwork _network = null!;
-    static RabbitMqContainer _rabbitMq = null!;
-    static PostgreSqlContainer _postgreSql = null!;
-    static TestHostServer _testHost = null!;
+    static TestEnvironment _env = null!;
     static EndpointHandle _sampleEndpoint = null!;
     static EndpointHandle _anotherEndpoint = null!;
-    static IContainer _sampleEndpointContainer = null!;
-    static IContainer _anotherEndpointContainer = null!;
 
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        // ── Step 1: Shared Docker network ───────────────────────────────────
-        _network = new NetworkBuilder().Build();
-        await _network.CreateAsync();
+        var vNextDir = Path.Combine(FindRepoRoot(), "vNext");
 
-        // ── Step 2: RabbitMQ ────────────────────────────────────────────────
-        _rabbitMq = new RabbitMqBuilder("rabbitmq:management")
-            .WithNetwork(_network)
-            .WithNetworkAliases("rabbitmq")
-            .Build();
-
-        // ── Step 3: PostgreSQL ───────────────────────────────────────────────
-        _postgreSql = new PostgreSqlBuilder("postgres:15.1")
-            .WithNetwork(_network)
-            .WithNetworkAliases("postgres")
-            .Build();
-
-        await Task.WhenAll(_rabbitMq.StartAsync(), _postgreSql.StartAsync());
-
-        // ── Step 4: gRPC test host ───────────────────────────────────────────
-        _testHost = new TestHostServer();
-        await _testHost.StartAsync();
-
-        _sampleEndpoint = _testHost.GetEndpoint("SampleEndpoint");
-        _anotherEndpoint = _testHost.GetEndpoint("AnotherEndpoint");
-
-        // ── Step 5: Build Docker images ──────────────────────────────────────
-        var repoRoot = FindRepoRoot();
-        var vNextDir = Path.Combine(repoRoot, "vNext");
-
-        var sampleImage = new ImageFromDockerfileBuilder()
+        _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(vNextDir)
-            .WithDockerfile("SampleEndpoint.Testing/Dockerfile")
-            .Build();
+            .UseRabbitMq()
+            .UsePostgreSql()
+            .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
+            .AddEndpoint("AnotherEndpoint", "AnotherEndpoint.Testing/Dockerfile")
+            .StartAsync();
 
-        var anotherImage = new ImageFromDockerfileBuilder()
-            .WithDockerfileDirectory(vNextDir)
-            .WithDockerfile("AnotherEndpoint.Testing/Dockerfile")
-            .Build();
-
-        await Task.WhenAll(sampleImage.CreateAsync(), anotherImage.CreateAsync());
-
-        // ── Step 6: Start endpoint containers ───────────────────────────────
-        // SampleEndpoint needs both RabbitMQ and PostgreSQL connection strings.
-        var sampleEnvVars = new Dictionary<string, string>
-        {
-            ["NSBUS_TESTING_HOST"] = _testHost.ContainerAddress,
-            ["RABBITMQ_CONNECTION_STRING"] =
-                $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}",
-            ["POSTGRESQL_CONNECTION_STRING"] =
-                $"Host=postgres;Port=5432;Database={PostgreSqlBuilder.DefaultDatabase};Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}"
-        };
-
-        // AnotherEndpoint has no persistence, so no PostgreSQL needed.
-        var anotherEnvVars = new Dictionary<string, string>
-        {
-            ["NSBUS_TESTING_HOST"] = _testHost.ContainerAddress,
-            ["RABBITMQ_CONNECTION_STRING"] =
-                $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}"
-        };
-
-        _sampleEndpointContainer = new ContainerBuilder(sampleImage.FullName)
-            .WithNetwork(_network)
-            .WithEnvironment(sampleEnvVars)
-            .Build();
-
-        _anotherEndpointContainer = new ContainerBuilder(anotherImage.FullName)
-            .WithNetwork(_network)
-            .WithEnvironment(anotherEnvVars)
-            .Build();
-
-        await Task.WhenAll(
-            _sampleEndpointContainer.StartAsync(),
-            _anotherEndpointContainer.StartAsync());
-
-        // ── Step 7: Wait for both agents to connect ──────────────────────────
-        using var agentWaitCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-        await Task.WhenAll(
-            _sampleEndpoint.WaitForConnectedAsync(agentWaitCts.Token),
-            _anotherEndpoint.WaitForConnectedAsync(agentWaitCts.Token));
+        _sampleEndpoint = _env.GetEndpoint("SampleEndpoint");
+        _anotherEndpoint = _env.GetEndpoint("AnotherEndpoint");
     }
 
     [TearDown]
@@ -130,13 +53,13 @@ public class WhenSomeMessageIsSent
         if (TestContext.CurrentContext.Result.Outcome.Status != NUnit.Framework.Interfaces.TestStatus.Failed)
             return;
 
-        var (sampleStdout, sampleStderr) = await _sampleEndpointContainer.GetLogsAsync();
+        var (sampleStdout, sampleStderr) = await _env.GetEndpointContainerLogsAsync("SampleEndpoint");
         TestContext.Out.WriteLine("=== SampleEndpoint container stdout ===");
         TestContext.Out.WriteLine(sampleStdout);
         TestContext.Out.WriteLine("=== SampleEndpoint container stderr ===");
         TestContext.Out.WriteLine(sampleStderr);
 
-        var (anotherStdout, anotherStderr) = await _anotherEndpointContainer.GetLogsAsync();
+        var (anotherStdout, anotherStderr) = await _env.GetEndpointContainerLogsAsync("AnotherEndpoint");
         TestContext.Out.WriteLine("=== AnotherEndpoint container stdout ===");
         TestContext.Out.WriteLine(anotherStdout);
         TestContext.Out.WriteLine("=== AnotherEndpoint container stderr ===");
@@ -144,21 +67,7 @@ public class WhenSomeMessageIsSent
     }
 
     [OneTimeTearDown]
-    public static async Task TearDown()
-    {
-        await Task.WhenAll(
-            _sampleEndpointContainer.StopAsync(),
-            _anotherEndpointContainer.StopAsync());
-
-        await Task.WhenAll(
-            _sampleEndpointContainer.DisposeAsync().AsTask(),
-            _anotherEndpointContainer.DisposeAsync().AsTask());
-
-        await _testHost.DisposeAsync();
-        await _rabbitMq.DisposeAsync();
-        await _postgreSql.DisposeAsync();
-        await _network.DeleteAsync();
-    }
+    public static Task TearDown() => _env.DisposeAsync().AsTask();
 
     [Test]
     public async Task The_full_chain_should_be_processed()
@@ -171,7 +80,7 @@ public class WhenSomeMessageIsSent
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-        var results = await _testHost.Observe(correlationId, cts.Token)
+        var results = await _env.Observe(correlationId, cts.Token)
             .HandlerInvoked("SomeMessageHandler")
             .HandlerInvoked("AnotherMessageHandler")
             .HandlerInvoked("SomeReplyHandler")
@@ -196,7 +105,7 @@ public class WhenSomeMessageIsSent
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-        var results = await _testHost.Observe(correlationId, cts.Token)
+        var results = await _env.Observe(correlationId, cts.Token)
             .MessageDispatched("AnotherMessage")
             .WhenAllAsync();
 
@@ -220,7 +129,7 @@ public class WhenSomeMessageIsSent
         // The saga starts on SomeReply and sets a 20s timeout — allow enough headroom.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        var results = await _testHost.Observe(correlationId, cts.Token)
+        var results = await _env.Observe(correlationId, cts.Token)
             .SagaInvoked("SomeReplySaga")
             // Validates that RequestTimeout stamped the correlation ID at IOutgoingLogicalMessageContext.
             .MessageDispatched("SomeReplySagaTimeout")
@@ -261,7 +170,7 @@ public class WhenSomeMessageIsSent
 
         // The predicate encodes "saga must be new" as the done condition,
         // not just "saga was invoked once".  The predicate on the dispatch checks intent.
-        var results = await _testHost.Observe(correlationId, cts.Token)
+        var results = await _env.Observe(correlationId, cts.Token)
             .SagaInvoked("SomeReplySaga", evt => evt.SagaIsNew)
             .MessageDispatched("SomeReplySagaTimeout", evt => evt.Intent == "RequestTimeout")
             .WhenAllAsync();
@@ -291,7 +200,7 @@ public class WhenSomeMessageIsSent
 
         // Wait until we have at least one SomeReplySagaTimeout dispatch AND
         // every collected dispatch has Intent == "RequestTimeout".
-        var results = await _testHost.Observe(correlationId, cts.Token)
+        var results = await _env.Observe(correlationId, cts.Token)
             .MessageDispatched("SomeReplySagaTimeout",
                 all => all.Count >= 1 && all.All(e => e.Intent == "RequestTimeout"))
             .WhenAllAsync();
