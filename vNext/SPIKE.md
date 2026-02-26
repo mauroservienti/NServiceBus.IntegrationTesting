@@ -9,8 +9,8 @@ version because they run in-process together.
 The new architecture runs each endpoint in its own Docker container. The test process is
 the gRPC server; each endpoint embeds a gRPC client agent that dials home on startup.
 
-**Status: spike complete and green.** Multi-endpoint interaction (send → reply chain across
-two containers) is proven end-to-end.
+**Status: spike active.** Multi-endpoint interaction, outgoing message tracking, failure
+tracking, saga state reporting, and saga timeout flows are all proven end-to-end.
 
 ---
 
@@ -40,13 +40,14 @@ two containers) is proven end-to-end.
 └───────────────┘ └─────────────┘
          │               │
          └───────┬───────┘
-           RabbitMQ container
-           (shared Docker network, alias "rabbitmq")
+           RabbitMQ container        PostgreSQL container
+           (alias "rabbitmq")        (alias "postgres" — used by SampleEndpoint saga)
 ```
 
-**Communication direction:**
-- Agent → Host: `ConnectMessage`, `HandlerInvokedMessage`
-- Host → Agent: `ReadyMessage`, `ExecuteScenarioMessage`
+**Agent → Host messages:** `ConnectMessage`, `HandlerInvokedMessage`,
+`MessageDispatchedMessage`, `MessageFailedMessage`
+
+**Host → Agent messages:** `ReadyMessage`, `ExecuteScenarioMessage`
 
 The proto definition lives in `proto/testing.proto`.
 
@@ -62,13 +63,19 @@ vNext/
 ├── NServiceBus.IntegrationTesting.Agent/
 │   ├── AgentService.cs                # gRPC client; connects, reports, dispatches scenarios
 │   ├── IntegrationTestingBootstrap.cs # Entry point helper for Testing projects
-│   ├── ReportingBehavior.cs           # NSB pipeline behavior; fires HandlerInvokedMessage
+│   ├── IncomingCorrelationIdBehavior.cs # Reads CorrelationIdHeader → AsyncLocal
+│   ├── OutgoingCorrelationIdBehavior.cs # Stamps AsyncLocal value → CorrelationIdHeader
+│   ├── ReportingBehavior.cs           # Reports handler invocations (+ saga state)
+│   ├── OutgoingReportingBehavior.cs   # Reports dispatched messages (intent, errors)
+│   ├── SagaInfo.cs                    # Snapshot of saga state at invocation time
 │   └── Scenario.cs                    # Abstract base class for user-defined scenarios
 │
 ├── NServiceBus.IntegrationTesting.Containers/
 │   ├── TestHostServer.cs              # Starts Kestrel gRPC server; exposes Address/ContainerAddress
 │   └── TestHostGrpcService.cs         # Server-side: WaitForAgentAsync, ExecuteScenarioAsync,
-│                                      #   WaitForHandlerInvocationAsync
+│                                      #   WaitForHandlerInvocationAsync,
+│                                      #   WaitForMessageDispatchedAsync,
+│                                      #   WaitForMessageFailureAsync
 │
 ├── SampleMessages/                    # Shared message contracts (IMessage)
 │   ├── SomeMessage.cs
@@ -80,7 +87,12 @@ vNext/
 │   ├── Program.cs
 │   └── Handlers/
 │       ├── SomeMessageHandler.cs      # Handles SomeMessage → sends AnotherMessage
-│       └── SomeReplyHandler.cs        # Handles SomeReply (the reply from AnotherEndpoint)
+│       ├── SomeReplyHandler.cs        # Handles SomeReply (reply from AnotherEndpoint)
+│       ├── SomeReplySaga.cs           # Starts on SomeReply; sets 20s timeout
+│       ├── SomeReplySagaData.cs       # ContainSagaData with SomeMessageCorrelationId
+│       ├── SomeReplySagaTimeout.cs    # Internal timeout marker
+│       ├── SagaCompletedMessage.cs    # Sent when timeout fires (IMessage, internal)
+│       └── SagaCompletedMessageHandler.cs  # Test done condition handler
 │
 ├── SampleEndpoint.Testing/            # Testing wrapper for SampleEndpoint
 │   ├── Program.cs                     # Calls IntegrationTestingBootstrap.RunAsync with scenarios
@@ -100,7 +112,7 @@ vNext/
 │   └── Dockerfile
 │
 └── SampleEndpoint.Tests/              # NUnit test project
-    ├── WhenSomeMessageIsSent.cs        # Full multi-endpoint test
+    ├── WhenSomeMessageIsSent.cs        # Full multi-endpoint test (inc. saga timeout test)
     └── SampleEndpoint.Tests.csproj    # Refs Containers, SampleMessages; builds Testing
                                        #   projects as ReferenceOutputAssembly=false
 ```
@@ -140,17 +152,59 @@ corrupted.
 public class SomeMessageScenario : Scenario
 {
     public override string Name => "SomeMessage";
-    public override async Task Execute(IMessageSession session, string[] args, CancellationToken ct)
-        => await session.Send(new SomeMessage { Id = Guid.NewGuid() });
+    public override async Task Execute(IMessageSession session,
+        IDictionary<string, string> args, CancellationToken ct)
+        => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
 ```
 
 Scenarios run **inside the endpoint process** using the real, fully-configured
 `IMessageSession`. No cross-process serialization of message payloads occurs.
 
-The test just passes the name: `ExecuteScenarioAsync("SampleEndpoint", "SomeMessage")`.
+The test just passes name + args:
+```csharp
+var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync(
+    "SampleEndpoint", "SomeMessage", new Dictionary<string, string> { ["ID"] = Guid.NewGuid().ToString() });
+```
 
-### 3. NServiceBus 10 constraints
+The returned `correlationId` is a server-assigned GUID that flows through all message
+headers via `CorrelationIdHeader`, allowing the test to filter events by their originating
+scenario invocation — making concurrent test execution safe.
+
+### 3. Correlation ID propagation
+
+Every message in a chain carries the correlation ID assigned by the test host when
+`ExecuteScenarioAsync` is called. The pipeline is:
+
+1. `AgentService.ExecuteScenarioAsync` sets `CurrentCorrelationId.Value` (AsyncLocal)
+2. `OutgoingCorrelationIdBehavior` stamps `CorrelationIdHeader` onto every outgoing message
+3. `IncomingCorrelationIdBehavior` reads `CorrelationIdHeader` from each incoming message
+   and restores `CurrentCorrelationId.Value` in the async context
+4. All reporting behaviors read `CurrentCorrelationId.Value` to tag events
+
+This propagates through the full chain: handlers → sends → saga timeouts → timeout handlers.
+Tests filter all events by `correlationId`, making concurrent tests safe.
+
+### 4. Outgoing message and failure reporting
+
+Two additional behaviors are registered alongside `ReportingBehavior`:
+
+- **`OutgoingReportingBehavior`** (`IOutgoingLogicalMessageContext`): fires for every
+  dispatched message when a correlation ID is active. Detects saga timeout requests via
+  `Headers.IsSagaTimeoutMessage` and reports them with intent `"RequestTimeout"`. Reports
+  in `finally` so dispatch errors are also captured.
+
+- **Failure hook** (`config.Recoverability().Failed(...).OnMessageSentToErrorQueue(...)`):
+  reports messages that exhaust retries, tagged with their correlation ID.
+
+### 5. Saga state reporting
+
+`ReportingBehavior` captures saga state from `context.Extensions.TryGet<ActiveSagaInstance>()`
+and includes it in `HandlerInvokedMessage`: `IsSaga`, `SagaIsNew`, `SagaIsCompleted`,
+`SagaId`, `SagaTypeName`, `SagaNotFound`. This gives tests full visibility into the saga
+lifecycle without any saga-specific test API.
+
+### 6. NServiceBus 10 constraints
 
 - **No `IWantToRunWhenEndpointStartsAndStops`** in NSB 10 core (moved to NSB.Host).
   Agent connection is therefore explicit: `IntegrationTestingBootstrap` calls
@@ -163,18 +217,25 @@ The test just passes the name: `ExecuteScenarioAsync("SampleEndpoint", "SomeMess
 - **Behaviors registered as instances**, not via DI:
   `configuration.Pipeline.Register(new ReportingBehavior(agentService), "description")`.
 
-### 4. Container networking
+- **Failure hook**: `config.Recoverability().Failed(c => c.OnMessageSentToErrorQueue(...))`.
+  `config.Notifications()` does not exist in NSB 10.
+
+- **Concurrent gRPC writes**: `RequestStream.WriteAsync` must not be called concurrently.
+  `AgentService` serializes all writes via a `SemaphoreSlim _writeLock`.
+
+### 7. Container networking
 
 - `TestHostServer` binds Kestrel to `IPAddress.Any` (not just `localhost`) so containers
   can reach it.
 - The test passes `NSBUS_TESTING_HOST = http://host.docker.internal:{port}` to containers.
   `host.docker.internal` is resolved by Docker Desktop on macOS and Windows.
-- RabbitMQ is reached by containers via the Docker network alias `rabbitmq` at the default
-  port — no host port mapping needed for inter-container traffic.
+- RabbitMQ and PostgreSQL are reached by containers via Docker network aliases
+  (`rabbitmq`, `postgres`) at their default ports — no host port mapping needed for
+  inter-container traffic.
 - `TestHostServer.ContainerAddress` returns `http://host.docker.internal:{port}`;
   `TestHostServer.Address` returns `http://localhost:{port}` for in-process use.
 
-### 5. Dockerfile: no `--no-restore` on publish
+### 8. Dockerfile: no `--no-restore` on publish
 
 On Apple Silicon (ARM64) with Docker Desktop running Linux/AMD64 containers, using
 `dotnet publish --no-restore` after a `dotnet restore` layer causes a native asset mismatch
@@ -186,60 +247,97 @@ On Apple Silicon (ARM64) with Docker Desktop running Linux/AMD64 containers, usi
 ## Proven End-to-End Flow
 
 ```
-Test                          SampleEndpoint          AnotherEndpoint
- │                                  │                       │
- │── ExecuteScenarioAsync ─────────►│                       │
- │   ("SampleEndpoint","SomeMessage")│                       │
- │                                  │                       │
- │                       [SomeMessageScenario.Execute]       │
- │                       session.Send(SomeMessage)           │
- │                                  │                       │
- │                       SomeMessageHandler                  │
- │◄── HandlerInvokedMessage ────────│                       │
- │    (SampleEndpoint,              │                       │
- │     SomeMessageHandler)          │                       │
- │                                  │── AnotherMessage ────►│
- │                                  │                       │
- │                                  │              AnotherMessageHandler
- │◄── HandlerInvokedMessage ────────┼───────────────────────│
- │    (AnotherEndpoint,             │                       │
- │     AnotherMessageHandler)       │◄── Reply(SomeReply) ──│
- │                                  │                       │
- │                       SomeReplyHandler                    │
- │◄── HandlerInvokedMessage ────────│                       │
- │    (SampleEndpoint,              │                       │
- │     SomeReplyHandler)            │                       │
- │                                  │                       │
- │ Assert all three invocations     │                       │
+Test                  SampleEndpoint                    AnotherEndpoint
+ │                         │                                   │
+ │── ExecuteScenario ──────►│                                   │
+ │   (SomeMessage)          │                                   │
+ │                [SomeMessageScenario.Execute]                  │
+ │                session.Send(SomeMessage)                      │
+ │                          │                                   │
+ │                SomeMessageHandler                             │
+ │◄── HandlerInvoked ───────│                                   │
+ │                          │────── AnotherMessage ────────────►│
+ │                          │                          AnotherMessageHandler
+ │◄── HandlerInvoked ───────┼───────────────────────────────────│
+ │                          │◄────── Reply(SomeReply) ──────────│
+ │                SomeReplyHandler + SomeReplySaga (both start)  │
+ │◄── HandlerInvoked (SomeReplyHandler) ────────────────────────│
+ │◄── HandlerInvoked (SomeReplySaga, IsSaga=true, IsNew=true) ──│
+ │                          │                                   │
+ │             [20 seconds elapse — saga timeout fires]          │
+ │                          │                                   │
+ │               SomeReplySaga.Timeout                           │
+ │◄── HandlerInvoked (SomeReplySaga, IsCompleted=true) ─────────│
+ │               context.SendLocal(SagaCompletedMessage)         │
+ │                          │                                   │
+ │               SagaCompletedMessageHandler                     │
+ │◄── HandlerInvoked (SagaCompletedMessageHandler) ─────────────│
+ │                          │                                   │
+ │ Assert saga assertions   │                                   │
 ```
+
+---
+
+## Package Versions (as of spike)
+
+| Package                          | Version  | Notes                              |
+|----------------------------------|----------|------------------------------------|
+| NServiceBus                      | 10.1.0   | targets net10.0                    |
+| NServiceBus.RabbitMQ             | 11.0.0   | NSB 10.x ↔ RabbitMQ transport 11.x |
+| NServiceBus.Persistence.Sql      | 9.0.0    | NSB 10.x ↔ Persistence.Sql 9.x     |
+| Npgsql                           | 10.0.1   |                                    |
+| Grpc.AspNetCore / Grpc.Net.Client| 2.67.0   |                                    |
+| Google.Protobuf                  | 3.29.3   |                                    |
+| Testcontainers                   | 4.10.0   | 4.1.0 breaks with containerd store |
+| Testcontainers.RabbitMq          | 4.10.0   |                                    |
+| Testcontainers.PostgreSql        | 4.10.0   |                                    |
 
 ---
 
 ## Known Gaps / Next Steps
 
-### Channel fragility (easy fix)
-`WaitForHandlerInvocationAsync` reads from a single shared `Channel<HandlerInvokedEvent>`.
-If two tests run concurrently and both expect the same handler type, they race for the same
-event. Each test needs its own subscription (e.g., fan-out via `IAsyncEnumerable` broadcast,
-or per-test channels registered before the scenario executes).
+### MEL logging interception (medium)
 
-### Outgoing message tracking (medium)
-`ReportingBehavior` currently only reports handler invocations. Extending it to also report
-what each handler sent/published/replied would give tests full visibility into the message
-flow — useful for asserting that the right messages were dispatched even in failure scenarios.
-Requires intercepting `IMessageHandlerContext.Send/Publish/Reply` in the behavior.
+Register a custom `ILoggerProvider` in `IntegrationTestingBootstrap` that captures
+`Microsoft.Extensions.Logging` entries from handler code and streams them over gRPC to the
+test host.
 
-### Saga state reporting (medium)
-When a saga handles a message, the test should be able to inspect the saga's persisted state.
-Requires hooking into NSB's saga persistence pipeline.
+**Approach:**
+
+1. New proto message `LogMessage` (`endpoint_name`, `level`, `category`, `message`,
+   `exception`, `correlation_id`) added to `AgentToHostMessage` oneof.
+2. `IntegrationTestingLoggerProvider : ILoggerProvider` + inner `ILogger` implementation
+   in the Agent library. Reads `AgentService.CurrentCorrelationId.Value` at log time —
+   since MEL logging typically fires in the same async context as the handler, the value
+   is available for logs within the NSB pipeline.
+3. Registered in `IntegrationTestingBootstrap` via `LoggerFactory.Create(b => b.AddProvider(...))`.
+   The factory is wired into the NSB service collection so handler `ILogger<T>` dependencies
+   resolve the capturing factory.
+4. `TestHostGrpcService` exposes `WaitForLogAsync(correlationId, level, ...)` using the
+   same fan-out channel pattern as handler/dispatch events.
+
+**Design choices to decide:**
+
+- Capture all levels vs. apply a minimum threshold at the provider.
+- Report logs without a correlation ID (e.g., startup logs) or only logs tied to a scenario.
+- Bridge NSB's own internal log abstraction (`LogManager`) via `NServiceBus.Extensions.Logging`
+  to also capture framework-level log lines.
 
 ### Done conditions (larger)
-Tests currently manually sequence `ExecuteScenarioAsync` + multiple `WaitForHandlerInvocationAsync`
-calls. A `DoneCondition` abstraction ("I'm done when handler X ran AND message Y was published")
+
+Tests currently manually sequence `ExecuteScenarioAsync` + multiple `WaitFor*Async` calls.
+A `DoneCondition` abstraction ("I'm done when handler X ran AND message Y was published")
 would make test intent clearer and eliminate the need to know the right order to await.
 
-### Linux/AMD64 container assumption
+### Multi-architecture Docker images (small)
+
 The Dockerfiles target `mcr.microsoft.com/dotnet/runtime:10.0` which defaults to AMD64 on
 Docker Desktop. This works fine on macOS Apple Silicon (Docker Desktop transparently emulates
 AMD64) but adds overhead. A future improvement could build multi-arch images or detect the
 host architecture.
+
+### Channel fragility with concurrent tests (easy fix, not yet needed)
+
+`WaitForHandlerInvocationAsync` uses a fan-out channel per waiter, filtered by correlation
+ID, so multiple concurrent tests are already safe. Verify this holds for
+`WaitForMessageDispatchedAsync` and `WaitForMessageFailureAsync` as well.
