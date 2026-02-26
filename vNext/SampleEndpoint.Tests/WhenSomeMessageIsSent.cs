@@ -35,6 +35,8 @@ public class WhenSomeMessageIsSent
     static RabbitMqContainer _rabbitMq = null!;
     static PostgreSqlContainer _postgreSql = null!;
     static TestHostServer _testHost = null!;
+    static EndpointHandle _sampleEndpoint = null!;
+    static EndpointHandle _anotherEndpoint = null!;
     static IContainer _sampleEndpointContainer = null!;
     static IContainer _anotherEndpointContainer = null!;
 
@@ -62,6 +64,9 @@ public class WhenSomeMessageIsSent
         // ── Step 4: gRPC test host ───────────────────────────────────────────
         _testHost = new TestHostServer();
         await _testHost.StartAsync();
+
+        _sampleEndpoint = _testHost.GetEndpoint("SampleEndpoint");
+        _anotherEndpoint = _testHost.GetEndpoint("AnotherEndpoint");
 
         // ── Step 5: Build Docker images ──────────────────────────────────────
         var repoRoot = FindRepoRoot();
@@ -115,8 +120,8 @@ public class WhenSomeMessageIsSent
         // ── Step 7: Wait for both agents to connect ──────────────────────────
         using var agentWaitCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         await Task.WhenAll(
-            _testHost.GrpcService.WaitForAgentAsync("SampleEndpoint", agentWaitCts.Token),
-            _testHost.GrpcService.WaitForAgentAsync("AnotherEndpoint", agentWaitCts.Token));
+            _sampleEndpoint.WaitForConnectedAsync(agentWaitCts.Token),
+            _anotherEndpoint.WaitForConnectedAsync(agentWaitCts.Token));
     }
 
     [TearDown]
@@ -162,12 +167,11 @@ public class WhenSomeMessageIsSent
         {
             { "ID", Guid.NewGuid().ToString() }
         };
-        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage", args);
+        var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-        var results = await _testHost.GrpcService
-            .Observe(correlationId, cts.Token)
+        var results = await _testHost.Observe(correlationId, cts.Token)
             .HandlerInvoked("SomeMessageHandler")
             .HandlerInvoked("AnotherMessageHandler")
             .HandlerInvoked("SomeReplyHandler")
@@ -188,12 +192,11 @@ public class WhenSomeMessageIsSent
         {
             { "ID", Guid.NewGuid().ToString() }
         };
-        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage", args);
+        var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-        var results = await _testHost.GrpcService
-            .Observe(correlationId, cts.Token)
+        var results = await _testHost.Observe(correlationId, cts.Token)
             .MessageDispatched("AnotherMessage")
             .WhenAllAsync();
 
@@ -212,13 +215,12 @@ public class WhenSomeMessageIsSent
         {
             { "ID", Guid.NewGuid().ToString() }
         };
-        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage", args);
+        var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
 
         // The saga starts on SomeReply and sets a 20s timeout — allow enough headroom.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        var results = await _testHost.GrpcService
-            .Observe(correlationId, cts.Token)
+        var results = await _testHost.Observe(correlationId, cts.Token)
             .HandlerInvoked("SomeReplySaga")
             // Validates that RequestTimeout stamped the correlation ID at IOutgoingLogicalMessageContext.
             .MessageDispatched("SomeReplySagaTimeout")

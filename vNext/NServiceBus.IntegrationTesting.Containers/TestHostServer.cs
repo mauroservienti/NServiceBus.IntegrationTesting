@@ -18,7 +18,21 @@ public sealed class TestHostServer : IAsyncDisposable
     WebApplication? _app;
 
     /// <summary>The gRPC service that receives agent connections and events.</summary>
-    public TestHostGrpcService GrpcService { get; } = new();
+    internal TestHostGrpcService GrpcService { get; } = new();
+
+    /// <summary>
+    /// Returns a handle for the named endpoint. Use the handle to wait for the agent
+    /// to connect and to execute scenarios.
+    /// </summary>
+    public EndpointHandle GetEndpoint(string endpointName)
+        => new(GrpcService, endpointName);
+
+    /// <summary>
+    /// Creates an ObserveContext for the given correlation ID. Add conditions with
+    /// HandlerInvoked / MessageDispatched, then call WhenAllAsync() to wait for all of them.
+    /// </summary>
+    public ObserveContext Observe(string correlationId, CancellationToken cancellationToken = default)
+        => GrpcService.Observe(correlationId, cancellationToken);
 
     /// <summary>The port the server is listening on (available after StartAsync).</summary>
     public int Port { get; private set; }
