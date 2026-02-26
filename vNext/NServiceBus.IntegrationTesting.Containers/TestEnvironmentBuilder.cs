@@ -142,6 +142,7 @@ public sealed class TestEnvironmentBuilder
             .Select(e => (e.EndpointName, Container: (IContainer)new ContainerBuilder(e.Image.FullName)
                 .WithNetwork(network)
                 .WithEnvironment(envVars)
+                .WithExtraHost("host.docker.internal", "host-gateway")
                 .Build()))
             .ToList();
 
