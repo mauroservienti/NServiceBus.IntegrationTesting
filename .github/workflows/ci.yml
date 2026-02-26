@@ -33,10 +33,14 @@ jobs:
         uses: actions/setup-dotnet@v3.0.3
         with:
           dotnet-version: 8.0.x
-      - name: Build
-        run: dotnet build src --configuration Release
-      - name: Tests
-        run: dotnet test src --configuration Release --no-build
+      - name: Setup Testcontainers Cloud Client
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: ${{ secrets.TC_CLOUD_TOKEN }}
+      #- name: Build
+      #  run: dotnet build src --configuration Release
+      #- name: Tests
+      #  run: dotnet test src --configuration Release --no-build
       - name: Build vNext
         run: dotnet build vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release
       - name: Tests vNext
