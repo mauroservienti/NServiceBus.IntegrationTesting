@@ -166,18 +166,18 @@ public class WhenSomeMessageIsSent
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-        var someMessageInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
-            correlationId, "SomeMessageHandler", cts.Token);
-        var anotherMessageInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
-            correlationId, "AnotherMessageHandler", cts.Token);
-        var someReplyInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
-            correlationId, "SomeReplyHandler", cts.Token);
+        var results = await _testHost.GrpcService
+            .Observe(correlationId, cts.Token)
+            .HandlerInvoked("SomeMessageHandler")
+            .HandlerInvoked("AnotherMessageHandler")
+            .HandlerInvoked("SomeReplyHandler")
+            .WhenAllAsync();
 
         Assert.Multiple(() =>
         {
-            Assert.That(someMessageInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
-            Assert.That(anotherMessageInvocation.EndpointName, Is.EqualTo("AnotherEndpoint"));
-            Assert.That(someReplyInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(results.HandlerInvoked("SomeMessageHandler").EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(results.HandlerInvoked("AnotherMessageHandler").EndpointName, Is.EqualTo("AnotherEndpoint"));
+            Assert.That(results.HandlerInvoked("SomeReplyHandler").EndpointName, Is.EqualTo("SampleEndpoint"));
         });
     }
 
@@ -192,9 +192,12 @@ public class WhenSomeMessageIsSent
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
-        var dispatched = await _testHost.GrpcService.WaitForMessageDispatchedAsync(
-            correlationId, "AnotherMessage", cts.Token);
+        var results = await _testHost.GrpcService
+            .Observe(correlationId, cts.Token)
+            .MessageDispatched("AnotherMessage")
+            .WhenAllAsync();
 
+        var dispatched = results.MessageDispatched("AnotherMessage");
         Assert.Multiple(() =>
         {
             Assert.That(dispatched.EndpointName, Is.EqualTo("SampleEndpoint"));
@@ -214,33 +217,26 @@ public class WhenSomeMessageIsSent
         // The saga starts on SomeReply and sets a 20s timeout — allow enough headroom.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        // Register all waiters up-front before awaiting any of them.
-        // This avoids a race where a fast event arrives before the next waiter is registered.
-        var sagaStartTask = _testHost.GrpcService.WaitForHandlerInvocationAsync(
-            correlationId, "SomeReplySaga", cts.Token);
-
-        // Validates that RequestTimeout stamped the correlation ID at IOutgoingLogicalMessageContext.
-        // If this times out, the correlation ID was not propagated through to the timeout request.
-        var timeoutDispatchedTask = _testHost.GrpcService.WaitForMessageDispatchedAsync(
-            correlationId, "SomeReplySagaTimeout", cts.Token);
-
-        var sagaCompletedTask = _testHost.GrpcService.WaitForHandlerInvocationAsync(
-            correlationId, "SagaCompletedMessageHandler", cts.Token);
-
-        var sagaStartInvocation = await sagaStartTask;
-        var timeoutDispatched = await timeoutDispatchedTask;
-        var sagaCompletedInvocation = await sagaCompletedTask;
+        var results = await _testHost.GrpcService
+            .Observe(correlationId, cts.Token)
+            .HandlerInvoked("SomeReplySaga")
+            // Validates that RequestTimeout stamped the correlation ID at IOutgoingLogicalMessageContext.
+            .MessageDispatched("SomeReplySagaTimeout")
+            .HandlerInvoked("SagaCompletedMessageHandler")
+            .WhenAllAsync();
 
         Assert.Multiple(() =>
         {
-            Assert.That(sagaStartInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
-            Assert.That(sagaStartInvocation.IsSaga, Is.True);
-            Assert.That(sagaStartInvocation.SagaIsNew, Is.True);
+            var sagaStart = results.HandlerInvoked("SomeReplySaga");
+            Assert.That(sagaStart.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(sagaStart.IsSaga, Is.True);
+            Assert.That(sagaStart.SagaIsNew, Is.True);
 
+            var timeoutDispatched = results.MessageDispatched("SomeReplySagaTimeout");
             Assert.That(timeoutDispatched.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(timeoutDispatched.Intent, Is.EqualTo("RequestTimeout"));
 
-            Assert.That(sagaCompletedInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(results.HandlerInvoked("SagaCompletedMessageHandler").EndpointName, Is.EqualTo("SampleEndpoint"));
         });
     }
 

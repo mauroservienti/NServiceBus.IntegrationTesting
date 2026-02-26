@@ -68,6 +68,14 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     readonly List<Channel<MessageFailedEvent>> _failedListeners = [];
 
     /// <summary>
+    /// Creates an ObserveContext for the given correlation ID. Add conditions with
+    /// HandlerInvoked / MessageDispatched, then call WhenAllAsync() to wait for all of them.
+    /// All listeners are registered immediately — no events can be missed between calls.
+    /// </summary>
+    public ObserveContext Observe(string correlationId, CancellationToken cancellationToken = default)
+        => new(this, correlationId, cancellationToken);
+
+    /// <summary>
     /// Returns a Task that completes when the named endpoint's agent connects.
     /// </summary>
     public Task WaitForAgentAsync(string endpointName, CancellationToken cancellationToken = default)
