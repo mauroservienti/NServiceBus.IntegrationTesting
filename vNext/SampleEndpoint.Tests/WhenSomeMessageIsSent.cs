@@ -221,7 +221,7 @@ public class WhenSomeMessageIsSent
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
         var results = await _testHost.Observe(correlationId, cts.Token)
-            .HandlerInvoked("SomeReplySaga")
+            .SagaInvoked("SomeReplySaga")
             // Validates that RequestTimeout stamped the correlation ID at IOutgoingLogicalMessageContext.
             .MessageDispatched("SomeReplySagaTimeout")
             .HandlerInvoked("SagaCompletedMessageHandler")
@@ -229,7 +229,7 @@ public class WhenSomeMessageIsSent
 
         Assert.Multiple(() =>
         {
-            var sagaStart = results.HandlerInvoked("SomeReplySaga");
+            var sagaStart = results.SagaInvoked("SomeReplySaga");
             Assert.That(sagaStart.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(sagaStart.IsSaga, Is.True);
             Assert.That(sagaStart.SagaIsNew, Is.True);
@@ -259,16 +259,16 @@ public class WhenSomeMessageIsSent
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        // The predicate on the handler encodes "saga must be new" as the done condition,
+        // The predicate encodes "saga must be new" as the done condition,
         // not just "saga was invoked once".  The predicate on the dispatch checks intent.
         var results = await _testHost.Observe(correlationId, cts.Token)
-            .HandlerInvoked("SomeReplySaga", evt => evt.IsSaga && evt.SagaIsNew)
+            .SagaInvoked("SomeReplySaga", evt => evt.SagaIsNew)
             .MessageDispatched("SomeReplySagaTimeout", evt => evt.Intent == "RequestTimeout")
             .WhenAllAsync();
 
         Assert.Multiple(() =>
         {
-            Assert.That(results.HandlerInvoked("SomeReplySaga").EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(results.SagaInvoked("SomeReplySaga").EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(results.MessageDispatched("SomeReplySagaTimeout").EndpointName, Is.EqualTo("SampleEndpoint"));
         });
     }

@@ -14,6 +14,7 @@ public sealed class ObserveContext
     readonly CancellationToken _cancellationToken;
 
     readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _handlerTasks = [];
+    readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _sagaTasks = [];
     readonly List<(string TypeName, Task<IReadOnlyList<MessageDispatchedEvent>> Task)> _dispatchedTasks = [];
 
     internal ObserveContext(
@@ -27,13 +28,13 @@ public sealed class ObserveContext
     }
 
     /// <summary>
-    /// Wait for the first successful invocation of the named handler.
+    /// Wait for the first successful invocation of the named message handler.
     /// </summary>
     public ObserveContext HandlerInvoked(string handlerTypeName)
         => HandlerInvoked(handlerTypeName, static all => all.Count >= 1);
 
     /// <summary>
-    /// Wait for invocations of the named handler until <paramref name="until"/> returns true.
+    /// Wait for invocations of the named message handler until <paramref name="until"/> returns true.
     /// The predicate receives the latest event and returns true when done.
     /// </summary>
     public ObserveContext HandlerInvoked(string handlerTypeName, Func<HandlerInvokedEvent, bool> until)
@@ -43,7 +44,7 @@ public sealed class ObserveContext
     }
 
     /// <summary>
-    /// Wait for invocations of the named handler until <paramref name="until"/> returns true.
+    /// Wait for invocations of the named message handler until <paramref name="until"/> returns true.
     /// The predicate receives the growing list of matching events (oldest first).
     /// </summary>
     public ObserveContext HandlerInvoked(string handlerTypeName, Func<IReadOnlyList<HandlerInvokedEvent>, bool> until)
@@ -52,6 +53,35 @@ public sealed class ObserveContext
         _handlerTasks.Add((
             handlerTypeName,
             _grpcService.WaitForHandlerInvocationsAsync(_correlationId, handlerTypeName, until, _cancellationToken)));
+        return this;
+    }
+
+    /// <summary>
+    /// Wait for the first successful invocation of the named saga.
+    /// </summary>
+    public ObserveContext SagaInvoked(string sagaTypeName)
+        => SagaInvoked(sagaTypeName, static all => all.Count >= 1);
+
+    /// <summary>
+    /// Wait for invocations of the named saga until <paramref name="until"/> returns true.
+    /// The predicate receives the latest event and returns true when done.
+    /// </summary>
+    public ObserveContext SagaInvoked(string sagaTypeName, Func<HandlerInvokedEvent, bool> until)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+        return SagaInvoked(sagaTypeName, all => until(all[^1]));
+    }
+
+    /// <summary>
+    /// Wait for invocations of the named saga until <paramref name="until"/> returns true.
+    /// The predicate receives the growing list of matching events (oldest first).
+    /// </summary>
+    public ObserveContext SagaInvoked(string sagaTypeName, Func<IReadOnlyList<HandlerInvokedEvent>, bool> until)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+        _sagaTasks.Add((
+            sagaTypeName,
+            _grpcService.WaitForHandlerInvocationsAsync(_correlationId, sagaTypeName, until, _cancellationToken)));
         return this;
     }
 
@@ -90,12 +120,14 @@ public sealed class ObserveContext
     public async Task<ObserveResults> WhenAllAsync()
     {
         IEnumerable<Task> allTasks = _handlerTasks.Select(t => (Task)t.Task)
+            .Concat(_sagaTasks.Select(t => (Task)t.Task))
             .Concat(_dispatchedTasks.Select(t => (Task)t.Task));
 
         await Task.WhenAll(allTasks);
 
         return new ObserveResults(
             _handlerTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
+            _sagaTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
             _dispatchedTasks.ToDictionary(t => t.TypeName, t => t.Task.Result));
     }
 }
@@ -106,18 +138,21 @@ public sealed class ObserveContext
 public sealed class ObserveResults
 {
     readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _handlerResults;
+    readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _sagaResults;
     readonly Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> _dispatchedResults;
 
     internal ObserveResults(
         Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> handlerResults,
+        Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> sagaResults,
         Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> dispatchedResults)
     {
         _handlerResults = handlerResults;
+        _sagaResults = sagaResults;
         _dispatchedResults = dispatchedResults;
     }
 
     /// <summary>
-    /// All collected invocations of the named handler satisfying the condition
+    /// All collected invocations of the named message handler satisfying the condition
     /// registered via ObserveContext.HandlerInvoked.
     /// </summary>
     public IReadOnlyList<HandlerInvokedEvent> HandlerInvocations(string handlerTypeName)
@@ -127,11 +162,28 @@ public sealed class ObserveResults
                 $"No HandlerInvokedEvents for '{handlerTypeName}' were observed.");
 
     /// <summary>
-    /// The last (or only) invocation of the named handler.
+    /// The last (or only) invocation of the named message handler.
     /// Equivalent to HandlerInvocations(name).Last() — convenient for the no-arg overload.
     /// </summary>
     public HandlerInvokedEvent HandlerInvoked(string handlerTypeName)
         => HandlerInvocations(handlerTypeName).Last();
+
+    /// <summary>
+    /// All collected invocations of the named saga satisfying the condition
+    /// registered via ObserveContext.SagaInvoked.
+    /// </summary>
+    public IReadOnlyList<HandlerInvokedEvent> SagaInvocations(string sagaTypeName)
+        => _sagaResults.TryGetValue(sagaTypeName, out var list)
+            ? list
+            : throw new InvalidOperationException(
+                $"No SagaInvokedEvents for '{sagaTypeName}' were observed.");
+
+    /// <summary>
+    /// The last (or only) invocation of the named saga.
+    /// Equivalent to SagaInvocations(name).Last() — convenient for the no-arg overload.
+    /// </summary>
+    public HandlerInvokedEvent SagaInvoked(string sagaTypeName)
+        => SagaInvocations(sagaTypeName).Last();
 
     /// <summary>
     /// All collected dispatches of the named message type satisfying the condition
