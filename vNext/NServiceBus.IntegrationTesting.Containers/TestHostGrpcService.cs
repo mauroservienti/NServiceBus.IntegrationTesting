@@ -30,6 +30,19 @@ public sealed record MessageFailedEvent(
     string CorrelationId);
 
 /// <summary>
+/// Thrown by WaitForHandlerInvocationAsync / WaitForMessageDispatchedAsync when the message
+/// with the watched correlation ID is permanently sent to the error queue before the expected
+/// event arrives. Allows tests to fail fast with a descriptive message instead of waiting
+/// for the test timeout to expire.
+/// </summary>
+public sealed class MessageFailedException(string correlationId, string messageTypeName, string causeMessage)
+    : Exception($"Message '{messageTypeName}' was sent to the error queue for correlation '{correlationId}'. Cause: {causeMessage}")
+{
+    public string CorrelationId { get; } = correlationId;
+    public string MessageTypeName { get; } = messageTypeName;
+}
+
+/// <summary>
 /// gRPC service implementation that runs in the test host process.
 /// Agents (in endpoint processes/containers) connect to this service.
 /// </summary>
@@ -72,6 +85,8 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     /// correlation ID and handler type name is reported by any agent.
     /// Only successful invocations are ever reported — transient failures are not
     /// surfaced here; permanent failures appear via WaitForMessageFailureAsync.
+    /// Races against MessageFailedEvent: if the message is permanently dead before
+    /// the handler succeeds, throws MessageFailedException immediately.
     /// Each call registers an independent listener — safe for concurrent tests.
     /// </summary>
     public async Task<HandlerInvokedEvent> WaitForHandlerInvocationAsync(
@@ -79,28 +94,49 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         string handlerTypeName,
         CancellationToken cancellationToken = default)
     {
-        var myChannel = Channel.CreateUnbounded<HandlerInvokedEvent>(
+        var handlerChannel = Channel.CreateUnbounded<HandlerInvokedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+        var failureChannel = Channel.CreateUnbounded<MessageFailedEvent>(
             new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
 
         lock (_handlerListenersLock)
-            _handlerListeners.Add(myChannel);
+            _handlerListeners.Add(handlerChannel);
+        lock (_failedListenersLock)
+            _failedListeners.Add(failureChannel);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         try
         {
-            await foreach (var evt in myChannel.Reader.ReadAllAsync(cancellationToken))
-            {
-                if (evt.CorrelationId == correlationId && evt.HandlerTypeName == handlerTypeName)
-                    return evt;
-            }
+            var successTask = ScanForHandlerEventAsync(handlerChannel.Reader, correlationId, handlerTypeName, cts.Token);
+            var failureTask = ScanForFailureEventAsync(failureChannel.Reader, correlationId, cts.Token);
 
+            await Task.WhenAny(successTask, failureTask);
+            await cts.CancelAsync();
+
+            var handlerResult = await successTask;
+            var failureResult = await failureTask;
+
+            if (failureResult is not null)
+                throw new MessageFailedException(correlationId, failureResult.MessageTypeName, failureResult.ExceptionMessage);
+
+            if (handlerResult is not null)
+                return handlerResult;
+
+            cancellationToken.ThrowIfCancellationRequested();
             throw new OperationCanceledException(
-                $"Channel completed without a '{handlerTypeName}' invocation for correlation '{correlationId}'.");
+                $"Timed out waiting for '{handlerTypeName}' invocation for correlation '{correlationId}'.",
+                cancellationToken);
         }
         finally
         {
             lock (_handlerListenersLock)
-                _handlerListeners.Remove(myChannel);
-            myChannel.Writer.TryComplete();
+                _handlerListeners.Remove(handlerChannel);
+            handlerChannel.Writer.TryComplete();
+
+            lock (_failedListenersLock)
+                _failedListeners.Remove(failureChannel);
+            failureChannel.Writer.TryComplete();
         }
     }
 
@@ -108,34 +144,57 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     /// Returns a Task that completes when a MessageDispatchedEvent with the given
     /// correlation ID and message type name is reported by any agent.
     /// Only successful dispatches are ever reported — transient failures are not surfaced here.
+    /// Races against MessageFailedEvent: if the message is permanently dead before
+    /// the expected dispatch occurs, throws MessageFailedException immediately.
     /// </summary>
     public async Task<MessageDispatchedEvent> WaitForMessageDispatchedAsync(
         string correlationId,
         string messageTypeName,
         CancellationToken cancellationToken = default)
     {
-        var myChannel = Channel.CreateUnbounded<MessageDispatchedEvent>(
+        var dispatchChannel = Channel.CreateUnbounded<MessageDispatchedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+        var failureChannel = Channel.CreateUnbounded<MessageFailedEvent>(
             new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
 
         lock (_dispatchedListenersLock)
-            _dispatchedListeners.Add(myChannel);
+            _dispatchedListeners.Add(dispatchChannel);
+        lock (_failedListenersLock)
+            _failedListeners.Add(failureChannel);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         try
         {
-            await foreach (var evt in myChannel.Reader.ReadAllAsync(cancellationToken))
-            {
-                if (evt.CorrelationId == correlationId && evt.MessageTypeName == messageTypeName)
-                    return evt;
-            }
+            var successTask = ScanForDispatchEventAsync(dispatchChannel.Reader, correlationId, messageTypeName, cts.Token);
+            var failureTask = ScanForFailureEventAsync(failureChannel.Reader, correlationId, cts.Token);
 
+            await Task.WhenAny(successTask, failureTask);
+            await cts.CancelAsync();
+
+            var dispatchResult = await successTask;
+            var failureResult = await failureTask;
+
+            if (failureResult is not null)
+                throw new MessageFailedException(correlationId, failureResult.MessageTypeName, failureResult.ExceptionMessage);
+
+            if (dispatchResult is not null)
+                return dispatchResult;
+
+            cancellationToken.ThrowIfCancellationRequested();
             throw new OperationCanceledException(
-                $"Channel completed without a '{messageTypeName}' dispatch for correlation '{correlationId}'.");
+                $"Timed out waiting for '{messageTypeName}' dispatch for correlation '{correlationId}'.",
+                cancellationToken);
         }
         finally
         {
             lock (_dispatchedListenersLock)
-                _dispatchedListeners.Remove(myChannel);
-            myChannel.Writer.TryComplete();
+                _dispatchedListeners.Remove(dispatchChannel);
+            dispatchChannel.Writer.TryComplete();
+
+            lock (_failedListenersLock)
+                _failedListeners.Remove(failureChannel);
+            failureChannel.Writer.TryComplete();
         }
     }
 
@@ -315,5 +374,61 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
             }
         }
         catch (OperationCanceledException) { }
+    }
+
+    // Scan helpers return null when the token is cancelled or the channel is closed
+    // without finding a matching event — the caller interprets null as "not found".
+
+    static async Task<HandlerInvokedEvent?> ScanForHandlerEventAsync(
+        ChannelReader<HandlerInvokedEvent> reader,
+        string correlationId,
+        string handlerTypeName,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var evt in reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.CorrelationId == correlationId && evt.HandlerTypeName == handlerTypeName)
+                    return evt;
+            }
+        }
+        catch (OperationCanceledException) { }
+        return null;
+    }
+
+    static async Task<MessageDispatchedEvent?> ScanForDispatchEventAsync(
+        ChannelReader<MessageDispatchedEvent> reader,
+        string correlationId,
+        string messageTypeName,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var evt in reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.CorrelationId == correlationId && evt.MessageTypeName == messageTypeName)
+                    return evt;
+            }
+        }
+        catch (OperationCanceledException) { }
+        return null;
+    }
+
+    static async Task<MessageFailedEvent?> ScanForFailureEventAsync(
+        ChannelReader<MessageFailedEvent> reader,
+        string correlationId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (var evt in reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.CorrelationId == correlationId)
+                    return evt;
+            }
+        }
+        catch (OperationCanceledException) { }
+        return null;
     }
 }
