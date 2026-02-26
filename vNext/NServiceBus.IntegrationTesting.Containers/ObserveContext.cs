@@ -13,8 +13,8 @@ public sealed class ObserveContext
     readonly string _correlationId;
     readonly CancellationToken _cancellationToken;
 
-    readonly List<(string Key, Task<HandlerInvokedEvent> Task)> _handlerTasks = [];
-    readonly List<(string Key, Task<MessageDispatchedEvent> Task)> _dispatchedTasks = [];
+    readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _handlerTasks = [];
+    readonly List<(string TypeName, Task<IReadOnlyList<MessageDispatchedEvent>> Task)> _dispatchedTasks = [];
 
     internal ObserveContext(
         TestHostGrpcService grpcService,
@@ -26,19 +26,61 @@ public sealed class ObserveContext
         _cancellationToken = cancellationToken;
     }
 
+    /// <summary>
+    /// Wait for the first successful invocation of the named handler.
+    /// </summary>
     public ObserveContext HandlerInvoked(string handlerTypeName)
+        => HandlerInvoked(handlerTypeName, static all => all.Count >= 1);
+
+    /// <summary>
+    /// Wait for invocations of the named handler until <paramref name="until"/> returns true.
+    /// The predicate receives the latest event and returns true when done.
+    /// </summary>
+    public ObserveContext HandlerInvoked(string handlerTypeName, Func<HandlerInvokedEvent, bool> until)
     {
+        ArgumentNullException.ThrowIfNull(until);
+        return HandlerInvoked(handlerTypeName, all => until(all[^1]));
+    }
+
+    /// <summary>
+    /// Wait for invocations of the named handler until <paramref name="until"/> returns true.
+    /// The predicate receives the growing list of matching events (oldest first).
+    /// </summary>
+    public ObserveContext HandlerInvoked(string handlerTypeName, Func<IReadOnlyList<HandlerInvokedEvent>, bool> until)
+    {
+        ArgumentNullException.ThrowIfNull(until);
         _handlerTasks.Add((
             handlerTypeName,
-            _grpcService.WaitForHandlerInvocationAsync(_correlationId, handlerTypeName, _cancellationToken)));
+            _grpcService.WaitForHandlerInvocationsAsync(_correlationId, handlerTypeName, until, _cancellationToken)));
         return this;
     }
 
+    /// <summary>
+    /// Wait for the first successful dispatch of the named message type.
+    /// </summary>
     public ObserveContext MessageDispatched(string messageTypeName)
+        => MessageDispatched(messageTypeName, static all => all.Count >= 1);
+
+    /// <summary>
+    /// Wait for dispatches of the named message type until <paramref name="until"/> returns true.
+    /// The predicate receives the latest event and returns true when done.
+    /// </summary>
+    public ObserveContext MessageDispatched(string messageTypeName, Func<MessageDispatchedEvent, bool> until)
     {
+        ArgumentNullException.ThrowIfNull(until);
+        return MessageDispatched(messageTypeName, all => until(all[^1]));
+    }
+
+    /// <summary>
+    /// Wait for dispatches of the named message type until <paramref name="until"/> returns true.
+    /// The predicate receives the growing list of matching events (oldest first).
+    /// </summary>
+    public ObserveContext MessageDispatched(string messageTypeName, Func<IReadOnlyList<MessageDispatchedEvent>, bool> until)
+    {
+        ArgumentNullException.ThrowIfNull(until);
         _dispatchedTasks.Add((
             messageTypeName,
-            _grpcService.WaitForMessageDispatchedAsync(_correlationId, messageTypeName, _cancellationToken)));
+            _grpcService.WaitForMessageDispatchesAsync(_correlationId, messageTypeName, until, _cancellationToken)));
         return this;
     }
 
@@ -53,37 +95,58 @@ public sealed class ObserveContext
         await Task.WhenAll(allTasks);
 
         return new ObserveResults(
-            _handlerTasks.ToDictionary(t => t.Key, t => t.Task.Result),
-            _dispatchedTasks.ToDictionary(t => t.Key, t => t.Task.Result));
+            _handlerTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
+            _dispatchedTasks.ToDictionary(t => t.TypeName, t => t.Task.Result));
     }
 }
 
 /// <summary>
 /// Holds the results of all observed conditions after WhenAllAsync completes.
-/// Access results using the same type names used when registering conditions.
 /// </summary>
 public sealed class ObserveResults
 {
-    readonly Dictionary<string, HandlerInvokedEvent> _handlerResults;
-    readonly Dictionary<string, MessageDispatchedEvent> _dispatchedResults;
+    readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _handlerResults;
+    readonly Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> _dispatchedResults;
 
     internal ObserveResults(
-        Dictionary<string, HandlerInvokedEvent> handlerResults,
-        Dictionary<string, MessageDispatchedEvent> dispatchedResults)
+        Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> handlerResults,
+        Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> dispatchedResults)
     {
         _handlerResults = handlerResults;
         _dispatchedResults = dispatchedResults;
     }
 
-    public HandlerInvokedEvent HandlerInvoked(string handlerTypeName)
-        => _handlerResults.TryGetValue(handlerTypeName, out var evt)
-            ? evt
+    /// <summary>
+    /// All collected invocations of the named handler satisfying the condition
+    /// registered via ObserveContext.HandlerInvoked.
+    /// </summary>
+    public IReadOnlyList<HandlerInvokedEvent> HandlerInvocations(string handlerTypeName)
+        => _handlerResults.TryGetValue(handlerTypeName, out var list)
+            ? list
             : throw new InvalidOperationException(
-                $"No HandlerInvokedEvent for '{handlerTypeName}' was observed.");
+                $"No HandlerInvokedEvents for '{handlerTypeName}' were observed.");
 
-    public MessageDispatchedEvent MessageDispatched(string messageTypeName)
-        => _dispatchedResults.TryGetValue(messageTypeName, out var evt)
-            ? evt
+    /// <summary>
+    /// The last (or only) invocation of the named handler.
+    /// Equivalent to HandlerInvocations(name).Last() — convenient for the no-arg overload.
+    /// </summary>
+    public HandlerInvokedEvent HandlerInvoked(string handlerTypeName)
+        => HandlerInvocations(handlerTypeName).Last();
+
+    /// <summary>
+    /// All collected dispatches of the named message type satisfying the condition
+    /// registered via ObserveContext.MessageDispatched.
+    /// </summary>
+    public IReadOnlyList<MessageDispatchedEvent> MessageDispatches(string messageTypeName)
+        => _dispatchedResults.TryGetValue(messageTypeName, out var list)
+            ? list
             : throw new InvalidOperationException(
-                $"No MessageDispatchedEvent for '{messageTypeName}' was observed.");
+                $"No MessageDispatchedEvents for '{messageTypeName}' were observed.");
+
+    /// <summary>
+    /// The last (or only) dispatch of the named message type.
+    /// Equivalent to MessageDispatches(name).Last() — convenient for the no-arg overload.
+    /// </summary>
+    public MessageDispatchedEvent MessageDispatched(string messageTypeName)
+        => MessageDispatches(messageTypeName).Last();
 }

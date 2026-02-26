@@ -242,6 +242,68 @@ public class WhenSomeMessageIsSent
         });
     }
 
+    /// <summary>
+    /// Exercises the single-event predicate overload (Func&lt;TEvent, bool&gt;).
+    /// The done condition is expressed as a property check on the latest event,
+    /// so the test completes as soon as the saga starts AND is flagged as new —
+    /// encoding the business assertion directly in the done condition.
+    /// </summary>
+    [Test]
+    public async Task Single_event_predicate_fires_when_saga_starts_as_new()
+    {
+        var args = new Dictionary<string, string>
+        {
+            { "ID", Guid.NewGuid().ToString() }
+        };
+        var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+
+        // The predicate on the handler encodes "saga must be new" as the done condition,
+        // not just "saga was invoked once".  The predicate on the dispatch checks intent.
+        var results = await _testHost.Observe(correlationId, cts.Token)
+            .HandlerInvoked("SomeReplySaga", evt => evt.IsSaga && evt.SagaIsNew)
+            .MessageDispatched("SomeReplySagaTimeout", evt => evt.Intent == "RequestTimeout")
+            .WhenAllAsync();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(results.HandlerInvoked("SomeReplySaga").EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(results.MessageDispatched("SomeReplySagaTimeout").EndpointName, Is.EqualTo("SampleEndpoint"));
+        });
+    }
+
+    /// <summary>
+    /// Exercises the list predicate overload (Func&lt;IReadOnlyList&lt;TEvent&gt;, bool&gt;).
+    /// Uses the accumulated list to assert that ALL collected dispatches carry the
+    /// expected intent — a condition that cannot be expressed with a single-event predicate.
+    /// </summary>
+    [Test]
+    public async Task List_predicate_fires_when_all_collected_dispatches_have_expected_intent()
+    {
+        var args = new Dictionary<string, string>
+        {
+            { "ID", Guid.NewGuid().ToString() }
+        };
+        var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+
+        // Wait until we have at least one SomeReplySagaTimeout dispatch AND
+        // every collected dispatch has Intent == "RequestTimeout".
+        var results = await _testHost.Observe(correlationId, cts.Token)
+            .MessageDispatched("SomeReplySagaTimeout",
+                all => all.Count >= 1 && all.All(e => e.Intent == "RequestTimeout"))
+            .WhenAllAsync();
+
+        var dispatches = results.MessageDispatches("SomeReplySagaTimeout");
+        Assert.Multiple(() =>
+        {
+            Assert.That(dispatches, Has.Count.GreaterThanOrEqualTo(1));
+            Assert.That(dispatches.Select(e => e.Intent), Is.All.EqualTo("RequestTimeout"));
+        });
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────
 
     static string FindRepoRoot()
