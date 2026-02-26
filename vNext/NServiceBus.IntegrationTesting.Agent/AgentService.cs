@@ -30,9 +30,13 @@ public sealed class AgentService : IAsyncDisposable
     IReadOnlyDictionary<string, Scenario> _scenarios = new Dictionary<string, Scenario>();
 
     // Becomes set once ConnectAsync has written the ConnectMessage.
-    // ReportHandlerInvokedAsync waits on this before writing to ensure ordering.
+    // All report methods wait on this before writing to ensure ordering.
     readonly TaskCompletionSource _connectedTcs =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    // gRPC RequestStream.WriteAsync must not be called concurrently.
+    // This semaphore serializes all writes from concurrent message handlers.
+    readonly SemaphoreSlim _writeLock = new(1, 1);
 
     internal AgentService(string endpointName)
     {
@@ -58,43 +62,75 @@ public sealed class AgentService : IAsyncDisposable
         var client = new TestHostService.TestHostServiceClient(_channel);
         _call = client.OpenChannel(cancellationToken: cancellationToken);
 
-        await _call.RequestStream.WriteAsync(
-            new AgentToHostMessage
-            {
-                Connect = new ConnectMessage { EndpointName = _endpointName }
-            },
-            cancellationToken);
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            await _call.RequestStream.WriteAsync(
+                new AgentToHostMessage
+                {
+                    Connect = new ConnectMessage { EndpointName = _endpointName }
+                },
+                cancellationToken);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
 
         _connectedTcs.TrySetResult();
 
         _ = ProcessHostMessagesAsync(cancellationToken);
     }
 
-    internal async Task ReportHandlerInvokedAsync(
+    async Task SendAsync(AgentToHostMessage message, CancellationToken cancellationToken)
+    {
+        await _connectedTcs.Task.WaitAsync(cancellationToken);
+        if (_call is null) return;
+
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            await _call.RequestStream.WriteAsync(message, cancellationToken);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    internal Task ReportHandlerInvokedAsync(
         string handlerTypeName,
         string messageTypeName,
         string? correlationId,
         bool hasError,
         string? errorMessage,
+        SagaInfo? sagaInfo,
         CancellationToken cancellationToken = default)
     {
-        await _connectedTcs.Task.WaitAsync(cancellationToken);
-        if (_call is null) return;
+        var msg = new HandlerInvokedMessage
+        {
+            EndpointName = _endpointName,
+            HandlerTypeName = handlerTypeName,
+            MessageTypeName = messageTypeName,
+            CorrelationId = correlationId ?? string.Empty,
+            HasError = hasError,
+            ErrorMessage = errorMessage ?? string.Empty
+        };
 
-        await _call.RequestStream.WriteAsync(
-            new AgentToHostMessage
+        if (sagaInfo is not null)
+        {
+            msg.IsSaga = true;
+            msg.SagaNotFound = sagaInfo.NotFound;
+            if (!sagaInfo.NotFound)
             {
-                HandlerInvoked = new HandlerInvokedMessage
-                {
-                    EndpointName = _endpointName,
-                    HandlerTypeName = handlerTypeName,
-                    MessageTypeName = messageTypeName,
-                    CorrelationId = correlationId ?? string.Empty,
-                    HasError = hasError,
-                    ErrorMessage = errorMessage ?? string.Empty
-                }
-            },
-            cancellationToken);
+                msg.SagaTypeName = sagaInfo.TypeName;
+                msg.SagaId = sagaInfo.Id;
+                msg.SagaIsNew = sagaInfo.IsNew;
+                msg.SagaIsCompleted = sagaInfo.IsCompleted;
+            }
+        }
+
+        return SendAsync(new AgentToHostMessage { HandlerInvoked = msg }, cancellationToken);
     }
 
     async Task ProcessHostMessagesAsync(CancellationToken cancellationToken)
@@ -122,6 +158,46 @@ public sealed class AgentService : IAsyncDisposable
             Console.Error.WriteLine($"[Agent] ProcessHostMessagesAsync failed: {ex}");
         }
     }
+
+    internal Task ReportMessageDispatchedAsync(
+        string messageTypeName,
+        string intent,
+        string? correlationId,
+        bool hasError,
+        string? errorMessage,
+        CancellationToken cancellationToken = default)
+        => SendAsync(
+            new AgentToHostMessage
+            {
+                MessageDispatched = new MessageDispatchedMessage
+                {
+                    EndpointName = _endpointName,
+                    MessageTypeName = messageTypeName,
+                    Intent = intent,
+                    CorrelationId = correlationId ?? string.Empty,
+                    HasError = hasError,
+                    ErrorMessage = errorMessage ?? string.Empty
+                }
+            },
+            cancellationToken);
+
+    internal Task ReportMessageFailedAsync(
+        string messageTypeName,
+        string exceptionMessage,
+        string? correlationId,
+        CancellationToken cancellationToken = default)
+        => SendAsync(
+            new AgentToHostMessage
+            {
+                MessageFailed = new MessageFailedMessage
+                {
+                    EndpointName = _endpointName,
+                    MessageTypeName = messageTypeName,
+                    ExceptionMessage = exceptionMessage,
+                    CorrelationId = correlationId ?? string.Empty
+                }
+            },
+            cancellationToken);
 
     async Task ExecuteScenarioAsync(ExecuteScenarioMessage cmd, CancellationToken cancellationToken)
     {
