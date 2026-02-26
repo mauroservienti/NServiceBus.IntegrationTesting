@@ -336,6 +336,45 @@ Docker Desktop. This works fine on macOS Apple Silicon (Docker Desktop transpare
 AMD64) but adds overhead. A future improvement could build multi-arch images or detect the
 host architecture.
 
+### Saga data and message content in events (medium)
+
+Let tests use saga data and message payloads inside `until` predicates and assertions:
+
+```csharp
+.SagaInvoked("SomeReplySaga", evt => evt.SagaData<SomeReplySagaData>().LoopCount >= 5)
+var data = results.SagaInvoked("SomeReplySaga").SagaData<SomeReplySagaData>();
+Assert.That(data.LoopCount, Is.EqualTo(5));
+```
+
+#### How to access saga state in the reporting behavior
+
+`ActiveSagaInstance` is available via context extensions inside a pipeline behavior.
+`ActiveSagaInstance.Instance.Entity` gives the concrete saga data object (confirmed via
+`src/NServiceBus.IntegrationTesting/InterceptInvokedHandlers.cs`).
+
+```csharp
+if (context.Extensions.TryGet<ActiveSagaInstance>(out var activeSaga))
+{
+    var sagaData = activeSaga.Instance.Entity;
+    sagaDataJson = JsonSerializer.Serialize(sagaData, sagaData.GetType());
+}
+```
+
+#### Preferred approach: always include serialized payload (Option A)
+
+- Extend `HandlerInvokedMessage` proto with `string message_json` and `string saga_data_json`
+- Serialize `context.Message.Instance` → `message_json` in `ReportingBehavior`
+- Serialize `activeSaga.Instance.Entity` → `saga_data_json` when saga is active
+- Extend `HandlerInvokedEvent` record with `string? MessageJson` and `string? SagaDataJson`
+- Add `T Message<T>()` and `T SagaData<T>()` helpers on `HandlerInvokedEvent` that call
+  `JsonSerializer.Deserialize<T>`
+
+Serialization overhead is negligible in test scenarios. Tests already reference message and
+saga data assemblies (needed to know type names anyway), so typed deserialization is free.
+
+Alternative (Option B): user-registered per-handler extractors in the agent bootstrap —
+more surgical, zero overhead unless opted in, but requires extra setup wiring.
+
 ### Channel fragility with concurrent tests (easy fix, not yet needed)
 
 `WaitForHandlerInvocationAsync` uses a fan-out channel per waiter, filtered by correlation
