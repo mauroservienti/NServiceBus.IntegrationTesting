@@ -222,13 +222,22 @@ public class WhenSomeMessageIsSent
         // The saga starts on SomeReply and sets a 20s timeout — allow enough headroom.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-        // Wait for SomeReplySaga to start (saga handler invocation on SomeReply).
-        var sagaStartInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+        // Register all waiters up-front before awaiting any of them.
+        // This avoids a race where a fast event arrives before the next waiter is registered.
+        var sagaStartTask = _testHost.GrpcService.WaitForHandlerInvocationAsync(
             correlationId, "SomeReplySaga", cts.Token);
 
-        // Wait for SagaCompletedMessageHandler after the 20s timeout fires.
-        var sagaCompletedInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+        // Validates that RequestTimeout stamped the correlation ID at IOutgoingLogicalMessageContext.
+        // If this times out, the correlation ID was not propagated through to the timeout request.
+        var timeoutDispatchedTask = _testHost.GrpcService.WaitForMessageDispatchedAsync(
+            correlationId, "SomeReplySagaTimeout", cts.Token);
+
+        var sagaCompletedTask = _testHost.GrpcService.WaitForHandlerInvocationAsync(
             correlationId, "SagaCompletedMessageHandler", cts.Token);
+
+        var sagaStartInvocation = await sagaStartTask;
+        var timeoutDispatched = await timeoutDispatchedTask;
+        var sagaCompletedInvocation = await sagaCompletedTask;
 
         Assert.Multiple(() =>
         {
@@ -236,6 +245,10 @@ public class WhenSomeMessageIsSent
             Assert.That(sagaStartInvocation.IsSaga, Is.True);
             Assert.That(sagaStartInvocation.SagaIsNew, Is.True);
             Assert.That(sagaStartInvocation.HasError, Is.False);
+
+            Assert.That(timeoutDispatched.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(timeoutDispatched.Intent, Is.EqualTo("RequestTimeout"));
+            Assert.That(timeoutDispatched.HasError, Is.False);
 
             Assert.That(sagaCompletedInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(sagaCompletedInvocation.HasError, Is.False);
