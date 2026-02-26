@@ -46,14 +46,13 @@ public class WhenSomeMessageIsSent
         await _network.CreateAsync();
 
         // ── Step 2: RabbitMQ ────────────────────────────────────────────────
-        _rabbitMq = new RabbitMqBuilder()
-            .WithImage("rabbitmq:management")
+        _rabbitMq = new RabbitMqBuilder("rabbitmq:management")
             .WithNetwork(_network)
             .WithNetworkAliases("rabbitmq")
             .Build();
 
         // ── Step 3: PostgreSQL ───────────────────────────────────────────────
-        _postgreSql = new PostgreSqlBuilder()
+        _postgreSql = new PostgreSqlBuilder("postgres:15.1")
             .WithNetwork(_network)
             .WithNetworkAliases("postgres")
             .Build();
@@ -99,14 +98,12 @@ public class WhenSomeMessageIsSent
                 $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}"
         };
 
-        _sampleEndpointContainer = new ContainerBuilder()
-            .WithImage(sampleImage.FullName)
+        _sampleEndpointContainer = new ContainerBuilder(sampleImage.FullName)
             .WithNetwork(_network)
             .WithEnvironment(sampleEnvVars)
             .Build();
 
-        _anotherEndpointContainer = new ContainerBuilder()
-            .WithImage(anotherImage.FullName)
+        _anotherEndpointContainer = new ContainerBuilder(anotherImage.FullName)
             .WithNetwork(_network)
             .WithEnvironment(anotherEnvVars)
             .Build();
