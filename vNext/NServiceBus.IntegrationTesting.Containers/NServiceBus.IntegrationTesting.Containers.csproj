@@ -21,7 +21,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Testcontainers.RabbitMq" Version="4.1.0" />
+        <PackageReference Include="Testcontainers.RabbitMq" Version="4.10.0" />
     </ItemGroup>
 
     <ItemGroup>
