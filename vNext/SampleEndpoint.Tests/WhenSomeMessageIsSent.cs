@@ -28,7 +28,6 @@ public class WhenSomeMessageIsSent
 {
     static TestEnvironment _env = null!;
     static EndpointHandle _sampleEndpoint = null!;
-    static EndpointHandle _anotherEndpoint = null!;
 
     [OneTimeSetUp]
     public static async Task SetUp()
@@ -44,7 +43,6 @@ public class WhenSomeMessageIsSent
             .StartAsync();
 
         _sampleEndpoint = _env.GetEndpoint("SampleEndpoint");
-        _anotherEndpoint = _env.GetEndpoint("AnotherEndpoint");
     }
 
     [TearDown]
