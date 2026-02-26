@@ -1,4 +1,6 @@
+using Npgsql;
 using NServiceBus;
+using NServiceBus.Persistence.Sql;
 using SampleMessages;
 
 namespace SampleEndpoint;
@@ -15,6 +17,10 @@ public static class SampleEndpointConfig
             Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION_STRING")
             ?? "host=localhost;username=guest;password=guest";
 
+        var postgresConnectionString =
+            Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")
+            ?? "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
+
         var endpointConfiguration = new EndpointConfiguration("SampleEndpoint");
 
         var transport = new RabbitMQTransport(
@@ -24,6 +30,10 @@ public static class SampleEndpointConfig
         var routing = endpointConfiguration.UseTransport(transport);
         routing.RouteToEndpoint(typeof(SomeMessage), "SampleEndpoint");
         routing.RouteToEndpoint(typeof(AnotherMessage), "AnotherEndpoint");
+
+        var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
+        persistence.SqlDialect<SqlDialect.PostgreSql>();
+        persistence.ConnectionBuilder(() => new NpgsqlConnection(postgresConnectionString));
 
         endpointConfiguration.UseSerialization<SystemJsonSerializer>();
         endpointConfiguration.EnableInstallers();

@@ -3,6 +3,7 @@ using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
 using NServiceBus.IntegrationTesting.Containers;
 using NUnit.Framework;
+using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
 namespace SampleEndpoint.Tests;
@@ -14,22 +15,25 @@ namespace SampleEndpoint.Tests;
 /// Flow:
 ///   1. A shared Docker network is created.
 ///   2. RabbitMQ starts in a container on that network (alias "rabbitmq").
-///   3. The gRPC test host server starts in-process, bound to 0.0.0.0 on a dynamic port.
-///   4. Docker images for SampleEndpoint.Testing and AnotherEndpoint.Testing are built.
-///   5. Both endpoints start as containers on the shared network.
+///   3. PostgreSQL starts in a container on that network (alias "postgres").
+///   4. The gRPC test host server starts in-process, bound to 0.0.0.0 on a dynamic port.
+///   5. Docker images for SampleEndpoint.Testing and AnotherEndpoint.Testing are built.
+///   6. Both endpoints start as containers on the shared network.
 ///      Agents dial NSBUS_TESTING_HOST = host.docker.internal:{port}.
-///   6. Test waits for both agents to connect.
-///   7. Test executes the "SomeMessage" scenario on SampleEndpoint:
+///   7. Test waits for both agents to connect.
+///   8. Test executes the "SomeMessage" scenario on SampleEndpoint:
 ///      a. SomeMessageHandler handles SomeMessage → sends AnotherMessage to AnotherEndpoint.
 ///      b. AnotherMessageHandler handles AnotherMessage → replies with SomeReply.
-///      c. SomeReplyHandler in SampleEndpoint handles SomeReply.
-///   8. Test asserts on all three handler invocations.
+///      c. SomeReplyHandler and SomeReplySaga handle SomeReply.
+///      d. SomeReplySaga sets a 20s timeout; on firing sends SagaCompletedMessage.
+///      e. SagaCompletedMessageHandler handles SagaCompletedMessage — test done condition.
 /// </summary>
 [TestFixture]
 public class WhenSomeMessageIsSent
 {
     static INetwork _network = null!;
     static RabbitMqContainer _rabbitMq = null!;
+    static PostgreSqlContainer _postgreSql = null!;
     static TestHostServer _testHost = null!;
     static IContainer _sampleEndpointContainer = null!;
     static IContainer _anotherEndpointContainer = null!;
@@ -47,13 +51,20 @@ public class WhenSomeMessageIsSent
             .WithNetwork(_network)
             .WithNetworkAliases("rabbitmq")
             .Build();
-        await _rabbitMq.StartAsync();
 
-        // ── Step 3: gRPC test host ───────────────────────────────────────────
+        // ── Step 3: PostgreSQL ───────────────────────────────────────────────
+        _postgreSql = new PostgreSqlBuilder()
+            .WithNetwork(_network)
+            .WithNetworkAliases("postgres")
+            .Build();
+
+        await Task.WhenAll(_rabbitMq.StartAsync(), _postgreSql.StartAsync());
+
+        // ── Step 4: gRPC test host ───────────────────────────────────────────
         _testHost = new TestHostServer();
         await _testHost.StartAsync();
 
-        // ── Step 4: Build Docker images ──────────────────────────────────────
+        // ── Step 5: Build Docker images ──────────────────────────────────────
         var repoRoot = FindRepoRoot();
         var vNextDir = Path.Combine(repoRoot, "vNext");
 
@@ -69,8 +80,19 @@ public class WhenSomeMessageIsSent
 
         await Task.WhenAll(sampleImage.CreateAsync(), anotherImage.CreateAsync());
 
-        // ── Step 5: Start endpoint containers ───────────────────────────────
-        var envVars = new Dictionary<string, string>
+        // ── Step 6: Start endpoint containers ───────────────────────────────
+        // SampleEndpoint needs both RabbitMQ and PostgreSQL connection strings.
+        var sampleEnvVars = new Dictionary<string, string>
+        {
+            ["NSBUS_TESTING_HOST"] = _testHost.ContainerAddress,
+            ["RABBITMQ_CONNECTION_STRING"] =
+                $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}",
+            ["POSTGRESQL_CONNECTION_STRING"] =
+                $"Host=postgres;Port=5432;Database={PostgreSqlBuilder.DefaultDatabase};Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}"
+        };
+
+        // AnotherEndpoint has no persistence, so no PostgreSQL needed.
+        var anotherEnvVars = new Dictionary<string, string>
         {
             ["NSBUS_TESTING_HOST"] = _testHost.ContainerAddress,
             ["RABBITMQ_CONNECTION_STRING"] =
@@ -80,20 +102,20 @@ public class WhenSomeMessageIsSent
         _sampleEndpointContainer = new ContainerBuilder()
             .WithImage(sampleImage.FullName)
             .WithNetwork(_network)
-            .WithEnvironment(envVars)
+            .WithEnvironment(sampleEnvVars)
             .Build();
 
         _anotherEndpointContainer = new ContainerBuilder()
             .WithImage(anotherImage.FullName)
             .WithNetwork(_network)
-            .WithEnvironment(envVars)
+            .WithEnvironment(anotherEnvVars)
             .Build();
 
         await Task.WhenAll(
             _sampleEndpointContainer.StartAsync(),
             _anotherEndpointContainer.StartAsync());
 
-        // ── Step 6: Wait for both agents to connect ──────────────────────────
+        // ── Step 7: Wait for both agents to connect ──────────────────────────
         using var agentWaitCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         await Task.WhenAll(
             _testHost.GrpcService.WaitForAgentAsync("SampleEndpoint", agentWaitCts.Token),
@@ -113,17 +135,13 @@ public class WhenSomeMessageIsSent
 
         await _testHost.DisposeAsync();
         await _rabbitMq.DisposeAsync();
+        await _postgreSql.DisposeAsync();
         await _network.DeleteAsync();
     }
 
     [Test]
     public async Task The_full_chain_should_be_processed()
     {
-        // Execute the scenario: SampleEndpoint sends SomeMessage to itself.
-        // SomeMessageHandler → sends AnotherMessage → AnotherMessageHandler → replies SomeReply
-        // → SomeReplyHandler.
-        // The returned correlation ID ties all three handler invocations together,
-        // making this test safe to run concurrently with other tests.
         var args = new Dictionary<string, string>
         {
             { "ID", Guid.NewGuid().ToString() }
@@ -170,6 +188,38 @@ public class WhenSomeMessageIsSent
         {
             Assert.That(dispatched.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(dispatched.Intent, Is.EqualTo("Send"));
+        });
+    }
+
+    [Test]
+    public async Task The_saga_should_complete_after_timeout()
+    {
+        var args = new Dictionary<string, string>
+        {
+            { "ID", Guid.NewGuid().ToString() }
+        };
+        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage", args);
+
+        // The saga starts on SomeReply and sets a 20s timeout — allow enough headroom.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+
+        // Wait for SomeReplySaga to start (saga handler invocation on SomeReply).
+        var sagaStartInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+            correlationId, "SomeReplySaga", cts.Token);
+
+        // Wait for SagaCompletedMessageHandler after the 20s timeout fires.
+        var sagaCompletedInvocation = await _testHost.GrpcService.WaitForHandlerInvocationAsync(
+            correlationId, "SagaCompletedMessageHandler", cts.Token);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(sagaStartInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(sagaStartInvocation.IsSaga, Is.True);
+            Assert.That(sagaStartInvocation.SagaIsNew, Is.True);
+            Assert.That(sagaStartInvocation.HasError, Is.False);
+
+            Assert.That(sagaCompletedInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(sagaCompletedInvocation.HasError, Is.False);
         });
     }
 

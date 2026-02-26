@@ -8,7 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Npgsql" Version="10.0.1" />
         <PackageReference Include="NServiceBus" Version="10.1.0" />
+        <PackageReference Include="NServiceBus.Persistence.Sql" Version="9.0.0" />
         <!--
             NServiceBus.RabbitMQ 11.x is the transport version compatible with NServiceBus 10.x.
             (Versioning is offset by one: NSB 10.x pairs with NServiceBus.RabbitMQ 11.x)
