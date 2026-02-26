@@ -11,7 +11,27 @@ public sealed record HandlerInvokedEvent(
     string MessageTypeName,
     string CorrelationId,
     bool HasError,
+    string ErrorMessage,
+    bool IsSaga,
+    bool SagaNotFound,
+    string SagaTypeName,
+    string SagaId,
+    bool SagaIsNew,
+    bool SagaIsCompleted);
+
+public sealed record MessageDispatchedEvent(
+    string EndpointName,
+    string MessageTypeName,
+    string Intent,
+    string CorrelationId,
+    bool HasError,
     string ErrorMessage);
+
+public sealed record MessageFailedEvent(
+    string EndpointName,
+    string MessageTypeName,
+    string ExceptionMessage,
+    string CorrelationId);
 
 /// <summary>
 /// gRPC service implementation that runs in the test host process.
@@ -27,11 +47,16 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     // drains each channel and writes to the agent's response stream.
     readonly ConcurrentDictionary<string, Channel<HostToAgentMessage>> _commandChannels = new();
 
-    // Fan-out: each WaitForHandlerInvocationAsync call registers its own channel here.
-    // Arriving events are written to every registered channel so concurrent waiters each
-    // receive a copy and can filter independently by correlation ID and handler type name.
-    readonly Lock _listenersLock = new();
-    readonly List<Channel<HandlerInvokedEvent>> _listeners = [];
+    // Fan-out listener lists — each WaitFor call registers its own channel and
+    // receives a copy of every event so concurrent tests can filter independently.
+    readonly Lock _handlerListenersLock = new();
+    readonly List<Channel<HandlerInvokedEvent>> _handlerListeners = [];
+
+    readonly Lock _dispatchedListenersLock = new();
+    readonly List<Channel<MessageDispatchedEvent>> _dispatchedListeners = [];
+
+    readonly Lock _failedListenersLock = new();
+    readonly List<Channel<MessageFailedEvent>> _failedListeners = [];
 
     /// <summary>
     /// Returns a Task that completes when the named endpoint's agent connects.
@@ -59,8 +84,8 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         var myChannel = Channel.CreateUnbounded<HandlerInvokedEvent>(
             new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
 
-        lock (_listenersLock)
-            _listeners.Add(myChannel);
+        lock (_handlerListenersLock)
+            _handlerListeners.Add(myChannel);
 
         try
         {
@@ -75,16 +100,83 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         }
         finally
         {
-            lock (_listenersLock)
-                _listeners.Remove(myChannel);
+            lock (_handlerListenersLock)
+                _handlerListeners.Remove(myChannel);
+            myChannel.Writer.TryComplete();
+        }
+    }
+
+    /// <summary>
+    /// Returns a Task that completes when a MessageDispatchedEvent with the given
+    /// correlation ID and message type name is reported by any agent.
+    /// </summary>
+    public async Task<MessageDispatchedEvent> WaitForMessageDispatchedAsync(
+        string correlationId,
+        string messageTypeName,
+        CancellationToken cancellationToken = default)
+    {
+        var myChannel = Channel.CreateUnbounded<MessageDispatchedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+
+        lock (_dispatchedListenersLock)
+            _dispatchedListeners.Add(myChannel);
+
+        try
+        {
+            await foreach (var evt in myChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.CorrelationId == correlationId && evt.MessageTypeName == messageTypeName)
+                    return evt;
+            }
+
+            throw new OperationCanceledException(
+                $"Channel completed without a '{messageTypeName}' dispatch for correlation '{correlationId}'.");
+        }
+        finally
+        {
+            lock (_dispatchedListenersLock)
+                _dispatchedListeners.Remove(myChannel);
+            myChannel.Writer.TryComplete();
+        }
+    }
+
+    /// <summary>
+    /// Returns a Task that completes when a MessageFailedEvent with the given
+    /// correlation ID is reported by any agent.
+    /// </summary>
+    public async Task<MessageFailedEvent> WaitForMessageFailureAsync(
+        string correlationId,
+        CancellationToken cancellationToken = default)
+    {
+        var myChannel = Channel.CreateUnbounded<MessageFailedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+
+        lock (_failedListenersLock)
+            _failedListeners.Add(myChannel);
+
+        try
+        {
+            await foreach (var evt in myChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.CorrelationId == correlationId)
+                    return evt;
+            }
+
+            throw new OperationCanceledException(
+                $"Channel completed without a failure event for correlation '{correlationId}'.");
+        }
+        finally
+        {
+            lock (_failedListenersLock)
+                _failedListeners.Remove(myChannel);
             myChannel.Writer.TryComplete();
         }
     }
 
     /// <summary>
     /// Instructs the named agent to execute a registered scenario by name.
-    /// Returns the correlation ID that ties all HandlerInvokedEvents produced
-    /// by this execution together — pass it to WaitForHandlerInvocationAsync.
+    /// Returns the correlation ID that ties all events produced by this execution
+    /// together — pass it to WaitForHandlerInvocationAsync / WaitForMessageDispatchedAsync.
     /// </summary>
     public async Task<string> ExecuteScenarioAsync(
         string endpointName,
@@ -156,19 +248,52 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
                         break;
 
                     case AgentToHostMessage.PayloadOneofCase.HandlerInvoked:
-                        var evt = message.HandlerInvoked;
+                        var handlerEvt = message.HandlerInvoked;
                         var handlerEvent = new HandlerInvokedEvent(
-                            evt.EndpointName,
-                            evt.HandlerTypeName,
-                            evt.MessageTypeName,
-                            evt.CorrelationId,
-                            evt.HasError,
-                            evt.ErrorMessage);
+                            handlerEvt.EndpointName,
+                            handlerEvt.HandlerTypeName,
+                            handlerEvt.MessageTypeName,
+                            handlerEvt.CorrelationId,
+                            handlerEvt.HasError,
+                            handlerEvt.ErrorMessage,
+                            handlerEvt.IsSaga,
+                            handlerEvt.SagaNotFound,
+                            handlerEvt.SagaTypeName,
+                            handlerEvt.SagaId,
+                            handlerEvt.SagaIsNew,
+                            handlerEvt.SagaIsCompleted);
 
-                        // Fan out to every registered waiter — no event is consumed.
-                        lock (_listenersLock)
-                            foreach (var listener in _listeners)
+                        lock (_handlerListenersLock)
+                            foreach (var listener in _handlerListeners)
                                 listener.Writer.TryWrite(handlerEvent);
+                        break;
+
+                    case AgentToHostMessage.PayloadOneofCase.MessageDispatched:
+                        var dispatchedEvt = message.MessageDispatched;
+                        var dispatchedEvent = new MessageDispatchedEvent(
+                            dispatchedEvt.EndpointName,
+                            dispatchedEvt.MessageTypeName,
+                            dispatchedEvt.Intent,
+                            dispatchedEvt.CorrelationId,
+                            dispatchedEvt.HasError,
+                            dispatchedEvt.ErrorMessage);
+
+                        lock (_dispatchedListenersLock)
+                            foreach (var listener in _dispatchedListeners)
+                                listener.Writer.TryWrite(dispatchedEvent);
+                        break;
+
+                    case AgentToHostMessage.PayloadOneofCase.MessageFailed:
+                        var failedEvt = message.MessageFailed;
+                        var failedEvent = new MessageFailedEvent(
+                            failedEvt.EndpointName,
+                            failedEvt.MessageTypeName,
+                            failedEvt.ExceptionMessage,
+                            failedEvt.CorrelationId);
+
+                        lock (_failedListenersLock)
+                            foreach (var listener in _failedListeners)
+                                listener.Writer.TryWrite(failedEvent);
                         break;
                 }
             }

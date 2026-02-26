@@ -1,4 +1,5 @@
 using NServiceBus.Pipeline;
+using NServiceBus.Sagas;
 
 namespace NServiceBus.IntegrationTesting.Agent;
 
@@ -45,7 +46,25 @@ sealed class ReportingBehavior : Behavior<IInvokeHandlerContext>
                 correlationId,
                 handlingError is not null,
                 handlingError?.Message,
+                BuildSagaInfo(context),
                 CancellationToken.None);
         }
+    }
+
+    static SagaInfo? BuildSagaInfo(IInvokeHandlerContext context)
+    {
+        if (!context.Extensions.TryGet(out ActiveSagaInstance? saga) || saga is null)
+            return null;
+
+        if (saga.NotFound)
+            return new SagaInfo(NotFound: true, TypeName: string.Empty, Id: string.Empty,
+                IsNew: false, IsCompleted: false);
+
+        return new SagaInfo(
+            NotFound: false,
+            TypeName: saga.Instance.GetType().Name,
+            Id: saga.Instance.Entity.Id.ToString(),
+            IsNew: saga.IsNew,
+            IsCompleted: saga.Instance.Completed);
     }
 }

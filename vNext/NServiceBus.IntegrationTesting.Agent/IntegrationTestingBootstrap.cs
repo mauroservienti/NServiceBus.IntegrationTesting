@@ -46,6 +46,25 @@ public static class IntegrationTestingBootstrap
         config.Pipeline.Register(
             new OutgoingCorrelationIdBehavior(),
             "Stamps the test correlation ID onto outgoing messages");
+        config.Pipeline.Register(
+            new OutgoingReportingBehavior(agentService),
+            "Reports dispatched messages to the integration testing host");
+
+        config.Recoverability().Failed(c => c.OnMessageSentToErrorQueue((failedMessage, ct) =>
+        {
+            if (!failedMessage.Headers.TryGetValue(AgentService.CorrelationIdHeader, out var correlationId))
+                return Task.CompletedTask;
+
+            var messageTypeName = failedMessage.Headers.TryGetValue(Headers.EnclosedMessageTypes, out var types)
+                ? types.Split(',')[0].Trim().Split('.')[^1]
+                : "Unknown";
+
+            return agentService.ReportMessageFailedAsync(
+                messageTypeName,
+                failedMessage.Exception.Message,
+                correlationId,
+                ct);
+        }));
 
         var endpointInstance = await Endpoint.Start(config);
 
