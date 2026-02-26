@@ -38,9 +38,9 @@ jobs:
       - name: Tests
         run: dotnet test src --configuration Release --no-build
       - name: Build vNext
-        run: dotnet build vNext --configuration Release
+        run: dotnet build vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release
       - name: Tests vNext
-        run: dotnet test vNext --configuration Release --no-build
+        run: dotnet test vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release --no-build
       - name: Upload packages
         if: matrix.name == 'Linux'
         uses: actions/upload-artifact@v4.4.0
