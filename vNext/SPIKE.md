@@ -280,17 +280,17 @@ Test                  SampleEndpoint                    AnotherEndpoint
 
 ## Package Versions (as of spike)
 
-| Package                          | Version  | Notes                              |
-|----------------------------------|----------|------------------------------------|
-| NServiceBus                      | 10.1.0   | targets net10.0                    |
-| NServiceBus.RabbitMQ             | 11.0.0   | NSB 10.x ↔ RabbitMQ transport 11.x |
-| NServiceBus.Persistence.Sql      | 9.0.0    | NSB 10.x ↔ Persistence.Sql 9.x     |
-| Npgsql                           | 10.0.1   |                                    |
-| Grpc.AspNetCore / Grpc.Net.Client| 2.67.0   |                                    |
-| Google.Protobuf                  | 3.29.3   |                                    |
-| Testcontainers                   | 4.10.0   | 4.1.0 breaks with containerd store |
-| Testcontainers.RabbitMq          | 4.10.0   |                                    |
-| Testcontainers.PostgreSql        | 4.10.0   |                                    |
+| Package                           | Version  | Notes                                      |
+|-----------------------------------|----------|--------------------------------------------|
+| NServiceBus                       | 10.1.0   | targets net10.0                            |
+| NServiceBus.RabbitMQ              | 11.0.0   | NSB 10.x / RabbitMQ transport 11.x        |
+| NServiceBus.Persistence.Sql       | 9.0.0    | NSB 10.x / Persistence.Sql 9.x            |
+| Npgsql                            | 10.0.1   | `JsonBParameterModifier` required (see §6) |
+| Grpc.AspNetCore / Grpc.Net.Client | 2.67.0   |                                            |
+| Google.Protobuf                   | 3.29.3   |                                            |
+| Testcontainers                    | 4.10.0   | 4.1.0 breaks with containerd store         |
+| Testcontainers.RabbitMq           | 4.10.0   |                                            |
+| Testcontainers.PostgreSql         | 4.10.0   |                                            |
 
 ---
 
