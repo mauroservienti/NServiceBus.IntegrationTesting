@@ -18,7 +18,7 @@
             Explicit reference for ContainerBuilder, NetworkBuilder, ImageFromDockerfileBuilder.
             Also available transitively via Testcontainers.RabbitMq, but explicit is clearer.
         -->
-        <PackageReference Include="Testcontainers" Version="4.1.0" />
+        <PackageReference Include="Testcontainers" Version="4.10.0" />
     </ItemGroup>
 
     <ItemGroup>
