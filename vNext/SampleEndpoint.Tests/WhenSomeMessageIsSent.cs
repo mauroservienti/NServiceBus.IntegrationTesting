@@ -179,13 +179,8 @@ public class WhenSomeMessageIsSent
         Assert.Multiple(() =>
         {
             Assert.That(someMessageInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
-            Assert.That(someMessageInvocation.HasError, Is.False);
-
             Assert.That(anotherMessageInvocation.EndpointName, Is.EqualTo("AnotherEndpoint"));
-            Assert.That(anotherMessageInvocation.HasError, Is.False);
-
             Assert.That(someReplyInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
-            Assert.That(someReplyInvocation.HasError, Is.False);
         });
     }
 
@@ -244,14 +239,11 @@ public class WhenSomeMessageIsSent
             Assert.That(sagaStartInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(sagaStartInvocation.IsSaga, Is.True);
             Assert.That(sagaStartInvocation.SagaIsNew, Is.True);
-            Assert.That(sagaStartInvocation.HasError, Is.False);
 
             Assert.That(timeoutDispatched.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(timeoutDispatched.Intent, Is.EqualTo("RequestTimeout"));
-            Assert.That(timeoutDispatched.HasError, Is.False);
 
             Assert.That(sagaCompletedInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
-            Assert.That(sagaCompletedInvocation.HasError, Is.False);
         });
     }
 

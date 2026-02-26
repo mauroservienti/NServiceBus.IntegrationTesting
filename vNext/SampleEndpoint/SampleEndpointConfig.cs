@@ -1,4 +1,5 @@
 using Npgsql;
+using NpgsqlTypes;
 using NServiceBus;
 using NServiceBus.Persistence.Sql;
 using SampleMessages;
@@ -32,7 +33,12 @@ public static class SampleEndpointConfig
         routing.RouteToEndpoint(typeof(AnotherMessage), "AnotherEndpoint");
 
         var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
-        persistence.SqlDialect<SqlDialect.PostgreSql>();
+        var dialect = persistence.SqlDialect<SqlDialect.PostgreSql>();
+        dialect.JsonBParameterModifier(parameter =>
+        {
+            var npgsqlParameter = (NpgsqlParameter)parameter;
+            npgsqlParameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        });
         persistence.ConnectionBuilder(() => new NpgsqlConnection(postgresConnectionString));
 
         endpointConfiguration.UseSerialization<SystemJsonSerializer>();

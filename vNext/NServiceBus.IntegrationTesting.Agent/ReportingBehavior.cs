@@ -23,32 +23,18 @@ sealed class ReportingBehavior : Behavior<IInvokeHandlerContext>
         // in CurrentCorrelationId by IncomingCorrelationIdBehavior earlier in the pipeline.
         var correlationId = AgentService.CurrentCorrelationId.Value;
 
-        Exception? handlingError = null;
-        try
-        {
-            await next();
-        }
-        catch (Exception ex)
-        {
-            handlingError = ex;
-            throw;
-        }
-        finally
-        {
-            // Report regardless of success or failure so the test host
-            // can observe both happy-path and error scenarios.
-            // Use CancellationToken.None: we want to report even when the message
-            // processing was cancelled or failed — the context token may already
-            // be cancelled at this point in the finally block.
-            await _agentService.ReportHandlerInvokedAsync(
-                context.MessageHandler.HandlerType.Name,
-                context.MessageMetadata.MessageType.Name,
-                correlationId,
-                handlingError is not null,
-                handlingError?.Message,
-                BuildSagaInfo(context),
-                CancellationToken.None);
-        }
+        await next();
+
+        // Only report on success. Failed invocations are transient noise — NServiceBus
+        // will retry them. The test host only cares about eventual successful outcomes;
+        // permanent failures are surfaced via MessageFailedMessage (error queue hook).
+        // Use CancellationToken.None: the context token may already be spent at this point.
+        await _agentService.ReportHandlerInvokedAsync(
+            context.MessageHandler.HandlerType.Name,
+            context.MessageMetadata.MessageType.Name,
+            correlationId,
+            BuildSagaInfo(context),
+            CancellationToken.None);
     }
 
     static SagaInfo? BuildSagaInfo(IInvokeHandlerContext context)

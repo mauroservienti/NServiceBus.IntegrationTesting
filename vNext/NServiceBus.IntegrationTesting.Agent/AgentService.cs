@@ -102,8 +102,6 @@ public sealed class AgentService : IAsyncDisposable
         string handlerTypeName,
         string messageTypeName,
         string? correlationId,
-        bool hasError,
-        string? errorMessage,
         SagaInfo? sagaInfo,
         CancellationToken cancellationToken = default)
     {
@@ -112,9 +110,7 @@ public sealed class AgentService : IAsyncDisposable
             EndpointName = _endpointName,
             HandlerTypeName = handlerTypeName,
             MessageTypeName = messageTypeName,
-            CorrelationId = correlationId ?? string.Empty,
-            HasError = hasError,
-            ErrorMessage = errorMessage ?? string.Empty
+            CorrelationId = correlationId ?? string.Empty
         };
 
         if (sagaInfo is not null)
@@ -163,8 +159,6 @@ public sealed class AgentService : IAsyncDisposable
         string messageTypeName,
         string intent,
         string? correlationId,
-        bool hasError,
-        string? errorMessage,
         CancellationToken cancellationToken = default)
         => SendAsync(
             new AgentToHostMessage
@@ -174,9 +168,7 @@ public sealed class AgentService : IAsyncDisposable
                     EndpointName = _endpointName,
                     MessageTypeName = messageTypeName,
                     Intent = intent,
-                    CorrelationId = correlationId ?? string.Empty,
-                    HasError = hasError,
-                    ErrorMessage = errorMessage ?? string.Empty
+                    CorrelationId = correlationId ?? string.Empty
                 }
             },
             cancellationToken);

@@ -10,8 +10,6 @@ public sealed record HandlerInvokedEvent(
     string HandlerTypeName,
     string MessageTypeName,
     string CorrelationId,
-    bool HasError,
-    string ErrorMessage,
     bool IsSaga,
     bool SagaNotFound,
     string SagaTypeName,
@@ -23,9 +21,7 @@ public sealed record MessageDispatchedEvent(
     string EndpointName,
     string MessageTypeName,
     string Intent,
-    string CorrelationId,
-    bool HasError,
-    string ErrorMessage);
+    string CorrelationId);
 
 public sealed record MessageFailedEvent(
     string EndpointName,
@@ -74,6 +70,8 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     /// <summary>
     /// Returns a Task that completes when a HandlerInvokedEvent with the given
     /// correlation ID and handler type name is reported by any agent.
+    /// Only successful invocations are ever reported — transient failures are not
+    /// surfaced here; permanent failures appear via WaitForMessageFailureAsync.
     /// Each call registers an independent listener — safe for concurrent tests.
     /// </summary>
     public async Task<HandlerInvokedEvent> WaitForHandlerInvocationAsync(
@@ -109,6 +107,7 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     /// <summary>
     /// Returns a Task that completes when a MessageDispatchedEvent with the given
     /// correlation ID and message type name is reported by any agent.
+    /// Only successful dispatches are ever reported — transient failures are not surfaced here.
     /// </summary>
     public async Task<MessageDispatchedEvent> WaitForMessageDispatchedAsync(
         string correlationId,
@@ -254,8 +253,6 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
                             handlerEvt.HandlerTypeName,
                             handlerEvt.MessageTypeName,
                             handlerEvt.CorrelationId,
-                            handlerEvt.HasError,
-                            handlerEvt.ErrorMessage,
                             handlerEvt.IsSaga,
                             handlerEvt.SagaNotFound,
                             handlerEvt.SagaTypeName,
@@ -274,9 +271,7 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
                             dispatchedEvt.EndpointName,
                             dispatchedEvt.MessageTypeName,
                             dispatchedEvt.Intent,
-                            dispatchedEvt.CorrelationId,
-                            dispatchedEvt.HasError,
-                            dispatchedEvt.ErrorMessage);
+                            dispatchedEvt.CorrelationId);
 
                         lock (_dispatchedListenersLock)
                             foreach (var listener in _dispatchedListeners)

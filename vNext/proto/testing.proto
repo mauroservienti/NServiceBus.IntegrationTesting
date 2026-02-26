@@ -38,8 +38,6 @@ message HandlerInvokedMessage {
     string endpoint_name = 1;
     string handler_type_name = 2;
     string message_type_name = 3;
-    bool has_error = 4;
-    string error_message = 5;
     string correlation_id = 6;
     // Saga fields — populated only when the handler is a saga handler.
     bool is_saga = 7;
@@ -61,8 +59,6 @@ message MessageDispatchedMessage {
     string message_type_name = 2;
     string intent = 3;
     string correlation_id = 4;
-    bool has_error = 5;
-    string error_message = 6;
 }
 
 message MessageFailedMessage {
