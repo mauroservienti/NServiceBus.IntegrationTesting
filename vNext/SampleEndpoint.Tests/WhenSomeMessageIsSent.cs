@@ -122,6 +122,25 @@ public class WhenSomeMessageIsSent
             _testHost.GrpcService.WaitForAgentAsync("AnotherEndpoint", agentWaitCts.Token));
     }
 
+    [TearDown]
+    public async Task DumpContainerLogsOnFailure()
+    {
+        if (TestContext.CurrentContext.Result.Outcome.Status != NUnit.Framework.Interfaces.TestStatus.Failed)
+            return;
+
+        var (sampleStdout, sampleStderr) = await _sampleEndpointContainer.GetLogsAsync();
+        TestContext.Out.WriteLine("=== SampleEndpoint container stdout ===");
+        TestContext.Out.WriteLine(sampleStdout);
+        TestContext.Out.WriteLine("=== SampleEndpoint container stderr ===");
+        TestContext.Out.WriteLine(sampleStderr);
+
+        var (anotherStdout, anotherStderr) = await _anotherEndpointContainer.GetLogsAsync();
+        TestContext.Out.WriteLine("=== AnotherEndpoint container stdout ===");
+        TestContext.Out.WriteLine(anotherStdout);
+        TestContext.Out.WriteLine("=== AnotherEndpoint container stderr ===");
+        TestContext.Out.WriteLine(anotherStderr);
+    }
+
     [OneTimeTearDown]
     public static async Task TearDown()
     {
