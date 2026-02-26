@@ -44,7 +44,6 @@ public class WhenSomeMessageIsSent
         // ── Step 2: RabbitMQ ────────────────────────────────────────────────
         _rabbitMq = new RabbitMqBuilder()
             .WithImage("rabbitmq:management")
-            .WithPortBinding(15672)
             .WithNetwork(_network)
             .WithNetworkAliases("rabbitmq")
             .Build();
@@ -150,6 +149,27 @@ public class WhenSomeMessageIsSent
 
             Assert.That(someReplyInvocation.EndpointName, Is.EqualTo("SampleEndpoint"));
             Assert.That(someReplyInvocation.HasError, Is.False);
+        });
+    }
+
+    [Test]
+    public async Task SampleEndpoint_should_dispatch_AnotherMessage()
+    {
+        var args = new Dictionary<string, string>
+        {
+            { "ID", Guid.NewGuid().ToString() }
+        };
+        var correlationId = await _testHost.GrpcService.ExecuteScenarioAsync("SampleEndpoint", "SomeMessage", args);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+        var dispatched = await _testHost.GrpcService.WaitForMessageDispatchedAsync(
+            correlationId, "AnotherMessage", cts.Token);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dispatched.EndpointName, Is.EqualTo("SampleEndpoint"));
+            Assert.That(dispatched.Intent, Is.EqualTo("Send"));
         });
     }
 
