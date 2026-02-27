@@ -31,6 +31,7 @@ public static class SampleEndpointConfig
         var routing = endpointConfiguration.UseTransport(transport);
         routing.RouteToEndpoint(typeof(SomeMessage), "SampleEndpoint");
         routing.RouteToEndpoint(typeof(AnotherMessage), "AnotherEndpoint");
+        routing.RouteToEndpoint(typeof(FailingMessage), "AnotherEndpoint");
 
         var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
         var dialect = persistence.SqlDialect<SqlDialect.PostgreSql>();

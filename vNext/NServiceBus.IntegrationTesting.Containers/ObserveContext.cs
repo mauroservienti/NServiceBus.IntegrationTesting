@@ -16,6 +16,7 @@ public sealed class ObserveContext
     readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _handlerTasks = [];
     readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _sagaTasks = [];
     readonly List<(string TypeName, Task<IReadOnlyList<MessageDispatchedEvent>> Task)> _dispatchedTasks = [];
+    Task<MessageFailedEvent>? _failedTask;
 
     internal ObserveContext(
         TestHostGrpcService grpcService,
@@ -115,6 +116,16 @@ public sealed class ObserveContext
     }
 
     /// <summary>
+    /// Wait for a message with this correlation ID to be permanently sent to the error queue.
+    /// Use this as the sole condition when the test expects a failure outcome.
+    /// </summary>
+    public ObserveContext MessageFailed()
+    {
+        _failedTask = _grpcService.WaitForMessageFailureAsync(_correlationId, _cancellationToken);
+        return this;
+    }
+
+    /// <summary>
     /// Waits for all registered conditions to be satisfied and returns the results.
     /// </summary>
     public async Task<ObserveResults> WhenAllAsync()
@@ -123,12 +134,16 @@ public sealed class ObserveContext
             .Concat(_sagaTasks.Select(t => (Task)t.Task))
             .Concat(_dispatchedTasks.Select(t => (Task)t.Task));
 
+        if (_failedTask is not null)
+            allTasks = allTasks.Append(_failedTask);
+
         await Task.WhenAll(allTasks);
 
         return new ObserveResults(
             _handlerTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
             _sagaTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
-            _dispatchedTasks.ToDictionary(t => t.TypeName, t => t.Task.Result));
+            _dispatchedTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
+            _failedTask?.Result);
     }
 }
 
@@ -140,15 +155,18 @@ public sealed class ObserveResults
     readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _handlerResults;
     readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _sagaResults;
     readonly Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> _dispatchedResults;
+    readonly MessageFailedEvent? _failedResult;
 
     internal ObserveResults(
         Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> handlerResults,
         Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> sagaResults,
-        Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> dispatchedResults)
+        Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> dispatchedResults,
+        MessageFailedEvent? failedResult = null)
     {
         _handlerResults = handlerResults;
         _sagaResults = sagaResults;
         _dispatchedResults = dispatchedResults;
+        _failedResult = failedResult;
     }
 
     /// <summary>
@@ -201,4 +219,13 @@ public sealed class ObserveResults
     /// </summary>
     public MessageDispatchedEvent MessageDispatched(string messageTypeName)
         => MessageDispatches(messageTypeName).Last();
+
+    /// <summary>
+    /// The failure event recorded when a message was permanently sent to the error queue.
+    /// Only available when ObserveContext.MessageFailed() was registered.
+    /// </summary>
+    public MessageFailedEvent MessageFailed()
+        => _failedResult
+            ?? throw new InvalidOperationException(
+                "No MessageFailed condition was registered via ObserveContext.MessageFailed().");
 }
