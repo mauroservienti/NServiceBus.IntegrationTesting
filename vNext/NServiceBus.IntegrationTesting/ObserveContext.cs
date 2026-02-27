@@ -51,6 +51,10 @@ public sealed class ObserveContext
     public ObserveContext HandlerInvoked(string handlerTypeName, Func<IReadOnlyList<HandlerInvokedEvent>, bool> until)
     {
         ArgumentNullException.ThrowIfNull(until);
+        if (_failedTask is not null)
+            throw new InvalidOperationException(
+                "Cannot register HandlerInvoked() when MessageFailed() is already registered. " +
+                "Use MessageFailed() alone when the test expects a failure outcome.");
         _handlerTasks.Add((
             handlerTypeName,
             _grpcService.WaitForHandlerInvocationsAsync(_correlationId, handlerTypeName, until, _cancellationToken)));
@@ -80,6 +84,10 @@ public sealed class ObserveContext
     public ObserveContext SagaInvoked(string sagaTypeName, Func<IReadOnlyList<HandlerInvokedEvent>, bool> until)
     {
         ArgumentNullException.ThrowIfNull(until);
+        if (_failedTask is not null)
+            throw new InvalidOperationException(
+                "Cannot register SagaInvoked() when MessageFailed() is already registered. " +
+                "Use MessageFailed() alone when the test expects a failure outcome.");
         _sagaTasks.Add((
             sagaTypeName,
             _grpcService.WaitForHandlerInvocationsAsync(_correlationId, sagaTypeName, until, _cancellationToken)));
@@ -109,6 +117,10 @@ public sealed class ObserveContext
     public ObserveContext MessageDispatched(string messageTypeName, Func<IReadOnlyList<MessageDispatchedEvent>, bool> until)
     {
         ArgumentNullException.ThrowIfNull(until);
+        if (_failedTask is not null)
+            throw new InvalidOperationException(
+                "Cannot register MessageDispatched() when MessageFailed() is already registered. " +
+                "Use MessageFailed() alone when the test expects a failure outcome.");
         _dispatchedTasks.Add((
             messageTypeName,
             _grpcService.WaitForMessageDispatchesAsync(_correlationId, messageTypeName, until, _cancellationToken)));
@@ -124,6 +136,11 @@ public sealed class ObserveContext
         if (_failedTask is not null)
             throw new InvalidOperationException(
                 "MessageFailed() has already been registered for this ObserveContext.");
+
+        if (_handlerTasks.Count > 0 || _sagaTasks.Count > 0 || _dispatchedTasks.Count > 0)
+            throw new InvalidOperationException(
+                "Cannot register MessageFailed() when success conditions are already registered. " +
+                "Use MessageFailed() alone when the test expects a failure outcome.");
 
         _failedTask = _grpcService.WaitForMessageFailureAsync(_correlationId, _cancellationToken);
         return this;
