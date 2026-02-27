@@ -168,10 +168,16 @@ public sealed class TestEnvironmentBuilder
                 $";Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}";
 
         // ── Build Docker images in parallel ──────────────────────────────────
+        // Use a fixed, predictable image name so CI can pre-build with the exact same tag.
+        // When the pre-built image already exists, Docker finds a full cache hit on every
+        // layer AND the tag itself — BuildImageFromDockerfileAsync returns synchronously
+        // and the subsequent ExistsWithIdAsync check succeeds, avoiding the BuildKit race
+        // condition where the async tagging completes after Testcontainers checks.
         var imageEntries = _endpoints
             .Select(ep => (ep.EndpointName, Image: new ImageFromDockerfileBuilder()
                 .WithDockerfileDirectory(_dockerfileDirectory)
                 .WithDockerfile(ep.Dockerfile)
+                .WithName($"localhost/nsb-integration-testing/{ep.EndpointName.ToLowerInvariant()}:latest")
                 .Build()))
             .ToList();
 

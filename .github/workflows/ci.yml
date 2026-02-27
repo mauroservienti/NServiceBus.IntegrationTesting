@@ -54,8 +54,8 @@ jobs:
           docker pull mcr.microsoft.com/dotnet/runtime:10.0
       - name: Pre-build endpoint Docker images
         run: |
-          docker build -f vNext/SampleEndpoint.Testing/Dockerfile -t prebuild/sample-endpoint:ci vNext/
-          docker build -f vNext/AnotherEndpoint.Testing/Dockerfile -t prebuild/another-endpoint:ci vNext/
+          docker build -f vNext/SampleEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/sampleendpoint:latest vNext/
+          docker build -f vNext/AnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/anotherendpoint:latest vNext/
       - name: Tests vNext
         run: dotnet test vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release --no-build
       - name: Upload packages
