@@ -156,15 +156,9 @@ Fast unit tests — no Docker, no gRPC server required. Run with `dotnet test`.
 - **Child-process endpoints**: `AddProcessEndpoint(name, exe, envVars?)` alongside
   `AddEndpoint` for endpoints that cannot be containerised; agent already works via
   `NSBUS_TESTING_HOST=http://localhost:{port}` (no agent changes needed)
-- **Supported NServiceBus downstream packages**: Currently it supports only RabbitMQ as a transport and POstgreSQL for persistence.
-  - Additional transports to evaluate:
-    - AmazonSQS/SNS via LocalStack
-    - Azure ServiceBus
-    - SqlServer Transport
-    - PostgreSQL Transport
-  - Additional persistence to evaluate:
-    - MySql Persistence
-    - Sql Server Persistence
-    - MongoDB
-    - DynamoDB via LocalStack
-    - RavenDB
+- **Built-in transport/persistence support**: `TestEnvironmentBuilder` currently ships
+  `UseRabbitMq()` and `UsePostgreSql()` convenience methods that spin up the matching
+  Testcontainers module. Users can already bring their own external broker/DB without
+  framework support, but there are no built-in `UseXxx()` helpers for:
+  - Transports: AmazonSQS/SNS (LocalStack), Azure Service Bus, SQL Server Transport
+  - Persistence: MySQL, SQL Server, MongoDB, DynamoDB (LocalStack), RavenDB
