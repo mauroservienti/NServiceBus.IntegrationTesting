@@ -32,7 +32,10 @@ jobs:
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3.0.3
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
       #- name: Setup Testcontainers Cloud Client
       #  uses: atomicjar/testcontainers-cloud-setup-action@v1
       #  with:
