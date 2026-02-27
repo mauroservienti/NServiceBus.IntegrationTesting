@@ -62,12 +62,8 @@ public static class IntegrationTestingBootstrap
             if (!failedMessage.Headers.TryGetValue(AgentService.CorrelationIdHeader, out var correlationId))
                 return Task.CompletedTask;
 
-            var messageTypeName = failedMessage.Headers.TryGetValue(Headers.EnclosedMessageTypes, out var types)
-                ? types.Split(',')[0].Trim().Split('.')[^1]
-                : "Unknown";
-
             return agentService.ReportMessageFailedAsync(
-                messageTypeName,
+                failedMessage.Headers,
                 failedMessage.Exception.Message,
                 correlationId,
                 ct);

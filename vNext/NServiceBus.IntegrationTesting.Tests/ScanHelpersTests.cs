@@ -26,7 +26,7 @@ public class ScanHelpersTests
         new(EndpointName: "EP", MessageTypeName: messageTypeName, Intent: "Send", CorrelationId: correlationId);
 
     static MessageFailedEvent FailureEvent(string correlationId = Id) =>
-        new(EndpointName: "EP", MessageTypeName: "Msg", ExceptionMessage: "boom", CorrelationId: correlationId);
+        new(EndpointName: "EP", Headers: new Dictionary<string, string>(), ExceptionMessage: "boom", CorrelationId: correlationId);
 
     // ── ScanForHandlerEventsAsync ─────────────────────────────────────────────
 

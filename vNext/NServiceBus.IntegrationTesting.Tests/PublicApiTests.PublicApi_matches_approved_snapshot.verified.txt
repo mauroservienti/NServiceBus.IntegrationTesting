@@ -30,17 +30,17 @@ namespace NServiceBus.IntegrationTesting
     }
     public sealed class MessageFailedEvent : System.IEquatable<NServiceBus.IntegrationTesting.MessageFailedEvent>
     {
-        public MessageFailedEvent(string EndpointName, string MessageTypeName, string ExceptionMessage, string CorrelationId) { }
+        public MessageFailedEvent(string EndpointName, System.Collections.Generic.IReadOnlyDictionary<string, string> Headers, string ExceptionMessage, string CorrelationId) { }
         public string CorrelationId { get; init; }
         public string EndpointName { get; init; }
         public string ExceptionMessage { get; init; }
-        public string MessageTypeName { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> Headers { get; init; }
     }
     public sealed class MessageFailedException : System.Exception
     {
-        public MessageFailedException(string correlationId, string messageTypeName, string causeMessage) { }
+        public MessageFailedException(string correlationId, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, string causeMessage) { }
         public string CorrelationId { get; }
-        public string MessageTypeName { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> Headers { get; }
     }
     public sealed class ObserveContext
     {
@@ -276,13 +276,13 @@ namespace NServiceBus.IntegrationTesting.Proto
         public const int CorrelationIdFieldNumber = 4;
         public const int EndpointNameFieldNumber = 1;
         public const int ExceptionMessageFieldNumber = 3;
-        public const int MessageTypeNameFieldNumber = 2;
+        public const int HeadersFieldNumber = 5;
         public MessageFailedMessage() { }
         public MessageFailedMessage(NServiceBus.IntegrationTesting.Proto.MessageFailedMessage other) { }
         public string CorrelationId { get; set; }
         public string EndpointName { get; set; }
         public string ExceptionMessage { get; set; }
-        public string MessageTypeName { get; set; }
+        public Google.Protobuf.Collections.MapField<string, string> Headers { get; }
         public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
         public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.MessageFailedMessage> Parser { get; }
         public int CalculateSize() { }

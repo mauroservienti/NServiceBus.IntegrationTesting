@@ -25,7 +25,7 @@ public sealed record MessageDispatchedEvent(
 
 public sealed record MessageFailedEvent(
     string EndpointName,
-    string MessageTypeName,
+    IReadOnlyDictionary<string, string> Headers,
     string ExceptionMessage,
     string CorrelationId);
 
@@ -35,11 +35,11 @@ public sealed record MessageFailedEvent(
 /// Allows tests to fail fast with a descriptive message instead of waiting
 /// for the test timeout to expire.
 /// </summary>
-public sealed class MessageFailedException(string correlationId, string messageTypeName, string causeMessage)
-    : Exception($"Message '{messageTypeName}' was sent to the error queue for correlation '{correlationId}'. Cause: {causeMessage}")
+public sealed class MessageFailedException(string correlationId, IReadOnlyDictionary<string, string> headers, string causeMessage)
+    : Exception($"Message was sent to the error queue for correlation '{correlationId}'. Cause: {causeMessage}")
 {
     public string CorrelationId { get; } = correlationId;
-    public string MessageTypeName { get; } = messageTypeName;
+    public IReadOnlyDictionary<string, string> Headers { get; } = headers;
 }
 
 /// <summary>
@@ -149,7 +149,7 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
 
             if (failureResult is not null)
                 throw new MessageFailedException(
-                    correlationId, failureResult.MessageTypeName, failureResult.ExceptionMessage);
+                    correlationId, failureResult.Headers, failureResult.ExceptionMessage);
 
             if (handlerResults is not null)
                 return handlerResults;
@@ -232,7 +232,7 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
 
             if (failureResult is not null)
                 throw new MessageFailedException(
-                    correlationId, failureResult.MessageTypeName, failureResult.ExceptionMessage);
+                    correlationId, failureResult.Headers, failureResult.ExceptionMessage);
 
             if (dispatchResults is not null)
                 return dispatchResults;
@@ -396,7 +396,7 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
                         var failedEvt = message.MessageFailed;
                         var failedEvent = new MessageFailedEvent(
                             failedEvt.EndpointName,
-                            failedEvt.MessageTypeName,
+                            failedEvt.Headers,
                             failedEvt.ExceptionMessage,
                             failedEvt.CorrelationId);
 

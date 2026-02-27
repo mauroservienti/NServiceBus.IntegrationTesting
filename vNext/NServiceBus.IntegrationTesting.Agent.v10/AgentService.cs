@@ -174,22 +174,21 @@ public sealed class AgentService : IAsyncDisposable
             cancellationToken);
 
     internal Task ReportMessageFailedAsync(
-        string messageTypeName,
+        IReadOnlyDictionary<string, string> headers,
         string exceptionMessage,
         string? correlationId,
         CancellationToken cancellationToken = default)
-        => SendAsync(
-            new AgentToHostMessage
-            {
-                MessageFailed = new MessageFailedMessage
-                {
-                    EndpointName = _endpointName,
-                    MessageTypeName = messageTypeName,
-                    ExceptionMessage = exceptionMessage,
-                    CorrelationId = correlationId ?? string.Empty
-                }
-            },
-            cancellationToken);
+    {
+        var msg = new MessageFailedMessage
+        {
+            EndpointName = _endpointName,
+            ExceptionMessage = exceptionMessage,
+            CorrelationId = correlationId ?? string.Empty
+        };
+        foreach (var (k, v) in headers)
+            msg.Headers[k] = v;
+        return SendAsync(new AgentToHostMessage { MessageFailed = msg }, cancellationToken);
+    }
 
     async Task ExecuteScenarioAsync(ExecuteScenarioMessage cmd, CancellationToken cancellationToken)
     {
