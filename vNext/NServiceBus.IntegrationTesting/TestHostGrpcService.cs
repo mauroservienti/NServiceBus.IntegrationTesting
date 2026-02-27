@@ -58,13 +58,13 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
 
     // Fan-out listener lists — each WaitFor call registers its own channel and
     // receives a copy of every event so concurrent tests can filter independently.
-    readonly Lock _handlerListenersLock = new();
+    readonly object _handlerListenersLock = new();
     readonly List<Channel<HandlerInvokedEvent>> _handlerListeners = [];
 
-    readonly Lock _dispatchedListenersLock = new();
+    readonly object _dispatchedListenersLock = new();
     readonly List<Channel<MessageDispatchedEvent>> _dispatchedListeners = [];
 
-    readonly Lock _failedListenersLock = new();
+    readonly object _failedListenersLock = new();
     readonly List<Channel<MessageFailedEvent>> _failedListeners = [];
 
     /// <summary>
