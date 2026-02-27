@@ -15,6 +15,7 @@ namespace SampleEndpoint.Tests;
 ///   3. Asserts WireMock received exactly the expected request.
 /// </summary>
 [TestFixture]
+[NonParallelizable]
 public class WhenSomeMessageIsSentWithWireMock
 {
     static TestEnvironment _env = null!;
@@ -35,6 +36,12 @@ public class WhenSomeMessageIsSentWithWireMock
             .StartAsync();
 
         _sampleEndpoint = _env.GetEndpoint("SampleEndpoint");
+    }
+
+    [SetUp]
+    public void LogTestName()
+    {
+        TestContext.Out.WriteLine($"=== Starting test: {TestContext.CurrentContext.Test.Name} ===");
     }
 
     [TearDown]
@@ -74,6 +81,7 @@ public class WhenSomeMessageIsSentWithWireMock
 
         // Act
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+        TestContext.Out.WriteLine($"Correlation ID: {correlationId}");
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 

@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\SampleEndpoint\SampleEndpoint.csproj" />
-        <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent\NServiceBus.IntegrationTesting.Agent.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v10\NServiceBus.IntegrationTesting.Agent.v10.csproj" />
     </ItemGroup>
 
 </Project>

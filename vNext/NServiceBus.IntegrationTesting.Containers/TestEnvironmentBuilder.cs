@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Sockets;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
@@ -128,9 +130,24 @@ public sealed class TestEnvironmentBuilder
         await testHost.StartAsync();
 
         // ── WireMock stub server (embedded, in test process) ─────────────────
+        // Bind to 0.0.0.0 so Docker containers can reach it via host.docker.internal.
+        // Pre-allocate a free port to avoid a two-step start, then release it and hand
+        // the port to WireMock — the race window is negligible in test environments.
         WireMockServer? wireMock = null;
         if (_useWireMock)
-            wireMock = WireMockServer.Start(new WireMockServerSettings { UseSSL = false });
+        {
+            int wireMockPort;
+            using (var probe = new TcpListener(IPAddress.Any, 0))
+            {
+                probe.Start();
+                wireMockPort = ((IPEndPoint)probe.LocalEndpoint).Port;
+            }
+            wireMock = WireMockServer.Start(new WireMockServerSettings
+            {
+                UseSSL = false,
+                Urls = [$"http://0.0.0.0:{wireMockPort}"]
+            });
+        }
 
         // ── Shared env vars for all endpoint containers ──────────────────────
         var envVars = new Dictionary<string, string>

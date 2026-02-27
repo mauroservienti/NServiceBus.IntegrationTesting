@@ -24,6 +24,7 @@ namespace SampleEndpoint.Tests;
 ///      e. SagaCompletedMessageHandler handles SagaCompletedMessage — test done condition.
 /// </summary>
 [TestFixture]
+[NonParallelizable]
 public class WhenSomeMessageIsSent
 {
     static TestEnvironment _env = null!;
@@ -43,6 +44,12 @@ public class WhenSomeMessageIsSent
             .StartAsync();
 
         _sampleEndpoint = _env.GetEndpoint("SampleEndpoint");
+    }
+
+    [SetUp]
+    public void LogTestName()
+    {
+        TestContext.Out.WriteLine($"=== Starting test: {TestContext.CurrentContext.Test.Name} ===");
     }
 
     [TearDown]
@@ -75,6 +82,7 @@ public class WhenSomeMessageIsSent
             { "ID", Guid.NewGuid().ToString() }
         };
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+        TestContext.Out.WriteLine($"Correlation ID: {correlationId}");
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
@@ -100,6 +108,7 @@ public class WhenSomeMessageIsSent
             { "ID", Guid.NewGuid().ToString() }
         };
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+        TestContext.Out.WriteLine($"Correlation ID: {correlationId}");
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
 
@@ -123,6 +132,7 @@ public class WhenSomeMessageIsSent
             { "ID", Guid.NewGuid().ToString() }
         };
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+        TestContext.Out.WriteLine($"Correlation ID: {correlationId}");
 
         // The saga starts on SomeReply and sets a 20s timeout — allow enough headroom.
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
@@ -163,6 +173,7 @@ public class WhenSomeMessageIsSent
             { "ID", Guid.NewGuid().ToString() }
         };
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+        TestContext.Out.WriteLine($"Correlation ID: {correlationId}");
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
@@ -193,6 +204,7 @@ public class WhenSomeMessageIsSent
             { "ID", Guid.NewGuid().ToString() }
         };
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync("SomeMessage", args);
+        TestContext.Out.WriteLine($"Correlation ID: {correlationId}");
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 

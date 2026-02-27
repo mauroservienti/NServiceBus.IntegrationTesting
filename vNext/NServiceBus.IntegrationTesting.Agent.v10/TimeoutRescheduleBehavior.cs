@@ -21,10 +21,9 @@ sealed class TimeoutRescheduleBehavior(IReadOnlyList<TimeoutRule> rules)
                 continue;
 
             if (context.Extensions.TryGet<DispatchProperties>(out var constraints)
-                && (constraints.DoNotDeliverBefore is not null || constraints.DelayDeliveryWith is not null))
+                && constraints?.DoNotDeliverBefore is not null)
             {
                 constraints.DoNotDeliverBefore = new DoNotDeliverBefore(DateTime.UtcNow.Add(delay));
-                constraints.DelayDeliveryWith = null;
             }
 
             break;
