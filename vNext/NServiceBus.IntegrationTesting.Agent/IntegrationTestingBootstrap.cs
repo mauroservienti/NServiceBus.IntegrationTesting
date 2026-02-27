@@ -25,7 +25,8 @@ public static class IntegrationTestingBootstrap
     public static async Task RunAsync(
         string endpointName,
         Func<EndpointConfiguration> configFactory,
-        IEnumerable<Scenario>? scenarios = null)
+        IEnumerable<Scenario>? scenarios = null,
+        IEnumerable<TimeoutRule>? timeoutRules = null)
     {
         var host = Environment.GetEnvironmentVariable("NSBUS_TESTING_HOST");
         if (string.IsNullOrEmpty(host))
@@ -49,6 +50,12 @@ public static class IntegrationTestingBootstrap
         config.Pipeline.Register(
             new OutgoingReportingBehavior(agentService),
             "Reports dispatched messages to the integration testing host");
+
+        var rules = timeoutRules?.ToList() ?? [];
+        if (rules.Count > 0)
+            config.Pipeline.Register(
+                new TimeoutRescheduleBehavior(rules),
+                "Shortens saga timeout delays for faster test execution");
 
         config.Recoverability().Failed(c => c.OnMessageSentToErrorQueue((failedMessage, ct) =>
         {
