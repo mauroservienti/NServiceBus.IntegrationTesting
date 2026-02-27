@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <AssemblyName>NServiceBus.IntegrationTesting.Agent.v9</AssemblyName>
+        <RootNamespace>NServiceBus.IntegrationTesting.Agent</RootNamespace>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
