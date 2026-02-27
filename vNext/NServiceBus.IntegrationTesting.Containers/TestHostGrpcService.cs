@@ -433,7 +433,7 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     // Scan helpers return null when the token is cancelled or the channel is closed
     // without collecting enough matching events — the caller interprets null as "not found".
 
-    static async Task<IReadOnlyList<HandlerInvokedEvent>?> ScanForHandlerEventsAsync(
+    internal static async Task<IReadOnlyList<HandlerInvokedEvent>?> ScanForHandlerEventsAsync(
         ChannelReader<HandlerInvokedEvent> reader,
         string correlationId,
         string handlerTypeName,
@@ -457,7 +457,7 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         return null;
     }
 
-    static async Task<IReadOnlyList<MessageDispatchedEvent>?> ScanForDispatchEventsAsync(
+    internal static async Task<IReadOnlyList<MessageDispatchedEvent>?> ScanForDispatchEventsAsync(
         ChannelReader<MessageDispatchedEvent> reader,
         string correlationId,
         string messageTypeName,
@@ -481,7 +481,7 @@ public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         return null;
     }
 
-    static async Task<MessageFailedEvent?> ScanForFailureEventAsync(
+    internal static async Task<MessageFailedEvent?> ScanForFailureEventAsync(
         ChannelReader<MessageFailedEvent> reader,
         string correlationId,
         CancellationToken cancellationToken)
