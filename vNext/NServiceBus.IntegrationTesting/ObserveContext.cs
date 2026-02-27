@@ -130,6 +130,11 @@ public sealed class ObserveContext
     /// </summary>
     public async Task<ObserveResults> WhenAllAsync()
     {
+        if (_handlerTasks.Count == 0 && _sagaTasks.Count == 0 && _dispatchedTasks.Count == 0 && _failedTask is null)
+            throw new InvalidOperationException(
+                "No conditions were registered. Call at least one of HandlerInvoked, SagaInvoked, " +
+                "MessageDispatched, or MessageFailed before awaiting WhenAllAsync.");
+
         IEnumerable<Task> allTasks = _handlerTasks.Select(t => (Task)t.Task)
             .Concat(_sagaTasks.Select(t => (Task)t.Task))
             .Concat(_dispatchedTasks.Select(t => (Task)t.Task));
