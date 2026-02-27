@@ -20,10 +20,14 @@ sealed class TimeoutRescheduleBehavior(IReadOnlyList<TimeoutRule> rules)
             if (!rule.TryGetDelay(context.Message.MessageType, context.Message.Instance, out var delay))
                 continue;
 
-            if (context.Extensions.TryGet<DispatchProperties>(out var constraints)
-                && constraints?.DoNotDeliverBefore is not null)
+            if (context.Extensions.TryGet<DispatchProperties>(out var constraints) && constraints is not null)
             {
-                constraints.DoNotDeliverBefore = new DoNotDeliverBefore(DateTime.UtcNow.Add(delay));
+                // NServiceBus RequestTimeout uses DelayDeliveryWith internally (relative delay).
+                // Some callers may use DoNotDeliverBefore (absolute time). Handle both.
+                if (constraints.DelayDeliveryWith is not null)
+                    constraints.DelayDeliveryWith = new DelayDeliveryWith(delay);
+                else if (constraints.DoNotDeliverBefore is not null)
+                    constraints.DoNotDeliverBefore = new DoNotDeliverBefore(DateTime.UtcNow.Add(delay));
             }
 
             break;
