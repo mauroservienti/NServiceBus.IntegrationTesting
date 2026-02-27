@@ -24,6 +24,7 @@
         <PackageReference Include="Testcontainers" Version="4.10.0" />
         <PackageReference Include="Testcontainers.PostgreSql" Version="4.10.0" />
         <PackageReference Include="Testcontainers.RabbitMq" Version="4.10.0" />
+        <PackageReference Include="WireMock.Net" Version="1.25.0" />
     </ItemGroup>
 
     <ItemGroup>

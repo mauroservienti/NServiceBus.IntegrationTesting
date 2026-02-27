@@ -19,6 +19,7 @@
             Also available transitively via Testcontainers.RabbitMq, but explicit is clearer.
         -->
         <PackageReference Include="Testcontainers" Version="4.10.0" />
+        <PackageReference Include="WireMock.Net" Version="1.25.0" />
     </ItemGroup>
 
     <ItemGroup>

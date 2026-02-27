@@ -2,6 +2,7 @@ using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
+using WireMock.Server;
 
 namespace NServiceBus.IntegrationTesting.Containers;
 
@@ -23,14 +24,23 @@ public sealed class TestEnvironment : IAsyncDisposable
         INetwork network,
         RabbitMqContainer? rabbitMq,
         PostgreSqlContainer? postgreSql,
+        WireMockServer? wireMock,
         Dictionary<string, IContainer> endpointContainers)
     {
         _testHost = testHost;
         _network = network;
         _rabbitMq = rabbitMq;
         _postgreSql = postgreSql;
+        WireMock = wireMock;
         _endpointContainers = endpointContainers;
     }
+
+    /// <summary>
+    /// The embedded WireMock stub server, or null if <see cref="TestEnvironmentBuilder.UseWireMock"/>
+    /// was not called. Use this to configure stubs before executing scenarios and to verify
+    /// calls afterward. Endpoint containers receive WIREMOCK_URL pointing to this server.
+    /// </summary>
+    public WireMockServer? WireMock { get; }
 
     /// <summary>Returns a handle to the named endpoint.</summary>
     public EndpointHandle GetEndpoint(string endpointName)
@@ -65,6 +75,8 @@ public sealed class TestEnvironment : IAsyncDisposable
         await Task.WhenAll(_endpointContainers.Values.Select(c => c.DisposeAsync().AsTask()));
 
         await _testHost.DisposeAsync();
+
+        WireMock?.Stop();
 
         if (_rabbitMq is not null) await _rabbitMq.DisposeAsync();
         if (_postgreSql is not null) await _postgreSql.DisposeAsync();

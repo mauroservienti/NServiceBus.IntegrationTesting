@@ -3,6 +3,8 @@ using DotNet.Testcontainers.Containers;
 using DotNet.Testcontainers.Networks;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
+using WireMock.Server;
+using WireMock.Settings;
 
 namespace NServiceBus.IntegrationTesting.Containers;
 
@@ -17,6 +19,7 @@ public sealed class TestEnvironmentBuilder
     string? _rabbitMqImage;
     string? _postgreSqlImage;
     string? _dockerfileDirectory;
+    bool _useWireMock;
     TimeSpan _agentConnectionTimeout = TimeSpan.FromSeconds(120);
 
     readonly List<(string EndpointName, string Dockerfile)> _endpoints = [];
@@ -60,6 +63,18 @@ public sealed class TestEnvironmentBuilder
     public TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile)
     {
         _endpoints.Add((endpointName, dockerfile));
+        return this;
+    }
+
+    /// <summary>
+    /// Starts an embedded WireMock.Net server in the test process. All endpoint containers
+    /// receive a WIREMOCK_URL environment variable pointing to it via host.docker.internal.
+    /// Access the server via <see cref="TestEnvironment.WireMock"/> to configure stubs
+    /// and verify calls.
+    /// </summary>
+    public TestEnvironmentBuilder UseWireMock()
+    {
+        _useWireMock = true;
         return this;
     }
 
@@ -112,11 +127,19 @@ public sealed class TestEnvironmentBuilder
         var testHost = new TestHostServer();
         await testHost.StartAsync();
 
+        // ── WireMock stub server (embedded, in test process) ─────────────────
+        WireMockServer? wireMock = null;
+        if (_useWireMock)
+            wireMock = WireMockServer.Start(new WireMockServerSettings { UseSSL = false });
+
         // ── Shared env vars for all endpoint containers ──────────────────────
         var envVars = new Dictionary<string, string>
         {
             ["NSBUS_TESTING_HOST"] = testHost.ContainerAddress
         };
+
+        if (wireMock is not null)
+            envVars["WIREMOCK_URL"] = $"http://host.docker.internal:{wireMock.Port}";
 
         if (rabbitMq is not null)
             envVars["RABBITMQ_CONNECTION_STRING"] =
@@ -160,6 +183,7 @@ public sealed class TestEnvironmentBuilder
             network,
             rabbitMq,
             postgreSql,
+            wireMock,
             containerEntries.ToDictionary(e => e.EndpointName, e => e.Container));
     }
 }
