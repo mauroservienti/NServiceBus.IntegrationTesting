@@ -7,6 +7,20 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <Description>NServiceBus 10 agent for out-of-process integration testing. Embed in your *.Testing companion project to connect the endpoint to the NServiceBus.IntegrationTesting test host.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
+        <PackageReference Include="MinVer" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Google.Protobuf" Version="3.29.3" />
         <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />

@@ -6,6 +6,20 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <Description>Test host library for out-of-process NServiceBus integration testing using Docker containers and gRPC. Provides TestEnvironmentBuilder, ObserveContext, and the fluent assertion API.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
+        <PackageReference Include="MinVer" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
     <!--
         FrameworkReference gives us access to Kestrel and WebApplication
         without needing the full Microsoft.NET.Sdk.Web SDK.
