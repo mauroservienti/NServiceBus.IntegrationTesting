@@ -1,7 +1,7 @@
-using NServiceBus.IntegrationTesting.Containers;
+using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 
-namespace NServiceBus.IntegrationTesting.Containers.Tests;
+namespace NServiceBus.IntegrationTesting.Tests;
 
 [TestFixture]
 public class ObserveResultsTests

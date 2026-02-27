@@ -3,7 +3,7 @@ using System.Threading.Channels;
 using Grpc.Core;
 using NServiceBus.IntegrationTesting.Proto;
 
-namespace NServiceBus.IntegrationTesting.Containers;
+namespace NServiceBus.IntegrationTesting;
 
 public sealed record HandlerInvokedEvent(
     string EndpointName,

@@ -1,8 +1,8 @@
 using System.Threading.Channels;
-using NServiceBus.IntegrationTesting.Containers;
+using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 
-namespace NServiceBus.IntegrationTesting.Containers.Tests;
+namespace NServiceBus.IntegrationTesting.Tests;
 
 /// <summary>
 /// Unit tests for the three internal scan helpers in TestHostGrpcService.

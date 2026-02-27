@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace NServiceBus.IntegrationTesting.Containers;
+namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// Hosts a gRPC server in the test process that endpoint agents connect back to.

@@ -1,4 +1,4 @@
-namespace NServiceBus.IntegrationTesting.Containers;
+namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// Collects a set of done conditions for a given correlation ID and waits for all of them.

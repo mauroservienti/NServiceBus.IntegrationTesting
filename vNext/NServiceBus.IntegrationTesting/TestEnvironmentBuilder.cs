@@ -8,7 +8,7 @@ using Testcontainers.RabbitMq;
 using WireMock.Server;
 using WireMock.Settings;
 
-namespace NServiceBus.IntegrationTesting.Containers;
+namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// Fluent builder for a complete test environment: Docker network, infrastructure

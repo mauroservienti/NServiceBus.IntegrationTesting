@@ -4,7 +4,7 @@ using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 using WireMock.Server;
 
-namespace NServiceBus.IntegrationTesting.Containers;
+namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// Represents a running test environment: gRPC test host, infrastructure containers

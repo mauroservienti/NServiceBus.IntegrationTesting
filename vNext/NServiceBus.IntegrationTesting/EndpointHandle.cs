@@ -1,4 +1,4 @@
-namespace NServiceBus.IntegrationTesting.Containers;
+namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// A handle to a named endpoint registered with the test host.

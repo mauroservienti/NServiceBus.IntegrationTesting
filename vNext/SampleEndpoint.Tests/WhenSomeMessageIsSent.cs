@@ -1,4 +1,4 @@
-using NServiceBus.IntegrationTesting.Containers;
+using NServiceBus.IntegrationTesting;
 using NUnit.Framework;
 
 namespace SampleEndpoint.Tests;

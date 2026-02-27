@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\NServiceBus.IntegrationTesting.Containers\NServiceBus.IntegrationTesting.Containers.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
     </ItemGroup>
 
 </Project>
