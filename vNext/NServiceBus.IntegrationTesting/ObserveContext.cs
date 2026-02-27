@@ -121,6 +121,10 @@ public sealed class ObserveContext
     /// </summary>
     public ObserveContext MessageFailed()
     {
+        if (_failedTask is not null)
+            throw new InvalidOperationException(
+                "MessageFailed() has already been registered for this ObserveContext.");
+
         _failedTask = _grpcService.WaitForMessageFailureAsync(_correlationId, _cancellationToken);
         return this;
     }

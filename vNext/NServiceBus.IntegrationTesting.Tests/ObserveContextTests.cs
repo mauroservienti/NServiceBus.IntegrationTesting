@@ -14,4 +14,14 @@ public class ObserveContextTests
 
         Assert.ThrowsAsync<InvalidOperationException>(() => context.WhenAllAsync());
     }
+
+    [Test]
+    public void MessageFailed_throws_on_second_call()
+    {
+        var grpcService = new TestHostGrpcService();
+        var context = new ObserveContext(grpcService, "c1", CancellationToken.None);
+        context.MessageFailed();
+
+        Assert.Throws<InvalidOperationException>(() => context.MessageFailed());
+    }
 }
