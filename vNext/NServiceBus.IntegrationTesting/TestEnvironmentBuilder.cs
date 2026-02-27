@@ -64,6 +64,10 @@ public sealed class TestEnvironmentBuilder
     /// </summary>
     public TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile)
     {
+        if (_endpoints.Any(e => e.EndpointName == endpointName))
+            throw new ArgumentException(
+                $"An endpoint named '{endpointName}' has already been added.", nameof(endpointName));
+
         _endpoints.Add((endpointName, dockerfile));
         return this;
     }
