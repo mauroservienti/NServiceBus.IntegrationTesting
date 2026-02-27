@@ -46,6 +46,11 @@ jobs:
       #  run: dotnet test src --configuration Release --no-build
       - name: Build vNext
         run: dotnet build vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release
+      - name: Disable Docker BuildKit (Testcontainers 4.x parses legacy builder output only)
+        run: |
+          echo '{"features":{"buildkit":false}}' | sudo tee /etc/docker/daemon.json
+          sudo systemctl restart docker
+          sleep 3
       - name: Pre-pull Docker base images
         run: |
           docker pull mcr.microsoft.com/dotnet/sdk:9.0
@@ -53,8 +58,6 @@ jobs:
           docker pull mcr.microsoft.com/dotnet/runtime:9.0
           docker pull mcr.microsoft.com/dotnet/runtime:10.0
       - name: Tests vNext
-        env:
-          DOCKER_BUILDKIT: 0
         run: dotnet test vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release --no-build
       - name: Upload packages
         if: matrix.name == 'Linux'
