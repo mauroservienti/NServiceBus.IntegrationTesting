@@ -20,7 +20,7 @@ public sealed class EndpointHandle
     /// <summary>
     /// Returns a Task that completes when this endpoint's agent connects to the test host.
     /// </summary>
-    public Task WaitForConnectedAsync(CancellationToken cancellationToken = default)
+    internal Task WaitForConnectedAsync(CancellationToken cancellationToken = default)
         => _grpcService.WaitForAgentAsync(EndpointName, cancellationToken);
 
     /// <summary>

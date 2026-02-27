@@ -5,7 +5,6 @@ namespace NServiceBus.IntegrationTesting
     {
         public string EndpointName { get; }
         public System.Threading.Tasks.Task<string> ExecuteScenarioAsync(string scenarioName, System.Collections.Generic.Dictionary<string, string>? args = null, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task WaitForConnectedAsync(System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class HandlerInvokedEvent : System.IEquatable<NServiceBus.IntegrationTesting.HandlerInvokedEvent>
     {
@@ -88,19 +87,6 @@ namespace NServiceBus.IntegrationTesting
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock() { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithAgentConnectionTimeout(System.TimeSpan timeout) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithDockerfileDirectory(string directory) { }
-    }
-    public sealed class TestHostGrpcService : NServiceBus.IntegrationTesting.Proto.TestHostService.TestHostServiceBase
-    {
-        public TestHostGrpcService() { }
-        public System.Threading.Tasks.Task<string> ExecuteScenarioAsync(string endpointName, string scenarioName, System.Collections.Generic.Dictionary<string, string>? args = null, System.Threading.CancellationToken cancellationToken = default) { }
-        public NServiceBus.IntegrationTesting.ObserveContext Observe(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
-        public override System.Threading.Tasks.Task OpenChannel(Grpc.Core.IAsyncStreamReader<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage> requestStream, Grpc.Core.IServerStreamWriter<NServiceBus.IntegrationTesting.Proto.HostToAgentMessage> responseStream, Grpc.Core.ServerCallContext context) { }
-        public System.Threading.Tasks.Task WaitForAgentAsync(string endpointName, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.HandlerInvokedEvent> WaitForHandlerInvocationAsync(string correlationId, string handlerTypeName, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent>> WaitForHandlerInvocationsAsync(string correlationId, string handlerTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent>, bool> until, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.MessageDispatchedEvent> WaitForMessageDispatchedAsync(string correlationId, string messageTypeName, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageDispatchedEvent>> WaitForMessageDispatchesAsync(string correlationId, string messageTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageDispatchedEvent>, bool> until, System.Threading.CancellationToken cancellationToken = default) { }
-        public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.MessageFailedEvent> WaitForMessageFailureAsync(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class TestHostServer : System.IAsyncDisposable
     {

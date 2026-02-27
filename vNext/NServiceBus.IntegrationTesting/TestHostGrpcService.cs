@@ -46,7 +46,7 @@ public sealed class MessageFailedException(string correlationId, string messageT
 /// gRPC service implementation that runs in the test host process.
 /// Agents (in endpoint processes/containers) connect to this service.
 /// </summary>
-public sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
+internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
 {
     // One TaskCompletionSource per expected endpoint name.
     // Completes when the agent for that endpoint connects.
