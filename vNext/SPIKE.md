@@ -375,6 +375,101 @@ saga data assemblies (needed to know type names anyway), so typed deserializatio
 Alternative (Option B): user-registered per-handler extractors in the agent bootstrap —
 more surgical, zero overhead unless opted in, but requires extra setup wiring.
 
+### Scenario-scoped timeout rules (considered, deferred)
+
+`TimeoutRule` currently applies to all scenarios on an endpoint. A scenario-scoped variant
+was considered: `.WhenScenario("Name")` on the rule, with the scenario name flowing via a
+second `AsyncLocal<string?>` alongside `CurrentCorrelationId` in `AgentService`.
+
+**Decided against for now.** The realistic use case (same timeout type, different reschedule
+delay per scenario) is rare enough that the better remedy is to give each scenario its own
+timeout message type. Adding scenario scoping to `TimeoutRule` would add complexity to the
+API and the behavior without a concrete driving use case. Revisit if one emerges.
+
+### Child-process endpoint option (medium, deferred until concrete use case)
+
+Some endpoints cannot be containerised (legacy dependencies, COM interop, machine-local
+resources, etc.). These could run as child processes on the test host machine instead of
+Docker containers.
+
+**Agent side: zero changes needed.** The agent reads `NSBUS_TESTING_HOST` and connects via
+gRPC regardless of how the process was launched.
+
+**`TestHostServer` side: already ready.** `Address` (`http://localhost:{port}`) works for
+local processes; `ContainerAddress` (`http://host.docker.internal:{port}`) is the container
+variant. No changes needed.
+
+**Work required in `TestEnvironmentBuilder`/`TestEnvironment`:**
+
+- Add `AddProcessEndpoint(name, executablePath, envVars?)` alongside `AddEndpoint`.
+- On `StartAsync`, spawn the process via `System.Diagnostics.Process.Start()` with:
+  - `NSBUS_TESTING_HOST = testHost.Address` (localhost, not container address)
+  - Infrastructure connection strings via **host-exposed ports**, not Docker-network aliases
+    (e.g. `rabbitMq.ConnectionString` from Testcontainers, not `host=rabbitmq`)
+- Track processes in `TestEnvironment` and kill them in `DisposeAsync`.
+
+The infrastructure routing (same RabbitMQ/PostgreSQL container, two different connection
+string flavours depending on caller) is the main non-trivial piece. Container endpoints
+get Docker-alias strings; process endpoints get host-port strings.
+
+Deferred until a concrete use case drives it.
+
+### HTTP mocking / external service stubs (implemented: Option A)
+
+When a saga or handler performs an HTTP call to an external service, tests need a way to
+stub those calls. Three options were considered:
+
+#### Option A — embedded WireMock.Net in test process (IMPLEMENTED)
+
+`WireMock.Net` starts an HTTP server inside the test process on a random port. Endpoint
+containers reach it via `http://host.docker.internal:{port}` (injected as `WIREMOCK_URL`).
+
+**Prerequisite**: endpoint configs must read external service base URLs from environment
+variables (12-factor). Production sets a real URL; the `*.Testing` project inherits
+`WIREMOCK_URL` automatically.
+
+**Usage:**
+
+```csharp
+_env = await new TestEnvironmentBuilder()
+    .UseWireMock()          // starts embedded server; sets WIREMOCK_URL for all containers
+    ...
+    .StartAsync();
+
+// In the test:
+_env.WireMock?.Given(Request.Create().WithPath("/api/foo").UsingGet())
+    .RespondWith(Response.Create().WithStatusCode(200).WithBody("{}"));
+```
+
+`TestEnvironment.WireMock` is `null` when `UseWireMock()` was not called.
+
+**Pros**: no extra Docker image, instant startup, rich request/response API, built-in
+verification (`LogEntries`). **Cons**: in-process so crashes in WireMock configuration
+can affect the test process; HTTP only (no HTTPS by default in this configuration).
+
+#### Option B — custom stub service as a Docker container (not implemented, deferred)
+
+Ship a dedicated lightweight HTTP stub image (e.g. a minimal ASP.NET app) that reads a
+stub configuration file mounted at startup. Register it via `AddStubService(image, port)`.
+
+**Pros**: full network isolation, closer to production. **Cons**: slower startup (container
+build + start), more complex configuration API than WireMock.Net's fluent DSL, harder to
+inspect calls from the test process without an additional control channel.
+
+Deferred: Option A covers the common case with far less complexity.
+
+#### Option C — in-process fake service via `IHostedService` / `BackgroundService` (not implemented, deferred)
+
+Start a minimal Kestrel endpoint inside the test process (similar to `TestHostServer`) that
+serves stub responses. Endpoint containers reach it via `host.docker.internal:{port}`.
+
+**Pros**: zero extra dependencies, full .NET type system for request matching. **Cons**:
+must be hand-written per project (no off-the-shelf stub DSL); essentially reimplements
+WireMock.Net without the polish.
+
+Deferred: Option A already provides a mature, production-proven implementation of exactly
+this pattern.
+
 ### Channel fragility with concurrent tests (easy fix, not yet needed)
 
 `WaitForHandlerInvocationAsync` uses a fan-out channel per waiter, filtered by correlation
