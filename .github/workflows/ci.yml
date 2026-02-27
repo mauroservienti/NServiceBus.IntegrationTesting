@@ -53,6 +53,8 @@ jobs:
           docker pull mcr.microsoft.com/dotnet/runtime:9.0
           docker pull mcr.microsoft.com/dotnet/runtime:10.0
       - name: Tests vNext
+        env:
+          DOCKER_BUILDKIT: 0
         run: dotnet test vNext/SampleEndpoint.Tests/SampleEndpoint.Tests.csproj --configuration Release --no-build
       - name: Upload packages
         if: matrix.name == 'Linux'
