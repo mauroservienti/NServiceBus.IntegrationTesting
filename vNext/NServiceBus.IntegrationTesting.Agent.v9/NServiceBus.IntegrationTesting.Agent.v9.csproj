@@ -9,6 +9,7 @@
 
     <PropertyGroup>
         <IsPackable>true</IsPackable>
+        <PackageId>NServiceBus.IntegrationTesting.AgentV9</PackageId>
         <Description>NServiceBus 9 agent for out-of-process integration testing. Embed in your *.Testing companion project to connect the endpoint to the NServiceBus.IntegrationTesting test host.</Description>
     </PropertyGroup>
 
