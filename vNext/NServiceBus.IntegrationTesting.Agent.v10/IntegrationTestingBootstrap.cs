@@ -22,12 +22,20 @@ public static class IntegrationTestingBootstrap
     /// Factory that produces a fully configured EndpointConfiguration.
     /// The factory should NOT call Endpoint.Start(); the bootstrap does that.
     /// </param>
+    /// <param name="sigTermGracePeriod">
+    /// How long to wait after SIGTERM (docker stop) before the CLR exits, giving the
+    /// graceful stop a chance to complete. Defaults to 5 seconds. Increase for endpoints
+    /// with slow saga persistence flushes or large in-flight message batches.
+    /// </param>
     public static async Task RunAsync(
         string endpointName,
         Func<EndpointConfiguration> configFactory,
         IEnumerable<Scenario>? scenarios = null,
-        IEnumerable<TimeoutRule>? timeoutRules = null)
+        IEnumerable<TimeoutRule>? timeoutRules = null,
+        TimeSpan sigTermGracePeriod = default)
     {
+        var gracePeriod = sigTermGracePeriod > TimeSpan.Zero ? sigTermGracePeriod : TimeSpan.FromSeconds(5);
+
         var host = Environment.GetEnvironmentVariable("NSBUS_TESTING_HOST");
         if (string.IsNullOrEmpty(host))
             throw new InvalidOperationException(
@@ -88,7 +96,7 @@ public static class IntegrationTestingBootstrap
         {
             cts.Cancel();
             // Give the graceful stop a moment to complete before the CLR exits.
-            Task.Delay(TimeSpan.FromSeconds(5)).Wait();
+            Task.Delay(gracePeriod).Wait();
         };
 
         try
