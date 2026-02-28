@@ -5,6 +5,24 @@ using NServiceBus.IntegrationTesting.Proto;
 
 namespace NServiceBus.IntegrationTesting;
 
+/// <summary>
+/// Reported after a message handler (or saga handler) successfully processes a message.
+/// </summary>
+/// <param name="EndpointName">Name of the endpoint that handled the message.</param>
+/// <param name="HandlerTypeName">Full type name of the handler. For saga handlers this is
+/// the saga type name; use <see cref="IsSaga"/> to distinguish the two cases.</param>
+/// <param name="MessageTypeName">Full type name of the handled message.</param>
+/// <param name="CorrelationId">Test correlation ID that ties this invocation to a
+/// specific test scenario execution.</param>
+/// <param name="IsSaga">True when the handler is a saga handler.</param>
+/// <param name="SagaNotFound">True when no existing saga instance matched the incoming
+/// message. Only meaningful when <see cref="IsSaga"/> is true.</param>
+/// <param name="SagaTypeName">Full type name of the saga. Empty when
+/// <see cref="SagaNotFound"/> is true.</param>
+/// <param name="SagaId">Identifier of the saga instance. Empty when
+/// <see cref="SagaNotFound"/> is true.</param>
+/// <param name="SagaIsNew">True when this invocation created a new saga instance.</param>
+/// <param name="SagaIsCompleted">True when this invocation completed (ended) the saga.</param>
 public sealed record HandlerInvokedEvent(
     string EndpointName,
     string HandlerTypeName,
@@ -17,12 +35,34 @@ public sealed record HandlerInvokedEvent(
     bool SagaIsNew,
     bool SagaIsCompleted);
 
+/// <summary>
+/// Reported after the outgoing pipeline successfully dispatches a message.
+/// Only successful dispatches are reported — transient send failures are not surfaced here.
+/// </summary>
+/// <param name="EndpointName">Name of the endpoint that dispatched the message.</param>
+/// <param name="MessageTypeName">Full type name of the dispatched message.</param>
+/// <param name="Intent">NServiceBus message intent: <c>Send</c>, <c>Publish</c>,
+/// <c>Reply</c>, <c>Subscribe</c>, <c>Unsubscribe</c>, or <c>RequestTimeout</c>
+/// (for saga timeout requests).</param>
+/// <param name="CorrelationId">Test correlation ID that ties this dispatch to a
+/// specific test scenario execution.</param>
 public sealed record MessageDispatchedEvent(
     string EndpointName,
     string MessageTypeName,
     string Intent,
     string CorrelationId);
 
+/// <summary>
+/// Reported when a message is permanently moved to the error queue after all
+/// recoverability retries are exhausted.
+/// </summary>
+/// <param name="EndpointName">Name of the endpoint that sent the message to the error queue.</param>
+/// <param name="Headers">All NServiceBus transport headers of the failed message.
+/// Useful headers include <c>NServiceBus.EnclosedMessageTypes</c>,
+/// <c>NServiceBus.FailedQ</c>, and <c>NServiceBus.ExceptionInfo.Message</c>.</param>
+/// <param name="ExceptionMessage">Exception message from the last processing attempt.</param>
+/// <param name="CorrelationId">Test correlation ID that ties this failure to a
+/// specific test scenario execution.</param>
 public sealed record MessageFailedEvent(
     string EndpointName,
     IReadOnlyDictionary<string, string> Headers,
