@@ -5,8 +5,7 @@
 NServiceBus.IntegrationTesting enables testing end-to-end business scenarios against real
 production endpoints, real transports, and real persistence.
 
-> **Disclaimer**: NServiceBus.IntegrationTesting is not affiliated with Particular Software
-> and is not officially supported.
+> **Disclaimer**: NServiceBus.IntegrationTesting is not affiliated with Particular Software and is not officially supported by Particular Software.
 
 ---
 
@@ -173,7 +172,7 @@ of the endpoint assembly.
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 
 > [!NOTE]
-> v1.x of the frameworkhas a fundamental limitation: all endpoints must share the same NServiceBus package(s) version because they run in-process.
+> v1.x of the framework has a fundamental limitation: all endpoints must share the same NServiceBus package(s) version because they run in-process.
 
 The original framework enables tests like:
 
@@ -193,7 +192,7 @@ public async Task AReplyMessage_is_received_and_ASaga_is_started()
 }
 ```
 
-### Resources
+### V1.x Resources
 
 - [Exploring NServiceBus Integration Testing options](https://milestone.topics.it/2019/07/04/exploring-nservicebus-integration-testing-options.html)
 - [NServiceBus.IntegrationTesting baby steps](https://milestone.topics.it/2021/04/07/nservicebus-integrationtesting-baby-steps.html)
