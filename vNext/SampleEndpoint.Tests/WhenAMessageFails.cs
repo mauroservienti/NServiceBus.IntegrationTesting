@@ -86,7 +86,7 @@ public class WhenAMessageFails
         Assert.Multiple(() =>
         {
             Assert.That(failure.EndpointName, Is.EqualTo("AnotherEndpoint"));
-            Assert.That(failure.MessageTypeName, Is.EqualTo("FailingMessage"));
+            Assert.That(failure.Headers["NServiceBus.EnclosedMessageTypes"].Contains("FailingMessage"), Is.True);
             Assert.That(failure.ExceptionMessage, Does.Contain("Intentional failure"));
         });
     }
