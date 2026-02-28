@@ -18,31 +18,39 @@ namespace NServiceBus.IntegrationTesting;
 /// </summary>
 public sealed class TestEnvironmentBuilder
 {
-    string? _rabbitMqImage;
-    string? _postgreSqlImage;
+    RabbitMqContainerOptions? _rabbitMqOptions;
+    PostgreSqlContainerOptions? _postgreSqlOptions;
     string? _dockerfileDirectory;
     bool _useWireMock;
     TimeSpan _agentConnectionTimeout = TimeSpan.FromSeconds(120);
 
-    readonly List<(string EndpointName, string Dockerfile)> _endpoints = [];
+    readonly List<EndpointRegistration> _endpoints = [];
+
+    record EndpointRegistration(string EndpointName, string Dockerfile, EndpointContainerOptions Options);
 
     /// <summary>
     /// Adds a RabbitMQ container to the environment. All endpoint containers receive a
-    /// RABBITMQ_CONNECTION_STRING environment variable pointing to it via the Docker network.
+    /// connection string environment variable pointing to it via the Docker network.
+    /// Use the optional <paramref name="configure"/> callback to override the Docker image
+    /// or the environment variable name (default: <c>RABBITMQ_CONNECTION_STRING</c>).
     /// </summary>
-    public TestEnvironmentBuilder UseRabbitMQ(string image = "rabbitmq:management")
+    public TestEnvironmentBuilder UseRabbitMQ(Action<RabbitMqContainerOptions>? configure = null)
     {
-        _rabbitMqImage = image;
+        _rabbitMqOptions = new RabbitMqContainerOptions();
+        configure?.Invoke(_rabbitMqOptions);
         return this;
     }
 
     /// <summary>
     /// Adds a PostgreSQL container to the environment. All endpoint containers receive a
-    /// POSTGRESQL_CONNECTION_STRING environment variable pointing to it via the Docker network.
+    /// connection string environment variable pointing to it via the Docker network.
+    /// Use the optional <paramref name="configure"/> callback to override the Docker image
+    /// or the environment variable name (default: <c>POSTGRESQL_CONNECTION_STRING</c>).
     /// </summary>
-    public TestEnvironmentBuilder UsePostgreSql(string image = "postgres:15.1")
+    public TestEnvironmentBuilder UsePostgreSql(Action<PostgreSqlContainerOptions>? configure = null)
     {
-        _postgreSqlImage = image;
+        _postgreSqlOptions = new PostgreSqlContainerOptions();
+        configure?.Invoke(_postgreSqlOptions);
         return this;
     }
 
@@ -61,14 +69,20 @@ public sealed class TestEnvironmentBuilder
     /// Registers an endpoint to run as a Docker container.
     /// <paramref name="dockerfile"/> is the path to the Dockerfile relative to the
     /// directory set via WithDockerfileDirectory.
+    /// Use the optional <paramref name="configure"/> callback to override per-endpoint
+    /// environment variable names (e.g. for RabbitMQ, PostgreSQL, WireMock) or to
+    /// inject additional static environment variables.
     /// </summary>
-    public TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile)
+    public TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile,
+        Action<EndpointContainerOptions>? configure = null)
     {
         if (_endpoints.Any(e => e.EndpointName == endpointName))
             throw new ArgumentException(
                 $"An endpoint named '{endpointName}' has already been added.", nameof(endpointName));
 
-        _endpoints.Add((endpointName, dockerfile));
+        var options = new EndpointContainerOptions();
+        configure?.Invoke(options);
+        _endpoints.Add(new EndpointRegistration(endpointName, dockerfile, options));
         return this;
     }
 
@@ -122,14 +136,14 @@ public sealed class TestEnvironmentBuilder
             await network.CreateAsync(cancellationToken);
 
             // ── Infrastructure containers ────────────────────────────────────────
-            if (_rabbitMqImage is not null)
-                rabbitMq = new RabbitMqBuilder(_rabbitMqImage)
+            if (_rabbitMqOptions is not null)
+                rabbitMq = new RabbitMqBuilder(_rabbitMqOptions.ImageName)
                     .WithNetwork(network)
                     .WithNetworkAliases("rabbitmq")
                     .Build();
 
-            if (_postgreSqlImage is not null)
-                postgreSql = new PostgreSqlBuilder(_postgreSqlImage)
+            if (_postgreSqlOptions is not null)
+                postgreSql = new PostgreSqlBuilder(_postgreSqlOptions.ImageName)
                     .WithNetwork(network)
                     .WithNetworkAliases("postgres")
                     .Build();
@@ -162,23 +176,22 @@ public sealed class TestEnvironmentBuilder
                 });
             }
 
-            // ── Shared env vars for all endpoint containers ──────────────────────
-            var envVars = new Dictionary<string, string>
-            {
-                ["NSBUS_TESTING_HOST"] = testHost.ContainerAddress
-            };
+            // ── Precompute infrastructure connection string values ────────────────
+            // Values are fixed regardless of per-endpoint env var name choices.
+            var testHostAddress = testHost.ContainerAddress;
 
-            if (wireMock is not null)
-                envVars["WIREMOCK_URL"] = $"http://host.docker.internal:{wireMock.Port}";
+            var rabbitMqConnectionString = rabbitMq is not null
+                ? $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}"
+                : null;
 
-            if (rabbitMq is not null)
-                envVars["RABBITMQ_CONNECTION_STRING"] =
-                    $"host=rabbitmq;username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}";
+            var postgreSqlConnectionString = postgreSql is not null
+                ? $"Host=postgres;Port=5432;Database={PostgreSqlBuilder.DefaultDatabase}" +
+                  $";Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}"
+                : null;
 
-            if (postgreSql is not null)
-                envVars["POSTGRESQL_CONNECTION_STRING"] =
-                    $"Host=postgres;Port=5432;Database={PostgreSqlBuilder.DefaultDatabase}" +
-                    $";Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}";
+            var wireMockUrl = wireMock is not null
+                ? $"http://host.docker.internal:{wireMock.Port}"
+                : null;
 
             // ── Build Docker images in parallel ──────────────────────────────────
             // Use a fixed, predictable image name so CI can pre-build with the exact same tag.
@@ -187,7 +200,7 @@ public sealed class TestEnvironmentBuilder
             // and the subsequent ExistsWithIdAsync check succeeds, avoiding the BuildKit race
             // condition where the async tagging completes after Testcontainers checks.
             var imageEntries = _endpoints
-                .Select(ep => (ep.EndpointName, Image: new ImageFromDockerfileBuilder()
+                .Select(ep => (ep.EndpointName, ep.Options, Image: new ImageFromDockerfileBuilder()
                     .WithDockerfileDirectory(_dockerfileDirectory)
                     .WithDockerfile(ep.Dockerfile)
                     .WithName($"localhost/nsb-integration-testing/{ep.EndpointName.ToLowerInvariant()}:latest")
@@ -197,12 +210,35 @@ public sealed class TestEnvironmentBuilder
             await Task.WhenAll(imageEntries.Select(e => e.Image.CreateAsync(cancellationToken)));
 
             // ── Start endpoint containers in parallel ────────────────────────────
+            // Env vars are built per-endpoint so each can use its own naming conventions.
             containerEntries = imageEntries
-                .Select(e => (e.EndpointName, Container: (IContainer)new ContainerBuilder(e.Image.FullName)
-                    .WithNetwork(network)
-                    .WithEnvironment(envVars)
-                    .WithExtraHost("host.docker.internal", "host-gateway")
-                    .Build()))
+                .Select(e =>
+                {
+                    var envVars = new Dictionary<string, string>
+                    {
+                        ["NSBUS_TESTING_HOST"] = testHostAddress
+                    };
+
+                    if (rabbitMqConnectionString is not null)
+                        envVars[e.Options.RabbitMqConnectionStringEnvVarName
+                            ?? _rabbitMqOptions!.ConnectionStringEnvVarName] = rabbitMqConnectionString;
+
+                    if (postgreSqlConnectionString is not null)
+                        envVars[e.Options.PostgreSqlConnectionStringEnvVarName
+                            ?? _postgreSqlOptions!.ConnectionStringEnvVarName] = postgreSqlConnectionString;
+
+                    if (wireMockUrl is not null)
+                        envVars[e.Options.WireMockUrlEnvVarName ?? "WIREMOCK_URL"] = wireMockUrl;
+
+                    foreach (var (key, value) in e.Options.EnvironmentVariables)
+                        envVars[key] = value;
+
+                    return (e.EndpointName, Container: (IContainer)new ContainerBuilder(e.Image.FullName)
+                        .WithNetwork(network)
+                        .WithEnvironment(envVars)
+                        .WithExtraHost("host.docker.internal", "host-gateway")
+                        .Build());
+                })
                 .ToList();
 
             await Task.WhenAll(containerEntries.Select(e => e.Container.StartAsync(cancellationToken)));
