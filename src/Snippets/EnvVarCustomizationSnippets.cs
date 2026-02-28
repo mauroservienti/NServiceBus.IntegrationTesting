@@ -1,3 +1,6 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Networks;
 using NServiceBus.IntegrationTesting;
 
 namespace Snippets.EnvVarCustomization;
@@ -38,10 +41,10 @@ public class EnvVarCustomizationSnippets
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
             .UseRabbitMQ()
-            .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile",
-                opts => opts.RabbitMqConnectionStringEnvVarName = "RABBIT_CONNECTION_STRING")
-            .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile",
-                opts => opts.RabbitMqConnectionStringEnvVarName = "TRANSPORT_CONNECTION_STRING")
+            .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile", opts =>
+                opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "RABBIT_CONNECTION_STRING")
+            .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile", opts =>
+                opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "TRANSPORT_CONNECTION_STRING")
             .StartAsync();
         // end-snippet
     }
@@ -55,10 +58,10 @@ public class EnvVarCustomizationSnippets
             .WithDockerfileDirectory(srcDir)
             .UseRabbitMQ()
             .UseWireMock()
-            .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile",
-                opts => opts.WireMockUrlEnvVarName = "EXTERNAL_HTTP_STUB_URL")
-            .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile",
-                opts => opts.WireMockUrlEnvVarName = "MOCK_SERVER_URL")
+            .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile", opts =>
+                opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "EXTERNAL_HTTP_STUB_URL")
+            .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile", opts =>
+                opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "MOCK_SERVER_URL")
             .StartAsync();
         // end-snippet
     }
@@ -92,16 +95,37 @@ public class EnvVarCustomizationSnippets
             .UseWireMock()
             .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile", opts =>
             {
-                opts.RabbitMqConnectionStringEnvVarName = "RABBIT_CONNECTION_STRING";
-                opts.PostgreSqlConnectionStringEnvVarName = "DB_CONNECTION_STRING";
-                opts.WireMockUrlEnvVarName = "EXTERNAL_HTTP_STUB_URL";
+                opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "RABBIT_CONNECTION_STRING";
+                opts.InfrastructureEnvVarNames[PostgreSqlContainerOptions.InfrastructureKey] = "DB_CONNECTION_STRING";
+                opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "EXTERNAL_HTTP_STUB_URL";
                 opts.EnvironmentVariables["FEATURE_FLAG_X"] = "true";
             })
             .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile", opts =>
             {
-                opts.RabbitMqConnectionStringEnvVarName = "TRANSPORT_CONNECTION_STRING";
-                opts.WireMockUrlEnvVarName = "MOCK_SERVER_URL";
+                opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "TRANSPORT_CONNECTION_STRING";
+                opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "MOCK_SERVER_URL";
             })
+            .StartAsync();
+        // end-snippet
+    }
+
+    public async Task CustomInfrastructure()
+    {
+        string srcDir = null!;
+
+        // begin-snippet: env-var-use-infrastructure
+        _env = await new TestEnvironmentBuilder()
+            .WithDockerfileDirectory(srcDir)
+            .UseInfrastructure(
+                key: "redis",
+                defaultEnvVarName: "REDIS_CONNECTION_STRING",
+                buildContainer: network => new ContainerBuilder()
+                    .WithImage("redis:7")
+                    .WithNetwork(network)
+                    .WithNetworkAliases("redis")
+                    .Build(),
+                connectionString: "redis:6379")
+            .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
             .StartAsync();
         // end-snippet
     }

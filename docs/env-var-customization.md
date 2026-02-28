@@ -28,7 +28,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L11-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-global-rabbitmq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L14-L20' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-global-rabbitmq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: env-var-global-postgresql -->
@@ -40,7 +40,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L24-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-global-postgresql' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L27-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-global-postgresql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 > Both callbacks are optional. Calling `UseRabbitMQ()` or `UsePostgreSql()` with no arguments
@@ -60,13 +60,13 @@ default for that endpoint only.
 _env = await new TestEnvironmentBuilder()
     .WithDockerfileDirectory(srcDir)
     .UseRabbitMQ()
-    .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile",
-        opts => opts.RabbitMqConnectionStringEnvVarName = "RABBIT_CONNECTION_STRING")
-    .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile",
-        opts => opts.RabbitMqConnectionStringEnvVarName = "TRANSPORT_CONNECTION_STRING")
+    .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile", opts =>
+        opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "RABBIT_CONNECTION_STRING")
+    .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile", opts =>
+        opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "TRANSPORT_CONNECTION_STRING")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L37-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-rabbitmq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L40-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-rabbitmq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### WireMock URL
@@ -78,13 +78,13 @@ _env = await new TestEnvironmentBuilder()
     .WithDockerfileDirectory(srcDir)
     .UseRabbitMQ()
     .UseWireMock()
-    .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile",
-        opts => opts.WireMockUrlEnvVarName = "EXTERNAL_HTTP_STUB_URL")
-    .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile",
-        opts => opts.WireMockUrlEnvVarName = "MOCK_SERVER_URL")
+    .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile", opts =>
+        opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "EXTERNAL_HTTP_STUB_URL")
+    .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile", opts =>
+        opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "MOCK_SERVER_URL")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L53-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-wiremock' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L56-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-wiremock' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Additional static environment variables
@@ -105,7 +105,7 @@ _env = await new TestEnvironmentBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L70-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-additional' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L73-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-additional' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Combining overrides
@@ -122,29 +122,59 @@ _env = await new TestEnvironmentBuilder()
     .UseWireMock()
     .AddEndpoint("TeamAEndpoint", "TeamA.Testing/Dockerfile", opts =>
     {
-        opts.RabbitMqConnectionStringEnvVarName = "RABBIT_CONNECTION_STRING";
-        opts.PostgreSqlConnectionStringEnvVarName = "DB_CONNECTION_STRING";
-        opts.WireMockUrlEnvVarName = "EXTERNAL_HTTP_STUB_URL";
+        opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "RABBIT_CONNECTION_STRING";
+        opts.InfrastructureEnvVarNames[PostgreSqlContainerOptions.InfrastructureKey] = "DB_CONNECTION_STRING";
+        opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "EXTERNAL_HTTP_STUB_URL";
         opts.EnvironmentVariables["FEATURE_FLAG_X"] = "true";
     })
     .AddEndpoint("TeamBEndpoint", "TeamB.Testing/Dockerfile", opts =>
     {
-        opts.RabbitMqConnectionStringEnvVarName = "TRANSPORT_CONNECTION_STRING";
-        opts.WireMockUrlEnvVarName = "MOCK_SERVER_URL";
+        opts.InfrastructureEnvVarNames[RabbitMqContainerOptions.InfrastructureKey] = "TRANSPORT_CONNECTION_STRING";
+        opts.InfrastructureEnvVarNames[WireMockOptions.InfrastructureKey] = "MOCK_SERVER_URL";
     })
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L87-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-combined' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L90-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-combined' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Adding custom infrastructure with `UseInfrastructure`
+
+`UseRabbitMQ()` and `UsePostgreSql()` are convenience wrappers around the general-purpose
+`UseInfrastructure()` method. You can use it directly to add any Testcontainers-managed
+infrastructure — no framework changes needed:
+
+<!-- snippet: env-var-use-infrastructure -->
+<a id='snippet-env-var-use-infrastructure'></a>
+```cs
+_env = await new TestEnvironmentBuilder()
+    .WithDockerfileDirectory(srcDir)
+    .UseInfrastructure(
+        key: "redis",
+        defaultEnvVarName: "REDIS_CONNECTION_STRING",
+        buildContainer: network => new ContainerBuilder()
+            .WithImage("redis:7")
+            .WithNetwork(network)
+            .WithNetworkAliases("redis")
+            .Build(),
+        connectionString: "redis:6379")
+    .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
+    .StartAsync();
+```
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The `key` you choose is what endpoints use in `InfrastructureEnvVarNames` to override the
+env var name for that infrastructure.
 
 ## Resolution order
 
 For each endpoint container, the env var name is resolved as follows:
 
-1. **Per-endpoint override** — the value set on `EndpointContainerOptions` (if non-`null`)
-2. **Global default** — the value set on `RabbitMqContainerOptions` / `PostgreSqlContainerOptions`
-3. **Built-in default** — the names in the table at the top of this page
+1. **Per-endpoint override** — `InfrastructureEnvVarNames[key]` in `EndpointContainerOptions`
+2. **Global default** — `defaultEnvVarName` passed to `UseInfrastructure` (or the
+   `ConnectionStringEnvVarName` on `RabbitMqContainerOptions` / `PostgreSqlContainerOptions`)
+3. **Built-in default** — the names in the table at the top of this page (for `UseRabbitMQ`
+   and `UsePostgreSql` specifically)
 
 The connection string *value* (i.e., the actual address and credentials) is always computed by
-the framework from the running container; only the *name* of the environment variable is
-customizable.
+the framework; only the *name* of the environment variable is customizable.

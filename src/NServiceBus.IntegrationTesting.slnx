@@ -3,6 +3,8 @@
   <Project Path="AnotherEndpoint/AnotherEndpoint.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.Agent.v9/NServiceBus.IntegrationTesting.Agent.v9.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.PostgreSql/NServiceBus.IntegrationTesting.PostgreSql.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.RabbitMQ/NServiceBus.IntegrationTesting.RabbitMQ.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.Tests/NServiceBus.IntegrationTesting.Tests.csproj" />
   <Project Path="NServiceBus.IntegrationTesting/NServiceBus.IntegrationTesting.csproj" />
   <Project Path="SampleEndpoint.Testing/SampleEndpoint.Testing.csproj" />

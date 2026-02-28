@@ -7,24 +7,14 @@ namespace NServiceBus.IntegrationTesting;
 public sealed class EndpointContainerOptions
 {
     /// <summary>
-    /// Overrides the environment variable name used to inject the RabbitMQ connection string
-    /// into this endpoint's container. When <c>null</c>, the name configured on
-    /// <see cref="RabbitMqContainerOptions.ConnectionStringEnvVarName"/> is used.
+    /// Per-endpoint overrides for the environment variable name used to inject each
+    /// infrastructure's connection string or URL. Keys are the canonical infrastructure
+    /// keys (e.g. <see cref="RabbitMqContainerOptions.InfrastructureKey"/>,
+    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>,
+    /// <see cref="WireMockOptions.InfrastructureKey"/>). When a key is absent the global
+    /// default configured on the corresponding options class is used.
     /// </summary>
-    public string? RabbitMqConnectionStringEnvVarName { get; set; }
-
-    /// <summary>
-    /// Overrides the environment variable name used to inject the PostgreSQL connection string
-    /// into this endpoint's container. When <c>null</c>, the name configured on
-    /// <see cref="PostgreSqlContainerOptions.ConnectionStringEnvVarName"/> is used.
-    /// </summary>
-    public string? PostgreSqlConnectionStringEnvVarName { get; set; }
-
-    /// <summary>
-    /// Overrides the environment variable name used to inject the WireMock URL into this
-    /// endpoint's container. When <c>null</c>, <c>WIREMOCK_URL</c> is used.
-    /// </summary>
-    public string? WireMockUrlEnvVarName { get; set; }
+    public Dictionary<string, string> InfrastructureEnvVarNames { get; } = [];
 
     /// <summary>
     /// Additional static environment variables to inject into this endpoint's container.
