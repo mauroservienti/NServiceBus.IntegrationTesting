@@ -2,7 +2,7 @@ namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// Configuration options for the RabbitMQ container added via
-/// <see cref="TestEnvironmentBuilder.UseRabbitMQ"/>.
+/// <see cref="TestEnvironmentBuilderRabbitMqExtensions.UseRabbitMQ"/>.
 /// </summary>
 public sealed class RabbitMqContainerOptions
 {

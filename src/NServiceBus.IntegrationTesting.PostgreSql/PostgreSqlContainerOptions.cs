@@ -2,7 +2,7 @@ namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// Configuration options for the PostgreSQL container added via
-/// <see cref="TestEnvironmentBuilder.UsePostgreSql"/>.
+/// <see cref="TestEnvironmentBuilderPostgreSqlExtensions.UsePostgreSql"/>.
 /// </summary>
 public sealed class PostgreSqlContainerOptions
 {

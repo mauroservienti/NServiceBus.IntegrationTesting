@@ -16,6 +16,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.RabbitMQ\NServiceBus.IntegrationTesting.RabbitMQ.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.PostgreSql\NServiceBus.IntegrationTesting.PostgreSql.csproj" />
         <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v10\NServiceBus.IntegrationTesting.Agent.v10.csproj" />
         <ProjectReference Include="..\SampleMessages\SampleMessages.csproj" />
     </ItemGroup>
