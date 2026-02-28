@@ -29,7 +29,7 @@ public class WhenAMessageFails
 
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
             .AddEndpoint("AnotherEndpoint", "AnotherEndpoint.Testing/Dockerfile")

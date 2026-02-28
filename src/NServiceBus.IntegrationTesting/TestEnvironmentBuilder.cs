@@ -30,7 +30,7 @@ public sealed class TestEnvironmentBuilder
     /// Adds a RabbitMQ container to the environment. All endpoint containers receive a
     /// RABBITMQ_CONNECTION_STRING environment variable pointing to it via the Docker network.
     /// </summary>
-    public TestEnvironmentBuilder UseRabbitMq(string image = "rabbitmq:management")
+    public TestEnvironmentBuilder UseRabbitMQ(string image = "rabbitmq:management")
     {
         _rabbitMqImage = image;
         return this;
