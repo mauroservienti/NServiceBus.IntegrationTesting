@@ -83,7 +83,7 @@ namespace NServiceBus.IntegrationTesting
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile) { }
         public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.TestEnvironment> StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UsePostgreSql(string image = "postgres:15.1") { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMq(string image = "rabbitmq:management") { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMQ(string image = "rabbitmq:management") { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock() { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithAgentConnectionTimeout(System.TimeSpan timeout) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithDockerfileDirectory(string directory) { }

@@ -28,7 +28,7 @@ public class WhenSomeMessageIsSentWithWireMock
 
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UsePostgreSql()
             .UseWireMock()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
