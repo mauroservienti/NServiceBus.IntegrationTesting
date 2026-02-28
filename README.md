@@ -1,6 +1,6 @@
 # NServiceBus.IntegrationTesting
 
-![NServiceBus.IntegrationTesting icon](assets/icon.png)
+<img src="assets/icon.png" width="100" />
 
 NServiceBus.IntegrationTesting enables testing end-to-end business scenarios against real
 production endpoints, real transports, and real persistence.
