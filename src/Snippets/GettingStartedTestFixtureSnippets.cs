@@ -20,7 +20,7 @@ public class WhenSomeCommandIsSent
 
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
             .StartAsync();

@@ -21,7 +21,7 @@ public class AdvancedSnippets
         // begin-snippet: gs-multi-endpoint
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("OrdersEndpoint", "OrdersEndpoint.Testing/Dockerfile")
             .AddEndpoint("BillingEndpoint", "BillingEndpoint.Testing/Dockerfile")
@@ -98,7 +98,7 @@ public class AdvancedSnippets
 
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UseWireMock()                       // starts the stub server
             .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
             .StartAsync();
@@ -152,7 +152,7 @@ public class AdvancedSnippets
         // begin-snippet: gs-agent-timeout
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
             .WithAgentConnectionTimeout(TimeSpan.FromMinutes(5))
             .StartAsync();
