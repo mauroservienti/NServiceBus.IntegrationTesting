@@ -5,21 +5,16 @@ NServiceBus.IntegrationTesting. By the end you will have:
 
 - A companion `*.Testing` project for each endpoint you want to test
 - One or more named **scenarios** that send messages from inside the endpoint process
-- An NUnit test project that starts Docker containers and asserts on handler invocations,
-  message dispatches, saga state, and failure outcomes
+- An NUnit test project that starts Docker containers and asserts on handler invocations, message dispatches, saga state, and failure outcomes
 
----
+> [!NOTE]
+> This guide uses NUnit, but NServiceBus.IntegrationTesting works with any unit testing framework
 
 ## What is NServiceBus.IntegrationTesting?
 
-NServiceBus.IntegrationTesting runs your real NServiceBus endpoints as Docker containers and
-lets your tests observe what happens — which handlers ran, which messages were dispatched,
-which sagas were started, and whether any messages failed permanently.
+NServiceBus.IntegrationTesting runs your real NServiceBus endpoints as Docker containers and lets your tests observe what happens — which handlers ran, which messages were dispatched, which sagas were started, and whether any messages failed permanently.
 
-Unlike unit tests or acceptance tests that mock the transport, every message here travels
-over the **real transport** (e.g. RabbitMQ) and is persisted by the **real persistence**
-(e.g. PostgreSQL). This gives you high confidence that your production configuration is
-correct.
+Unlike unit tests or acceptance tests that mock the transport, every message here travels over the **real transport** (e.g., RabbitMQ) and is persisted by the **real persistence** (e.g., PostgreSQL). This gives you high confidence that your production configuration is correct.
 
 ### How it works
 
@@ -41,13 +36,11 @@ correct.
 ```
 
 1. The test process starts a lightweight **gRPC host** on a dynamic port.
-2. Infrastructure containers (RabbitMQ, PostgreSQL) start on a shared Docker network.
+2. Infrastructure containers (e.g., RabbitMQ, PostgreSQL) start on a shared Docker network.
 3. Each endpoint's **companion `*.Testing` image** is built and started as a container.
-4. Each endpoint embeds a gRPC **agent** that connects home on startup.
-5. A test **scenario** — a named entry point in the `*.Testing` project — is executed
-   inside the endpoint process using the real `IMessageSession`.
-6. The agent streams back handler invocations, saga events, message dispatches, and
-   failure events to the test host.
+4. Each endpoint companion embeds a gRPC **agent** that connects home on startup.
+5. A test **scenario** — a named entry point in the `*.Testing` project — is executed inside the endpoint process using the real `IMessageSession` and can send messages required to kick off the scenario to test.
+6. Each agent, running in real endpoints, streams back handler invocations, saga events, message dispatches, and failure events to the test host.
 7. The test awaits conditions via the fluent `ObserveContext` API and then makes assertions.
 
 ---
@@ -58,7 +51,6 @@ correct.
 |---|---|
 | .NET SDK | 9.0 |
 | Docker Desktop (macOS/Windows) or Docker Engine (Linux) | 20.10 |
-| NUnit | 4.x |
 
 > **Tip for Linux CI**: add `WithExtraHost("host.docker.internal", "host-gateway")` to your
 > endpoint container builder if containers cannot resolve `host.docker.internal`. This is
