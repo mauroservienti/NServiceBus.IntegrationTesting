@@ -1,6 +1,14 @@
 ﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NServiceBus.IntegrationTesting.Tests")]
 namespace NServiceBus.IntegrationTesting
 {
+    public sealed class EndpointContainerOptions
+    {
+        public EndpointContainerOptions() { }
+        public System.Collections.Generic.Dictionary<string, string> EnvironmentVariables { get; }
+        public string? PostgreSqlConnectionStringEnvVarName { get; set; }
+        public string? RabbitMqConnectionStringEnvVarName { get; set; }
+        public string? WireMockUrlEnvVarName { get; set; }
+    }
     public sealed class EndpointHandle
     {
         public string EndpointName { get; }
@@ -66,6 +74,18 @@ namespace NServiceBus.IntegrationTesting
         public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent> SagaInvocations(string sagaTypeName) { }
         public NServiceBus.IntegrationTesting.HandlerInvokedEvent SagaInvoked(string sagaTypeName) { }
     }
+    public sealed class PostgreSqlContainerOptions
+    {
+        public PostgreSqlContainerOptions() { }
+        public string ConnectionStringEnvVarName { get; set; }
+        public string ImageName { get; set; }
+    }
+    public sealed class RabbitMqContainerOptions
+    {
+        public RabbitMqContainerOptions() { }
+        public string ConnectionStringEnvVarName { get; set; }
+        public string ImageName { get; set; }
+    }
     public sealed class TestEnvironment : System.IAsyncDisposable
     {
         public WireMock.Server.WireMockServer? WireMock { get; }
@@ -80,10 +100,10 @@ namespace NServiceBus.IntegrationTesting
     public sealed class TestEnvironmentBuilder
     {
         public TestEnvironmentBuilder() { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? configure = null) { }
         public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.TestEnvironment> StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UsePostgreSql(string image = "postgres:15.1") { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMQ(string image = "rabbitmq:management") { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UsePostgreSql(System.Action<NServiceBus.IntegrationTesting.PostgreSqlContainerOptions>? configure = null) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMQ(System.Action<NServiceBus.IntegrationTesting.RabbitMqContainerOptions>? configure = null) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock() { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithAgentConnectionTimeout(System.TimeSpan timeout) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithDockerfileDirectory(string directory) { }
