@@ -84,7 +84,7 @@ jobs:
         run: |
           echo "Tag is pre-release"
           echo "Pushing package to Feedz.io"
-          dotnet nuget push ./nugets/*.nupkg --source https://f.feedz.io/servicecomposer/pre-releases/nuget --api-key ${{ secrets.FEEDZ_API_KEY }}
+          dotnet nuget push ./nugets/*.nupkg --source https://f.feedz.io/mauroservienti/pre-releases/nuget/index.json --api-key ${{ secrets.FEEDZ_API_KEY }}
       - name: Deploy release to NuGet
         if: steps.check-tag-type.outputs.release-type == 'production'
         run: |
