@@ -112,8 +112,6 @@ public static class YourEndpointConfig
 
 > **Important**: read all connection strings from environment variables. The framework injects the correct container-network addresses (e.g., `host=rabbitmq`) at startup.
 
----
-
 ## Step 2 — Create the companion `*.Testing` project
 
 Add a new console project alongside the production endpoint:
@@ -132,10 +130,19 @@ Add a new console project alongside the production endpoint:
     <ProjectReference Include="..\YourEndpoint\YourEndpoint.csproj" />
     <!--
       Reference the agent version that matches your NServiceBus major version:
-        NServiceBus 10 → NServiceBus.IntegrationTesting.Agent.v10
-        NServiceBus 9  → NServiceBus.IntegrationTesting.Agent.v9
+        NServiceBus 10 → NServiceBus.IntegrationTesting.AgentV10
+        NServiceBus 9  → NServiceBus.IntegrationTesting.AgentV9
     -->
     <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v10\NServiceBus.IntegrationTesting.Agent.v10.csproj" />
+  </ItemGroup>
+
+    <ItemGroup>
+    <!--
+      Reference the agent version that matches your NServiceBus major version:
+        NServiceBus 10 → NServiceBus.IntegrationTesting.AgentV10
+        NServiceBus 9  → NServiceBus.IntegrationTesting.AgentV9
+    -->
+    <PackageReference Include="..." Version="..." />
   </ItemGroup>
 </Project>
 ```
@@ -173,10 +180,7 @@ static EndpointConfiguration CreateConfig()
 }
 ```
 
-> **Never modify the production `Create()` factory for testing purposes.** Wrap it in the
-> `*.Testing` project and overlay settings there.
-
----
+> **Never modify the production `Create()` factory for testing purposes.** Wrap it in the `*.Testing` project and customize settings there for trsting purposes.
 
 ## Step 3 — Write scenarios
 
@@ -192,7 +196,7 @@ using YourEndpoint.Messages;
 
 public class SomeCommandScenario : Scenario
 {
-    public override string Name => "SomeCommand";
+    public override string Name => "SomeCommand Scenario";
 
     public override async Task Execute(
         IMessageSession session,
@@ -208,17 +212,13 @@ public class SomeCommandScenario : Scenario
 Key points:
 
 - `Name` must be unique within an endpoint and is used by the test to trigger the scenario.
-- `args` is a `Dictionary<string, string>` passed from the test — use it for correlation IDs
-  and any other per-test data.
-- The `Execute` method runs inside the endpoint process. Any message type available there
-  is available here; no special constructors or test-only types are needed.
-
----
+- `args` is a `Dictionary<string, string>` passed from the test — use it for per-test data relevant to the scenario, e.g., permutations.
+- The `Execute` method runs inside the endpoint process. Any message type available there is available here; no special constructors or test-only types are needed.
 
 ## Step 4 — Write the Dockerfile for the companion project
 
 The Dockerfile builds the `*.Testing` project (not the production project) into a container
-image. The build context is the `src/` directory so `COPY` instructions can reach all sibling
+image. The build context is the `src/` directory, so `COPY` instructions can reach all sibling
 projects.
 
 ```dockerfile
@@ -230,16 +230,13 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy project files first for layer-cached restore
-COPY NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj NServiceBus.IntegrationTesting.Agent.v10/
 COPY YourMessages/YourMessages.csproj YourMessages/
 COPY YourEndpoint/YourEndpoint.csproj YourEndpoint/
 COPY YourEndpoint.Testing/YourEndpoint.Testing.csproj YourEndpoint.Testing/
-COPY proto/ proto/
 
 RUN dotnet restore YourEndpoint.Testing/YourEndpoint.Testing.csproj
 
 # Copy source and publish
-COPY NServiceBus.IntegrationTesting.Agent.v10/ NServiceBus.IntegrationTesting.Agent.v10/
 COPY YourMessages/ YourMessages/
 COPY YourEndpoint/ YourEndpoint/
 COPY YourEndpoint.Testing/ YourEndpoint.Testing/
@@ -252,14 +249,11 @@ COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "YourEndpoint.Testing.dll"]
 ```
 
-> **Do not use `--no-restore`** on the `dotnet publish` step. On ARM64/Apple Silicon with
-> Linux/AMD64 containers, the restore and publish must share the same RID context.
-
----
+> **Do not use `--no-restore`** on the `dotnet publish` step. On ARM64/Apple Silicon with Linux/AMD64 containers, the restore and publish must share the same RID context.
 
 ## Step 5 — Create the test project
 
-Create an NUnit test project that references both the framework and the companion projects:
+Create a test project, using NUnit in the example below, that references both the testing framework and the `*.Testing` companion projects:
 
 ```xml
 <!-- YourEndpoint.Tests/YourEndpoint.Tests.csproj -->
@@ -279,12 +273,10 @@ Create an NUnit test project that references both the framework and the companio
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Testcontainers" Version="4.10.0" />
+    <PackageReference Include="NServiceBus.IntegrationTesting" Version="3.*" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The framework library — provides TestEnvironmentBuilder, ObserveContext, etc. -->
-    <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
-
     <!--
       ReferenceOutputAssembly="false": compile the companion project (catches errors early)
       but do not load its assembly at runtime — Docker builds the image instead.
@@ -296,15 +288,11 @@ Create an NUnit test project that references both the framework and the companio
 </Project>
 ```
 
----
-
 ## Step 6 — Write test fixtures
 
 ### Basic fixture structure
 
-Each test fixture manages a shared `TestEnvironment` that is started once for the entire
-fixture and torn down afterward. Starting the environment (building Docker images, starting
-containers) is expensive, so share it across all tests in the fixture.
+Each test fixture manages a shared `TestEnvironment` that is started once at the beginning of the fixture and torn down afterward. Starting the environment (building Docker images, starting containers) is expensive, so share it across all tests in the fixture. NServiceBus endpoints should be stateless and thus reused across different tests. What might require being "fresh" before each test is the underlying infrastructure, such as the message broker, to prevent leftover in-flight messages or saga instances to affets the next test. The way tests are set up depends on your requirements.
 
 ```csharp
 using NServiceBus.IntegrationTesting;
@@ -321,7 +309,7 @@ public class WhenSomeCommandIsSent
     public static async Task SetUp()
     {
         // Point to the directory that contains the endpoint sub-directories.
-        // Typically this is the 'src/' folder of your repository.
+        // Typically, this is the 'src/' folder of your repository.
         var srcDir = Path.Combine(FindRepoRoot(), "src");
 
         _env = await new TestEnvironmentBuilder()
@@ -341,9 +329,10 @@ public class WhenSomeCommandIsSent
     public async Task Handler_should_be_invoked()
     {
         var correlationId = await _yourEndpoint.ExecuteScenarioAsync(
-            "SomeCommand",
+            "SomeCommand Scenario",
             new Dictionary<string, string> { { "ID", Guid.NewGuid().ToString() } });
 
+        // this is the overall test timeout
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
         var results = await _env.Observe(correlationId, cts.Token)
@@ -371,25 +360,20 @@ public class WhenSomeCommandIsSent
 
 ```csharp
 var correlationId = await _yourEndpoint.ExecuteScenarioAsync(
-    "SomeCommand",
+    "SomeCommand Scenario",
     new Dictionary<string, string> { { "ID", Guid.NewGuid().ToString() } });
 ```
 
 - `ExecuteScenarioAsync` returns a **correlation ID** — a string that ties all events
   produced by this scenario execution together.
 - The `args` dictionary is forwarded to `Scenario.Execute` inside the endpoint process.
-- Always generate a fresh `Guid` for each test run so events from different tests are
-  never mixed up.
-
----
 
 ## Step 7 — Observing results
 
-The `ObserveContext` API lets you declare what you are waiting for before calling
-`WhenAllAsync()`. Because all listeners are registered immediately, no event can be missed
-between registrations — even if a handler runs extremely fast.
+The `ObserveContext` API lets you declare what you are waiting for before calling `WhenAllAsync()`. Because all listeners are registered immediately, no event can be missed between registrations — even if a handler runs extremely fast.
 
-> **Critical**: register **all** conditions before awaiting `WhenAllAsync()`.
+> [!IMPORTANT]
+> Register **all** conditions before awaiting `WhenAllAsync()`.
 
 ### Waiting for a handler invocation
 
@@ -404,12 +388,11 @@ var evt = results.HandlerInvoked("SomeMessageHandler");
 Assert.That(evt.EndpointName, Is.EqualTo("YourEndpoint"));
 ```
 
-The string passed to `HandlerInvoked` is the **simple type name** of the handler class
-(e.g. `"SomeMessageHandler"` for `class SomeMessageHandler : IHandleMessages<SomeMessage>`).
+The string passed to `HandlerInvoked` is the **simple type name** of the handler class (e.g., `"SomeMessageHandler"` for `class SomeMessageHandler : IHandleMessages<SomeMessage>`).
 
 ### Waiting for a saga invocation
 
-Sagas are tracked separately from plain handlers so you can distinguish between the two:
+Sagas are tracked separately from plain handlers, so you can distinguish between the two:
 
 ```csharp
 var results = await _env.Observe(correlationId, cts.Token)
@@ -455,8 +438,7 @@ The string passed to `MessageDispatched` is the **simple type name** of the mess
 
 ### Waiting for a message failure
 
-Use `MessageFailed()` alone when you expect a message to be permanently sent to the error
-queue. It cannot be combined with success conditions:
+There are cases in which we want to test the error path. For example, if we do something, we expect a message to land in the error queue. Use `MessageFailed()` alone when you expect a message to be permanently sent to the error queue. It cannot be combined with success conditions:
 
 ```csharp
 var results = await _env.Observe(correlationId, cts.Token)
@@ -471,15 +453,13 @@ Assert.Multiple(() =>
 });
 ```
 
-> **Tip**: set `NumberOfRetries(0)` in the `*.Testing` project so messages fail
+> **Tip**: Tweak `NumberOfRetries(0)` in the `*.Testing` project so messages fail
 > immediately rather than spending time in retry loops:
 >
 > ```csharp
 > config.Recoverability().Immediate(s => s.NumberOfRetries(0));
 > config.Recoverability().Delayed(s => s.NumberOfRetries(0));
 > ```
-
----
 
 ## Advanced topics
 
@@ -504,7 +484,7 @@ each other exactly as they would in production.
 ### Testing saga timeouts
 
 Sagas that use `RequestTimeout` may have delays that are far too long for tests (minutes or
-hours in production). Use `TimeoutRule` to shorten them in the `*.Testing` project:
+hours in production). Use a `TimeoutRule` to shorten them in the `*.Testing` project:
 
 ```csharp
 // YourEndpoint.Testing/Program.cs
@@ -532,11 +512,7 @@ Assert.That(results.MessageDispatched("OrderProcessingTimeout").Intent,
 
 ### Predicate overloads
 
-All `HandlerInvoked`, `SagaInvoked`, and `MessageDispatched` conditions support two
-additional overloads that let you encode business assertions directly in the done condition.
-
-**Single-event predicate** — the condition fires only when the predicate on the latest event
-returns `true`:
+All `HandlerInvoked`, `SagaInvoked`, and `MessageDispatched` conditions support two additional overloads that let you encode business assertions directly in the done condition — the condition fires only when the predicate on the latest event returns `true`:
 
 ```csharp
 // Only fires when the saga is new — no need to assert afterward
@@ -545,8 +521,7 @@ var results = await _env.Observe(correlationId, cts.Token)
     .WhenAllAsync();
 ```
 
-**List predicate** — the condition fires when the accumulated list of matching events
-satisfies the predicate. Use this when you need to reason about multiple events together:
+**List predicate** — the condition fires when the accumulated list of matching events satisfies the predicate. Use this when you need to reason about multiple events together:
 
 ```csharp
 // Wait until we have seen at least 3 dispatches of the same type
@@ -560,9 +535,7 @@ Assert.That(dispatches, Has.Count.GreaterThanOrEqualTo(3));
 
 ### Stubbing external HTTP services with WireMock
 
-If your endpoint calls an external HTTP service, use `.UseWireMock()` to start an embedded
-[WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) stub server. The framework
-automatically injects `WIREMOCK_URL` into every endpoint container.
+If your endpoint calls an external HTTP service, use `.UseWireMock()` to start an embedded [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) stub server. The framework automatically injects the `WIREMOCK_URL` environment variable into every endpoint container.
 
 ```csharp
 // *.Tests.csproj: add <PackageReference Include="WireMock.Net" Version="1.25.0" />
@@ -578,7 +551,7 @@ _env = await new TestEnvironmentBuilder()
 In your endpoint, read `WIREMOCK_URL` from the environment:
 
 ```csharp
-// Only calls the external service when the variable is set (i.e. in test mode)
+// Only calls the external service when the variable is set (i.e., in test mode)
 var externalUrl = Environment.GetEnvironmentVariable("WIREMOCK_URL");
 if (externalUrl is not null)
 {
@@ -586,8 +559,7 @@ if (externalUrl is not null)
 }
 ```
 
-In the test, configure the stub before triggering the scenario, then verify the request
-was received afterward:
+In the test, configure the stub before triggering the scenario, then verify the request was received afterward:
 
 ```csharp
 using WireMock.RequestBuilders;
@@ -618,8 +590,7 @@ public async Task Handler_calls_external_service()
 
 ### Dumping container logs on failure
 
-When a test fails, endpoint container logs are invaluable for diagnosing what went wrong.
-Add a `[TearDown]` method that dumps them only on failure:
+When a test fails, endpoint container logs are invaluable for diagnosing what went wrong. Add a `[TearDown]` method that dumps them only on failure:
 
 ```csharp
 [TearDown]
@@ -639,8 +610,7 @@ public async Task DumpContainerLogsOnFailure()
 
 ### Adjusting the agent connection timeout
 
-By default, `StartAsync` waits up to 120 seconds for all endpoint agents to connect. Adjust
-this if your Docker image builds or container startup are particularly slow:
+By default, `StartAsync` waits up to 120 seconds for all endpoint agents to connect. Adjust this if your Docker image builds or container startup is particularly slow:
 
 ```csharp
 _env = await new TestEnvironmentBuilder()
@@ -651,12 +621,9 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
----
-
 ## Complete example
 
-The following end-to-end example mirrors the sample included with this repository. It shows
-two endpoints, a saga with a timeout, a failure scenario, and WireMock stubbing.
+The following end-to-end example mirrors the sample included with this repository. It shows two endpoints, a saga with a timeout, a failure scenario, and WireMock stubbing.
 
 ### Production endpoint (`SampleEndpoint/`)
 
@@ -713,7 +680,7 @@ await IntegrationTestingBootstrap.RunAsync(
 // SampleEndpoint.Testing/SomeMessageScenario.cs
 public class SomeMessageScenario : Scenario
 {
-    public override string Name => "SomeMessage";
+    public override string Name => "SomeMessage Scenario";
 
     public override async Task Execute(
         IMessageSession session,
@@ -769,7 +736,7 @@ public class WhenSomeMessageIsSent
     public async Task The_full_chain_should_be_processed()
     {
         var correlationId = await _sampleEndpoint.ExecuteScenarioAsync(
-            "SomeMessage",
+            "SomeMessage Scenario",
             new Dictionary<string, string> { { "ID", Guid.NewGuid().ToString() } });
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -826,8 +793,7 @@ public class WhenSomeMessageIsSent
 
 - Increase `WithAgentConnectionTimeout` for slower machines or CI environments.
 - Check that `NSBUS_TESTING_HOST` is not blocked by a firewall rule on the host.
-- Ensure `WithExtraHost("host.docker.internal", "host-gateway")` resolves correctly on
-  Linux Docker Engine (this is applied automatically by `TestEnvironmentBuilder`).
+- Ensure `WithExtraHost("host.docker.internal", "host-gateway")` resolves correctly on Linux Docker Engine (this is applied automatically by `TestEnvironmentBuilder`).
 - Dump the container logs for the failing endpoint to see the startup error:
   ```csharp
   var (out, err) = await _env.GetEndpointContainerLogsAsync("YourEndpoint");
@@ -835,34 +801,23 @@ public class WhenSomeMessageIsSent
 
 ### Docker image build fails
 
-- Verify the build context (`WithDockerfileDirectory`) points to the directory that
-  contains all the projects referenced in the Dockerfile's `COPY` instructions.
-- Add a `.dockerignore` file in the build context directory that excludes `**/bin/`
-  and `**/obj/` to prevent local build artifacts from contaminating container builds.
+- Verify the build context (`WithDockerfileDirectory`) points to the directory that contains all the projects referenced in the Dockerfile's `COPY` instructions.
+- Add a `.dockerignore` file in the build context directory that excludes `**/bin/` and `**/obj/` to prevent local build artifacts from contaminating container builds.
 
 ### Tests pass locally but fail in CI
 
-- Ensure Docker images are pre-built in a CI step before the test run. See the CI
-  workflow for the pattern of building images with a fixed tag before running tests.
-- On Linux CI, the BuildKit async-tagging race condition means the image tag may not
-  be immediately visible after `docker build`. Pre-building images with the exact same
-  tag that `TestEnvironmentBuilder` uses (`localhost/nsb-integration-testing/{name}:latest`)
-  avoids this.
+- Ensure Docker images are pre-built in a CI step before the test run. See the CI workflow for the pattern of building images with a fixed tag before running tests.
+- On Linux CI, the BuildKit async-tagging race condition means the image tag may not be immediately visible after `docker build`. Pre-building images with the exact same tag that `TestEnvironmentBuilder` uses (`localhost/nsb-integration-testing/{name}:latest`) avoids this.
 
 ### `OperationCanceledException` — conditions not satisfied in time
 
-- Increase the `CancellationTokenSource` timeout. Long-running tests (e.g. saga timeouts)
-  need enough headroom.
+- Increase the `CancellationTokenSource` timeout. Long-running tests (e.g., saga timeouts) need enough headroom.
 - Make sure you have registered all expected conditions before calling `WhenAllAsync()`.
-- If a handler is not being invoked, check the routing configuration and that the message
-  type name matches exactly (simple type name, not fully qualified).
+- If a handler is not being invoked, check the routing configuration and that the message type name matches exactly (simple type name, not fully qualified).
 
 ### `InvalidOperationException: Cannot register HandlerInvoked() when MessageFailed() is already registered`
 
-`MessageFailed()` must be the only condition on an `ObserveContext`. Create a separate
-test for the failure scenario instead of mixing success and failure conditions.
-
----
+`MessageFailed()` must be the only condition on an `ObserveContext`. Create a separate test for the failure scenario instead of mixing success and failure conditions. If, while testing a happy path, a message fails and is delivered to the error queue, the test fails automatically.
 
 ## API reference summary
 
