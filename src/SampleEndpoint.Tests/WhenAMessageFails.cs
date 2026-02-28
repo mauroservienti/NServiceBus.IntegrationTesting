@@ -25,10 +25,10 @@ public class WhenAMessageFails
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        var vNextDir = Path.Combine(FindRepoRoot(), "vNext");
+        var srcDir = Path.Combine(FindRepoRoot(), "src");
 
         _env = await new TestEnvironmentBuilder()
-            .WithDockerfileDirectory(vNextDir)
+            .WithDockerfileDirectory(srcDir)
             .UseRabbitMq()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")

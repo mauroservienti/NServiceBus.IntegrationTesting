@@ -4,7 +4,7 @@ using SampleMessages;
 
 namespace Snippets;
 
-// begin-snippet: vNext-scenario
+// begin-snippet: scenario
 public class SomeMessageScenario : Scenario
 {
     public override string Name => "SomeMessage";

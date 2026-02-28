@@ -35,8 +35,8 @@ Each endpoint runs in its own Docker container. Endpoints can run **different NS
 
 ### Writing a test
 
-<!-- snippet: vNext-writing-a-test -->
-<a id='snippet-vNext-writing-a-test'></a>
+<!-- snippet: writing-a-test -->
+<a id='snippet-writing-a-test'></a>
 ```cs
 [TestFixture]
 public class WhenSomeMessageIsSent
@@ -46,10 +46,10 @@ public class WhenSomeMessageIsSent
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        var vNextDir = Path.Combine(FindRepoRoot(), "vNext");
+        var srcDir = Path.Combine(FindRepoRoot(), "src");
 
         _env = await new TestEnvironmentBuilder()
-            .WithDockerfileDirectory(vNextDir)
+            .WithDockerfileDirectory(srcDir)
             .UseRabbitMq()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
@@ -117,7 +117,7 @@ public class WhenSomeMessageIsSent
     }
 }
 ```
-<sup><a href='/vNext/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-vNext-writing-a-test' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-writing-a-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Key concepts
@@ -131,8 +131,8 @@ containers, the gRPC test host, and all endpoint containers. Optionally adds
 runs _inside the endpoint process_, using the real `IMessageSession`, so no cross-process
 message serialization occurs:
 
-<!-- snippet: vNext-scenario -->
-<a id='snippet-vNext-scenario'></a>
+<!-- snippet: scenario -->
+<a id='snippet-scenario'></a>
 ```cs
 public class SomeMessageScenario : Scenario
 {
@@ -143,7 +143,7 @@ public class SomeMessageScenario : Scenario
         => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
 ```
-<sup><a href='/vNext/Snippets/ScenarioSnippets.cs#L7-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-vNext-scenario' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/ScenarioSnippets.cs#L7-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-scenario' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **`ObserveContext`** — fluent API for waiting on events correlated by scenario invocation.

@@ -1,4 +1,4 @@
-# Build context: vNext/
+# Build context: src/
 # docker build -f SampleEndpoint.Testing/Dockerfile .
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
