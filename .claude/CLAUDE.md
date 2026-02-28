@@ -146,6 +146,42 @@ Fast unit tests — no Docker, no gRPC server required. Run with `dotnet test`.
 - Scan helpers are `internal static` in `TestHostGrpcService`; exposed via
   `InternalsVisibleTo` in `Properties/AssemblyInfo.cs`
 
+## Documentation Snippets (mdsnippets)
+
+Code examples in `/docs/*.md` are kept in sync with compilable C# via **mdsnippets**.
+
+### Snippet authoring
+
+1. Add a method (or block) in `src/Snippets/` with `// begin-snippet: id` / `// end-snippet` markers:
+   ```csharp
+   // begin-snippet: my-snippet-id
+   var x = DoSomething();
+   // end-snippet
+   ```
+2. Reference the snippet in the markdown using an HTML comment pair:
+   ```markdown
+   <!-- snippet: my-snippet-id -->
+   <!-- endSnippet -->
+   ```
+3. Run `mdsnippets -c InPlaceOverwrite` from the repo root to expand all snippets in place.
+   mdsnippets replaces the content between the comment pair with a fenced code block and a
+   source-file link, leaving the markers so the file can be re-synced in future.
+
+### Naming conventions
+- Getting-started snippets: `gs-*` prefix
+- Feature-specific snippets: short descriptive prefix matching the doc file name (e.g. `env-var-*`)
+
+### Stubs
+Types that don't exist in production code (e.g. `YourEndpoint.Messages.SomeCommand`) are
+declared in `src/Snippets/GettingStartedStubs.cs` so snippet files compile without external
+dependencies. Add new stubs there when a snippet references a non-existent type.
+
+### Running mdsnippets
+```
+cd /Users/mauroservienti/dev/mauroservienti/NServiceBus.IntegrationTesting
+mdsnippets -c InPlaceOverwrite
+```
+
 ## Remaining Gaps
 
 - **Saga data and message payload in events** (Option A: add `string message_json` and
