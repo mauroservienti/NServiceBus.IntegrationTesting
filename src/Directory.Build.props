@@ -21,7 +21,7 @@
         <!-- Output all NuGet packages to the repo-level nugets/ folder. -->
         <PackageOutputPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'nugets'))</PackageOutputPath>
         <!-- Ensure packages version at minum at 2.x regardless of existing git tags. -->
-        <MinVerMinimumMajorMinor>2.0</MinVerMinimumMajorMinor>
+        <MinVerMinimumMajorMinor>3.0</MinVerMinimumMajorMinor>
     </PropertyGroup>
 
 </Project>
