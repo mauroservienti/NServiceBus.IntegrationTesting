@@ -187,6 +187,10 @@ This gives compile-time validation that the `*.Testing` project builds, while at
 runtime the container image is built from its Dockerfile — there is no in-process loading
 of the endpoint assembly.
 
+## Supported NServiceBus versions
+
+NServiceBus.IntegrationTesting agents support NServiceBus versions 9 and 10
+
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 
 > [!NOTE]
