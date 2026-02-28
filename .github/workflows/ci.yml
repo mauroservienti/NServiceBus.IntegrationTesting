@@ -19,7 +19,7 @@ jobs:
       matrix:
         include:
 # Tests require Docker on the agent. Cannot use Windows for now
-#          - os: windows-2019
+#          - os: windows-latest
 #            name: Windows
           - os: ubuntu-latest
             name: Linux
@@ -36,28 +36,20 @@ jobs:
             8.0.x
             9.0.x
             10.0.x
-      #- name: Setup Testcontainers Cloud Client
-      #  uses: atomicjar/testcontainers-cloud-setup-action@v1
-      #  with:
-      #    token: ${{ secrets.TC_CLOUD_TOKEN }}
-      #- name: Build
-      #  run: dotnet build src --configuration Release
-      #- name: Tests
-      #  run: dotnet test src --configuration Release --no-build
       - name: Build
-        run: dotnet build vNext/NServiceBus.IntegrationTesting.slnx --configuration Release
+        run: dotnet build src --configuration Release
       - name: Pre-pull Docker base images
         run: |
           docker pull mcr.microsoft.com/dotnet/sdk:9.0
           docker pull mcr.microsoft.com/dotnet/sdk:10.0
           docker pull mcr.microsoft.com/dotnet/runtime:9.0
           docker pull mcr.microsoft.com/dotnet/runtime:10.0
-      - name: Pre-build endpoint Docker images
+      - name: Pre-build *.Testing endpoint Docker images
         run: |
-          docker build -f vNext/SampleEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/sampleendpoint:latest vNext/
-          docker build -f vNext/AnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/anotherendpoint:latest vNext/
+          docker build -f src/SampleEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/sampleendpoint:latest src/
+          docker build -f src/AnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/anotherendpoint:latest src/
       - name: Test
-        run: dotnet test vNext/NServiceBus.IntegrationTesting.slnx --configuration Release --no-build
+        run: dotnet test src --configuration Release --no-build
       - name: Upload packages
         if: matrix.name == 'Linux'
         uses: actions/upload-artifact@v4.4.0
