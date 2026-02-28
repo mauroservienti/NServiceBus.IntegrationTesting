@@ -190,11 +190,14 @@ of the endpoint assembly.
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 
 > [!NOTE]
-> v1.x of the framework has a fundamental limitation: all endpoints must share the same NServiceBus package(s) version because they run in-process.
+> v1.x of the framework has two fundamental limitations:
+>
+> - All endpoints must share the same NServiceBus package(s) version because they run in-process.
+> - NUnit is the only possible testing framework dictated by the NServiceBus.AcceptanceTesting dependency
 
-The original framework enables tests like:
+V1 of the framework enables tests like:
 
-```csharp
+```cs
 [Test]
 public async Task AReplyMessage_is_received_and_ASaga_is_started()
 {
