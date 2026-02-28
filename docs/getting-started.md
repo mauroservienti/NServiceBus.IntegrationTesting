@@ -128,12 +128,6 @@ Add a new console project alongside the production endpoint:
 
   <ItemGroup>
     <ProjectReference Include="..\YourEndpoint\YourEndpoint.csproj" />
-    <!--
-      Reference the agent version that matches your NServiceBus major version:
-        NServiceBus 10 → NServiceBus.IntegrationTesting.AgentV10
-        NServiceBus 9  → NServiceBus.IntegrationTesting.AgentV9
-    -->
-    <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v10\NServiceBus.IntegrationTesting.Agent.v10.csproj" />
   </ItemGroup>
 
     <ItemGroup>
@@ -180,7 +174,7 @@ static EndpointConfiguration CreateConfig()
 }
 ```
 
-> **Never modify the production `Create()` factory for testing purposes.** Wrap it in the `*.Testing` project and customize settings there for trsting purposes.
+> **Never modify the production `Create()` factory for testing purposes.** Wrap it in the `*.Testing` project and customize settings there for testing purposes.
 
 ## Step 3 — Write scenarios
 
@@ -292,7 +286,7 @@ Create a test project, using NUnit in the example below, that references both th
 
 ### Basic fixture structure
 
-Each test fixture manages a shared `TestEnvironment` that is started once at the beginning of the fixture and torn down afterward. Starting the environment (building Docker images, starting containers) is expensive, so share it across all tests in the fixture. NServiceBus endpoints should be stateless and thus reused across different tests. What might require being "fresh" before each test is the underlying infrastructure, such as the message broker, to prevent leftover in-flight messages or saga instances to affets the next test. The way tests are set up depends on your requirements.
+Each test fixture manages a shared `TestEnvironment` that is started once at the beginning of the fixture and torn down afterward. Starting the environment (building Docker images, starting containers) is expensive, so share it across all tests in the fixture. NServiceBus endpoints should be stateless and thus reused across different tests. What might require being "fresh" before each test is the underlying infrastructure, such as the message broker, to prevent leftover in-flight messages or saga instances to affect the next test. The way tests are set up depends on your requirements.
 
 ```csharp
 using NServiceBus.IntegrationTesting;
@@ -418,6 +412,7 @@ Fields available on a `HandlerInvokedEvent` for sagas:
 | `SagaIsCompleted` | `true` if `MarkAsComplete()` was called |
 | `SagaNotFound` | `true` if no existing instance matched |
 | `SagaId` | The saga data `Id` |
+| `SagaTypeName` | The full type name of the saga class |
 
 ### Waiting for a message dispatch
 
@@ -450,8 +445,20 @@ Assert.Multiple(() =>
 {
     Assert.That(failure.EndpointName, Is.EqualTo("AnotherEndpoint"));
     Assert.That(failure.ExceptionMessage, Does.Contain("expected error text"));
+    // The message type is available via NServiceBus headers:
+    Assert.That(failure.Headers["NServiceBus.EnclosedMessageTypes"],
+        Does.Contain("FailingMessage"));
 });
 ```
+
+Fields available on a `MessageFailedEvent`:
+
+| Field | Description |
+|---|---|
+| `EndpointName` | Logical endpoint name that sent the message to the error queue |
+| `ExceptionMessage` | The exception message from the handler that caused the failure |
+| `Headers` | `IReadOnlyDictionary<string, string>` — full NServiceBus headers; use `Headers["NServiceBus.EnclosedMessageTypes"]` to get the message type |
+| `CorrelationId` | The correlation ID tying the failure to the scenario execution |
 
 > **Tip**: Tweak `NumberOfRetries(0)` in the `*.Testing` project so messages fail
 > immediately rather than spending time in retry loops:
@@ -460,6 +467,26 @@ Assert.Multiple(() =>
 > config.Recoverability().Immediate(s => s.NumberOfRetries(0));
 > config.Recoverability().Delayed(s => s.NumberOfRetries(0));
 > ```
+
+### Fast-fail on unexpected permanent failures
+
+Even when you are **not** using `.MessageFailed()`, the framework monitors for permanent
+failures. If a message with the observed correlation ID is sent to the error queue before
+all success conditions are met, `WhenAllAsync()` throws a `MessageFailedException`
+immediately instead of waiting for the cancellation token to expire.
+
+This means you get a clear, descriptive error rather than a generic
+`OperationCanceledException` timeout:
+
+```csharp
+// MessageFailedException is thrown if the handler fails permanently,
+// even though the test only registered success conditions.
+var results = await _env.Observe(correlationId, cts.Token)
+    .HandlerInvoked("SomeMessageHandler")
+    .WhenAllAsync();
+```
+
+`MessageFailedException` exposes `CorrelationId` and `Headers` properties for diagnostics.
 
 ## Advanced topics
 
@@ -815,6 +842,15 @@ public class WhenSomeMessageIsSent
 - Make sure you have registered all expected conditions before calling `WhenAllAsync()`.
 - If a handler is not being invoked, check the routing configuration and that the message type name matches exactly (simple type name, not fully qualified).
 
+### `MessageFailedException` — message sent to error queue unexpectedly
+
+If you are awaiting success conditions (`.HandlerInvoked()`, `.MessageDispatched()`, etc.)
+and a message with the observed correlation ID is permanently sent to the error queue,
+`WhenAllAsync()` throws `MessageFailedException` immediately instead of waiting for the
+timeout. This is usually caused by a handler throwing an exception with retries exhausted.
+Check the exception's `Message` property for the cause, and inspect `Headers` for the
+full NServiceBus headers of the failed message.
+
 ### `InvalidOperationException: Cannot register HandlerInvoked() when MessageFailed() is already registered`
 
 `MessageFailed()` must be the only condition on an `ObserveContext`. Create a separate test for the failure scenario instead of mixing success and failure conditions. If, while testing a happy path, a message fails and is delivered to the error queue, the test fails automatically.
@@ -873,7 +909,19 @@ public class WhenSomeMessageIsSent
 | `SagaInvocations(name)` | All collected saga `HandlerInvokedEvent` instances |
 | `MessageDispatched(name)` | Last (or only) `MessageDispatchedEvent` |
 | `MessageDispatches(name)` | All collected `MessageDispatchedEvent` instances |
-| `MessageFailed()` | The `MessageFailedEvent` |
+| `MessageFailed()` | The `MessageFailedEvent` (`EndpointName`, `ExceptionMessage`, `Headers`, `CorrelationId`) |
+
+### `MessageFailedException`
+
+Thrown by `WhenAllAsync()` when a message is permanently sent to the error queue while
+awaiting success conditions (i.e. without `.MessageFailed()`). This gives a clear failure
+message instead of a generic timeout.
+
+| Member | Description |
+|---|---|
+| `CorrelationId` | The correlation ID of the failed message |
+| `Headers` | `IReadOnlyDictionary<string, string>` — full NServiceBus headers |
+| `Message` | Formatted string with correlation ID and cause |
 
 ### `IntegrationTestingBootstrap.RunAsync`
 
