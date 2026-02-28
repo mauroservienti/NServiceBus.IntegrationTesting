@@ -43,8 +43,6 @@ Unlike unit tests or acceptance tests that mock the transport, every message her
 6. Each agent, running in real endpoints, streams back handler invocations, saga events, message dispatches, and failure events to the test host.
 7. The test awaits conditions via the fluent `ObserveContext` API and then makes assertions.
 
----
-
 ## Prerequisites
 
 | Requirement | Minimum version |
@@ -52,11 +50,8 @@ Unlike unit tests or acceptance tests that mock the transport, every message her
 | .NET SDK | 9.0 |
 | Docker Desktop (macOS/Windows) or Docker Engine (Linux) | 20.10 |
 
-> **Tip for Linux CI**: add `WithExtraHost("host.docker.internal", "host-gateway")` to your
-> endpoint container builder if containers cannot resolve `host.docker.internal`. This is
-> already done automatically by `TestEnvironmentBuilder`.
-
----
+> [!NOTE]
+> **Tip for Linux CI**: add `WithExtraHost("host.docker.internal", "host-gateway")` to your endpoint container builder if containers cannot resolve `host.docker.internal`. This is already done automatically by `TestEnvironmentBuilder`.
 
 ## Project structure
 
@@ -64,7 +59,7 @@ The framework enforces a clean boundary between production code and test infrast
 
 ```text
 YourEndpoint/                   ← production code, zero test dependencies
-  YourEndpointConfig.cs         ← static Create() factory (reused by *.Testing)
+  YourEndpointConfig.cs         ← static Create() factory (used by the endpoint and customized by YourEndpoint.Testing)
   Handlers/
     SomeMessageHandler.cs
 
@@ -73,25 +68,20 @@ YourEndpoint.Testing/           ← wraps production config, adds agent + scenar
   SomeMessageScenario.cs        ← implements Scenario base class
   Dockerfile                    ← builds the testable container image
 
-YourEndpoint.Tests/             ← NUnit test project
+YourEndpoint.Tests/             ← Unit test project
   WhenSomeMessageIsSent.cs      ← test fixture
 ```
 
 - **`YourEndpoint/`** has no reference to any testing library and is deployed as-is to production.
-- **`YourEndpoint.Testing/`** only runs inside integration tests. It imports the production
-  `Create()` factory and layers on test-specific settings (e.g. fewer retries).
-- **`YourEndpoint.Tests/`** references `YourEndpoint.Testing` with
-  `ReferenceOutputAssembly="false"` — this causes the companion project to be compiled as
-  part of the test build (so errors are caught early) but the assembly itself is never
-  loaded by the test process. The Docker image is built at test runtime.
+- **`YourEndpoint.Testing/`** only runs inside integration tests. It imports the production `Create()` factory and layers on test-specific settings (e.g., fewer retries).
+- **`YourEndpoint.Tests/`** references `YourEndpoint.Testing` with `ReferenceOutputAssembly="false"` — this causes the companion project to be compiled as part of the test build (so errors are caught early), but the assembly itself is never loaded by the test process. The Docker image is built at test runtime.
 
----
+> [!NOTE]
+> Project names don't have to follow the schema above. You can use your conventions, and they won't affect in any way how integration tests are set up and executed.
 
 ## Step 1 — Create the production endpoint configuration factory
 
-If your production endpoint does not already have a static configuration factory, create one.
-The factory reads connection strings from environment variables so it works both in production
-and inside Docker containers:
+If your production endpoint does not already have a static configuration factory, create one. The factory reads connection strings from environment variables, so it works both in production and inside Docker containers. What is important is that the `*.Testing` endpoint can instantiate the production `EndpointConfiguration`:
 
 ```csharp
 // YourEndpoint/YourEndpointConfig.cs
@@ -110,7 +100,7 @@ public static class YourEndpointConfig
             rabbitMqConnectionString);
 
         var routing = config.UseTransport(transport);
-        routing.RouteToEndpoint(typeof(SomeCommand), "YourEndpoint");
+        routing.RouteToEndpoint(typeof(SomeCommand), "AnotherEndpoint");
 
         config.UseSerialization<SystemJsonSerializer>();
         config.EnableInstallers();
@@ -120,8 +110,7 @@ public static class YourEndpointConfig
 }
 ```
 
-> **Important**: read all connection strings from environment variables. The framework
-> injects the correct container-network addresses (e.g. `host=rabbitmq`) at startup.
+> **Important**: read all connection strings from environment variables. The framework injects the correct container-network addresses (e.g., `host=rabbitmq`) at startup.
 
 ---
 
