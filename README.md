@@ -35,7 +35,9 @@ Each endpoint runs in its own Docker container. Endpoints can run **different NS
 
 ### Writing a test
 
-```csharp
+<!-- snippet: vNext-writing-a-test -->
+<a id='snippet-vNext-writing-a-test'></a>
+```cs
 [TestFixture]
 public class WhenSomeMessageIsSent
 {
@@ -103,8 +105,20 @@ public class WhenSomeMessageIsSent
         Assert.That(failure.EndpointName, Is.EqualTo("AnotherEndpoint"));
         Assert.That(failure.ExceptionMessage, Does.Contain("Intentional failure"));
     }
+
+    static string FindRepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !dir.GetDirectories(".git").Any())
+            dir = dir.Parent;
+        return dir?.FullName
+            ?? throw new InvalidOperationException(
+                "Cannot locate repository root. Ensure the test runs inside a git repository.");
+    }
 }
 ```
+<sup><a href='/vNext/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-vNext-writing-a-test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Key concepts
 
@@ -117,7 +131,9 @@ containers, the gRPC test host, and all endpoint containers. Optionally adds
 runs _inside the endpoint process_, using the real `IMessageSession`, so no cross-process
 message serialization occurs:
 
-```csharp
+<!-- snippet: vNext-scenario -->
+<a id='snippet-vNext-scenario'></a>
+```cs
 public class SomeMessageScenario : Scenario
 {
     public override string Name => "SomeMessage";
@@ -127,6 +143,8 @@ public class SomeMessageScenario : Scenario
         => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
 ```
+<sup><a href='/vNext/Snippets/ScenarioSnippets.cs#L7-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-vNext-scenario' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 **`ObserveContext`** — fluent API for waiting on events correlated by scenario invocation.
 Conditions: `.HandlerInvoked`, `.SagaInvoked`, `.MessageDispatched`, `.MessageFailed`.

@@ -9,4 +9,5 @@
   <Project Path="SampleEndpoint.Tests/SampleEndpoint.Tests.csproj" />
   <Project Path="SampleEndpoint/SampleEndpoint.csproj" />
   <Project Path="SampleMessages/SampleMessages.csproj" />
+  <Project Path="Snippets/Snippets.csproj" />
 </Solution>

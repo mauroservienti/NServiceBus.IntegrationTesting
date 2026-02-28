@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="NUnit" Version="4.2.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v10\NServiceBus.IntegrationTesting.Agent.v10.csproj" />
+        <ProjectReference Include="..\SampleMessages\SampleMessages.csproj" />
+    </ItemGroup>
+
+</Project>
