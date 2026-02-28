@@ -50,7 +50,7 @@ public class WhenSomeMessageIsSent
 
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
             .AddEndpoint("AnotherEndpoint", "AnotherEndpoint.Testing/Dockerfile")
@@ -186,6 +186,10 @@ The test project references the `*.Testing` project with `ReferenceOutputAssembl
 This gives compile-time validation that the `*.Testing` project builds, while at test
 runtime the container image is built from its Dockerfile — there is no in-process loading
 of the endpoint assembly.
+
+## Supported NServiceBus versions
+
+NServiceBus.IntegrationTesting agents support NServiceBus versions 9 and 10
 
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 
