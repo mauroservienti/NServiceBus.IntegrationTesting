@@ -1,0 +1,161 @@
+using NServiceBus.IntegrationTesting;
+using NServiceBus.IntegrationTesting.Agent;
+using NUnit.Framework;
+using Snippets.GettingStarted;
+using Snippets.GettingStartedScenario;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+
+namespace Snippets.GettingStartedAdvanced;
+
+[TestFixture]
+public class AdvancedSnippets
+{
+    static TestEnvironment _env = null!;
+    static EndpointHandle _yourEndpoint = null!;
+
+    public async Task MultiEndpoint()
+    {
+        string srcDir = null!;
+
+        // begin-snippet: gs-multi-endpoint
+        _env = await new TestEnvironmentBuilder()
+            .WithDockerfileDirectory(srcDir)
+            .UseRabbitMq()
+            .UsePostgreSql()
+            .AddEndpoint("OrdersEndpoint", "OrdersEndpoint.Testing/Dockerfile")
+            .AddEndpoint("BillingEndpoint", "BillingEndpoint.Testing/Dockerfile")
+            .AddEndpoint("ShippingEndpoint", "ShippingEndpoint.Testing/Dockerfile")
+            .StartAsync();
+        // end-snippet
+    }
+
+    public async Task TimeoutBootstrap()
+    {
+        // begin-snippet: gs-timeout-bootstrap
+        // YourEndpoint.Testing/Program.cs
+        await IntegrationTestingBootstrap.RunAsync(
+            "YourEndpoint",
+            Snippets.GettingStartedConfig.YourEndpointConfig.Create,
+            scenarios: [new SomeCommandScenario()],
+            timeoutRules: [TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5))]);
+        // end-snippet
+    }
+
+    public async Task TimeoutAssertions()
+    {
+        string correlationId = null!;
+
+        // begin-snippet: gs-timeout-assertions
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        var results = await _env.Observe(correlationId, cts.Token)
+            .SagaInvoked("OrderSaga")
+            .MessageDispatched("OrderProcessingTimeout")
+            .HandlerInvoked("TimeoutCompletionHandler")
+            .WhenAllAsync();
+
+        Assert.That(results.MessageDispatched("OrderProcessingTimeout").Intent,
+            Is.EqualTo("RequestTimeout"));
+        // end-snippet
+    }
+
+    public async Task SinglePredicate()
+    {
+        string correlationId = null!;
+        using var cts = new CancellationTokenSource();
+
+        // begin-snippet: gs-single-predicate
+        // Only fires when the saga is new — no need to assert afterward
+        var results = await _env.Observe(correlationId, cts.Token)
+            .SagaInvoked("OrderSaga", evt => evt.SagaIsNew)
+            .WhenAllAsync();
+        // end-snippet
+    }
+
+    public async Task ListPredicate()
+    {
+        string correlationId = null!;
+        using var cts = new CancellationTokenSource();
+
+        // begin-snippet: gs-list-predicate
+        // Wait until we have seen at least 3 dispatches of the same type
+        var results = await _env.Observe(correlationId, cts.Token)
+            .MessageDispatched("OrderStatusUpdated", all => all.Count >= 3)
+            .WhenAllAsync();
+
+        var dispatches = results.MessageDispatches("OrderStatusUpdated");
+        Assert.That(dispatches, Has.Count.GreaterThanOrEqualTo(3));
+        // end-snippet
+    }
+
+    public async Task WireMockSetup()
+    {
+        string srcDir = null!;
+
+        // begin-snippet: gs-wiremock-setup
+        // *.Tests.csproj: add <PackageReference Include="WireMock.Net" Version="1.25.0" />
+
+        _env = await new TestEnvironmentBuilder()
+            .WithDockerfileDirectory(srcDir)
+            .UseRabbitMq()
+            .UseWireMock()                       // starts the stub server
+            .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
+            .StartAsync();
+        // end-snippet
+    }
+
+    // begin-snippet: gs-wiremock-test
+    [Test]
+    public async Task Handler_calls_external_service()
+    {
+        // Configure stub first so no request is missed
+        _env.WireMock!
+            .Given(Request.Create().WithPath("/api/data").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("ok"));
+
+        var correlationId = await _yourEndpoint.ExecuteScenarioAsync(
+            "SomeCommand",
+            new Dictionary<string, string> { { "ID", Guid.NewGuid().ToString() } });
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        await _env.Observe(correlationId, cts.Token)
+            .HandlerInvoked("SomeMessageHandler")
+            .WhenAllAsync();
+
+        Assert.That(
+            _env.WireMock!.LogEntries.Any(e => e.RequestMessage.Path == "/api/data"),
+            Is.True);
+    }
+    // end-snippet
+
+    // begin-snippet: gs-dump-logs
+    [TearDown]
+    public async Task DumpContainerLogsOnFailure()
+    {
+        if (TestContext.CurrentContext.Result.Outcome.Status
+                != NUnit.Framework.Interfaces.TestStatus.Failed)
+            return;
+
+        var (stdout, stderr) = await _env.GetEndpointContainerLogsAsync("YourEndpoint");
+        TestContext.Out.WriteLine("=== YourEndpoint stdout ===");
+        TestContext.Out.WriteLine(stdout);
+        TestContext.Out.WriteLine("=== YourEndpoint stderr ===");
+        TestContext.Out.WriteLine(stderr);
+    }
+    // end-snippet
+
+    public async Task AgentTimeout()
+    {
+        string srcDir = null!;
+
+        // begin-snippet: gs-agent-timeout
+        _env = await new TestEnvironmentBuilder()
+            .WithDockerfileDirectory(srcDir)
+            .UseRabbitMq()
+            .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
+            .WithAgentConnectionTimeout(TimeSpan.FromMinutes(5))
+            .StartAsync();
+        // end-snippet
+    }
+}

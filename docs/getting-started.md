@@ -83,7 +83,9 @@ YourEndpoint.Tests/             ← Unit test project
 
 If your production endpoint does not already have a static configuration factory, create one. The factory reads connection strings from environment variables, so it works both in production and inside Docker containers. What is important is that the `*.Testing` endpoint can instantiate the production `EndpointConfiguration`:
 
-```csharp
+<!-- snippet: gs-config-factory -->
+<a id='snippet-gs-config-factory'></a>
+```cs
 // YourEndpoint/YourEndpointConfig.cs
 public static class YourEndpointConfig
 {
@@ -109,6 +111,8 @@ public static class YourEndpointConfig
     }
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedConfigSnippets.cs#L9-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-config-factory' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 > **Important**: read all connection strings from environment variables. The framework injects the correct container-network addresses (e.g., `host=rabbitmq`) at startup.
 
@@ -144,23 +148,26 @@ Add a new console project alongside the production endpoint:
 The entry point calls `IntegrationTestingBootstrap.RunAsync`, passing the production factory
 and a list of scenarios:
 
-```csharp
+<!-- snippet: gs-bootstrap -->
+<a id='snippet-gs-bootstrap'></a>
+```cs
 // YourEndpoint.Testing/Program.cs
-using NServiceBus.IntegrationTesting.Agent;
-using YourEndpoint;
-
 await IntegrationTestingBootstrap.RunAsync(
     "YourEndpoint",
     YourEndpointConfig.Create,
     scenarios: [new SomeCommandScenario()]);
 ```
+<sup><a href='/src/Snippets/GettingStartedConfigSnippets.cs#L40-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-bootstrap' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Overlaying test-specific settings
 
 You can adjust the configuration before handing it off — for example, reducing retries so
 that failing messages reach the error queue quickly instead of spending minutes in retry loops:
 
-```csharp
+<!-- snippet: gs-overlay -->
+<a id='snippet-gs-overlay'></a>
+```cs
 await IntegrationTestingBootstrap.RunAsync(
     "YourEndpoint",
     CreateConfig);
@@ -173,6 +180,8 @@ static EndpointConfiguration CreateConfig()
     return config;
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedConfigSnippets.cs#L51-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-overlay' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 > **Never modify the production `Create()` factory for testing purposes.** Wrap it in the `*.Testing` project and customize settings there for testing purposes.
 
@@ -182,12 +191,10 @@ A **scenario** is a named entry point that runs _inside the endpoint process_ us
 real `IMessageSession`. This means messages are sent with the real serializer, real routing,
 and real transport — no mocking involved.
 
-```csharp
+<!-- snippet: gs-scenario -->
+<a id='snippet-gs-scenario'></a>
+```cs
 // YourEndpoint.Testing/SomeCommandScenario.cs
-using NServiceBus;
-using NServiceBus.IntegrationTesting.Agent;
-using YourEndpoint.Messages;
-
 public class SomeCommandScenario : Scenario
 {
     public override string Name => "SomeCommand Scenario";
@@ -202,6 +209,8 @@ public class SomeCommandScenario : Scenario
     }
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedScenarioSnippets.cs#L7-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-scenario' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Key points:
 
@@ -288,10 +297,9 @@ Create a test project, using NUnit in the example below, that references both th
 
 Each test fixture manages a shared `TestEnvironment` that is started once at the beginning of the fixture and torn down afterward. Starting the environment (building Docker images, starting containers) is expensive, so share it across all tests in the fixture. NServiceBus endpoints should be stateless and thus reused across different tests. What might require being "fresh" before each test is the underlying infrastructure, such as the message broker, to prevent leftover in-flight messages or saga instances to affect the next test. The way tests are set up depends on your requirements.
 
-```csharp
-using NServiceBus.IntegrationTesting;
-using NUnit.Framework;
-
+<!-- snippet: gs-test-fixture -->
+<a id='snippet-gs-test-fixture'></a>
+```cs
 [TestFixture]
 [NonParallelizable]
 public class WhenSomeCommandIsSent
@@ -349,6 +357,8 @@ public class WhenSomeCommandIsSent
     }
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedTestFixtureSnippets.cs#L6-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-test-fixture' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Executing a scenario
 
