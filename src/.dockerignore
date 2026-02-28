@@ -1,0 +1,6 @@
+# Exclude local build artifacts from the Docker build context.
+# Without this, a local `dotnet build` (on arm64) populates bin/ and obj/ with
+# native artifacts that change the Testcontainers context hash, trigger unnecessary
+# image rebuilds, and may interfere with dotnet publish inside the amd64 container.
+**/bin/
+**/obj/

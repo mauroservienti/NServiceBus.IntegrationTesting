@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="AnotherEndpoint.Testing/AnotherEndpoint.Testing.csproj" />
+  <Project Path="AnotherEndpoint/AnotherEndpoint.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.Agent.v9/NServiceBus.IntegrationTesting.Agent.v9.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.Tests/NServiceBus.IntegrationTesting.Tests.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting/NServiceBus.IntegrationTesting.csproj" />
+  <Project Path="SampleEndpoint.Testing/SampleEndpoint.Testing.csproj" />
+  <Project Path="SampleEndpoint.Tests/SampleEndpoint.Tests.csproj" />
+  <Project Path="SampleEndpoint/SampleEndpoint.csproj" />
+  <Project Path="SampleMessages/SampleMessages.csproj" />
+  <Project Path="Snippets/Snippets.csproj" />
+</Solution>

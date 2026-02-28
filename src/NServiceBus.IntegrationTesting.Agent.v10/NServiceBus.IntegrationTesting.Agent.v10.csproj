@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>NServiceBus.IntegrationTesting.Agent</RootNamespace>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <PackageId>NServiceBus.IntegrationTesting.AgentV10</PackageId>
+        <Description>NServiceBus 10 agent for out-of-process integration testing. Embed in your *.Testing companion project to connect the endpoint to the NServiceBus.IntegrationTesting test host.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
+        <PackageReference Include="MinVer" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.29.3" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.67.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NServiceBus" Version="10.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+            Only generate the client-side stubs here.
+            The server-side stubs are generated in the Containers project.
+        -->
+        <Protobuf Include="..\proto\testing.proto" GrpcServices="Client" />
+    </ItemGroup>
+
+</Project>

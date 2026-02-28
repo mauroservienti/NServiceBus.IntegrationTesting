@@ -1,0 +1,27 @@
+<Project>
+
+    <!-- Chain to the root Directory.Build.props -->
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <!-- All projects are non-packable by default; packable projects opt in. -->
+        <IsPackable>false</IsPackable>
+
+        <!-- Shared NuGet metadata — only meaningful when IsPackable=true but harmless otherwise. -->
+        <Authors>Mauro Servienti</Authors>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+        <PackageIcon>icon.png</PackageIcon>
+        <PackageTags>NServiceBus Integration Testing</PackageTags>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <NoWarn>$(NoWarn);NU5105</NoWarn>
+        <!-- Output all NuGet packages to the repo-level nugets/ folder. -->
+        <PackageOutputPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'nugets'))</PackageOutputPath>
+        <!-- Ensure packages version at minum at 2.x regardless of existing git tags. -->
+        <MinVerMinimumMajorMinor>2.0</MinVerMinimumMajorMinor>
+    </PropertyGroup>
+
+</Project>

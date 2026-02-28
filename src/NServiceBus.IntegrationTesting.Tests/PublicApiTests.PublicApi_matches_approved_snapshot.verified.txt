@@ -1,0 +1,331 @@
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NServiceBus.IntegrationTesting.Tests")]
+namespace NServiceBus.IntegrationTesting
+{
+    public sealed class EndpointHandle
+    {
+        public string EndpointName { get; }
+        public System.Threading.Tasks.Task<string> ExecuteScenarioAsync(string scenarioName, System.Collections.Generic.Dictionary<string, string>? args = null, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class HandlerInvokedEvent : System.IEquatable<NServiceBus.IntegrationTesting.HandlerInvokedEvent>
+    {
+        public HandlerInvokedEvent(string EndpointName, string HandlerTypeName, string MessageTypeName, string CorrelationId, bool IsSaga, bool SagaNotFound, string SagaTypeName, string SagaId, bool SagaIsNew, bool SagaIsCompleted) { }
+        public string CorrelationId { get; init; }
+        public string EndpointName { get; init; }
+        public string HandlerTypeName { get; init; }
+        public bool IsSaga { get; init; }
+        public string MessageTypeName { get; init; }
+        public string SagaId { get; init; }
+        public bool SagaIsCompleted { get; init; }
+        public bool SagaIsNew { get; init; }
+        public bool SagaNotFound { get; init; }
+        public string SagaTypeName { get; init; }
+    }
+    public sealed class MessageDispatchedEvent : System.IEquatable<NServiceBus.IntegrationTesting.MessageDispatchedEvent>
+    {
+        public MessageDispatchedEvent(string EndpointName, string MessageTypeName, string Intent, string CorrelationId) { }
+        public string CorrelationId { get; init; }
+        public string EndpointName { get; init; }
+        public string Intent { get; init; }
+        public string MessageTypeName { get; init; }
+    }
+    public sealed class MessageFailedEvent : System.IEquatable<NServiceBus.IntegrationTesting.MessageFailedEvent>
+    {
+        public MessageFailedEvent(string EndpointName, System.Collections.Generic.IReadOnlyDictionary<string, string> Headers, string ExceptionMessage, string CorrelationId) { }
+        public string CorrelationId { get; init; }
+        public string EndpointName { get; init; }
+        public string ExceptionMessage { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> Headers { get; init; }
+    }
+    public sealed class MessageFailedException : System.Exception
+    {
+        public MessageFailedException(string correlationId, System.Collections.Generic.IReadOnlyDictionary<string, string> headers, string causeMessage) { }
+        public string CorrelationId { get; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> Headers { get; }
+    }
+    public sealed class ObserveContext
+    {
+        public NServiceBus.IntegrationTesting.ObserveContext HandlerInvoked(string handlerTypeName) { }
+        public NServiceBus.IntegrationTesting.ObserveContext HandlerInvoked(string handlerTypeName, System.Func<NServiceBus.IntegrationTesting.HandlerInvokedEvent, bool> until) { }
+        public NServiceBus.IntegrationTesting.ObserveContext HandlerInvoked(string handlerTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent>, bool> until) { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageDispatched(string messageTypeName) { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageDispatched(string messageTypeName, System.Func<NServiceBus.IntegrationTesting.MessageDispatchedEvent, bool> until) { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageDispatched(string messageTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageDispatchedEvent>, bool> until) { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageFailed() { }
+        public NServiceBus.IntegrationTesting.ObserveContext SagaInvoked(string sagaTypeName) { }
+        public NServiceBus.IntegrationTesting.ObserveContext SagaInvoked(string sagaTypeName, System.Func<NServiceBus.IntegrationTesting.HandlerInvokedEvent, bool> until) { }
+        public NServiceBus.IntegrationTesting.ObserveContext SagaInvoked(string sagaTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent>, bool> until) { }
+        public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.ObserveResults> WhenAllAsync() { }
+    }
+    public sealed class ObserveResults
+    {
+        public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent> HandlerInvocations(string handlerTypeName) { }
+        public NServiceBus.IntegrationTesting.HandlerInvokedEvent HandlerInvoked(string handlerTypeName) { }
+        public NServiceBus.IntegrationTesting.MessageDispatchedEvent MessageDispatched(string messageTypeName) { }
+        public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageDispatchedEvent> MessageDispatches(string messageTypeName) { }
+        public NServiceBus.IntegrationTesting.MessageFailedEvent MessageFailed() { }
+        public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent> SagaInvocations(string sagaTypeName) { }
+        public NServiceBus.IntegrationTesting.HandlerInvokedEvent SagaInvoked(string sagaTypeName) { }
+    }
+    public sealed class TestEnvironment : System.IAsyncDisposable
+    {
+        public WireMock.Server.WireMockServer? WireMock { get; }
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public NServiceBus.IntegrationTesting.EndpointHandle GetEndpoint(string endpointName) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Stdout",
+                "Stderr"})]
+        public System.Threading.Tasks.Task<System.ValueTuple<string, string>> GetEndpointContainerLogsAsync(string endpointName) { }
+        public NServiceBus.IntegrationTesting.ObserveContext Observe(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class TestEnvironmentBuilder
+    {
+        public TestEnvironmentBuilder() { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile) { }
+        public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.TestEnvironment> StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UsePostgreSql(string image = "postgres:15.1") { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMq(string image = "rabbitmq:management") { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock() { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithAgentConnectionTimeout(System.TimeSpan timeout) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithDockerfileDirectory(string directory) { }
+    }
+    public sealed class TestHostServer : System.IAsyncDisposable
+    {
+        public TestHostServer() { }
+        public string Address { get; }
+        public string ContainerAddress { get; }
+        public int Port { get; }
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public NServiceBus.IntegrationTesting.EndpointHandle GetEndpoint(string endpointName) { }
+        public NServiceBus.IntegrationTesting.ObserveContext Observe(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartAsync() { }
+    }
+}
+namespace NServiceBus.IntegrationTesting.Proto
+{
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class AgentToHostMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage>
+    {
+        public const int ConnectFieldNumber = 1;
+        public const int HandlerInvokedFieldNumber = 2;
+        public const int MessageDispatchedFieldNumber = 3;
+        public const int MessageFailedFieldNumber = 4;
+        public AgentToHostMessage() { }
+        public AgentToHostMessage(NServiceBus.IntegrationTesting.Proto.AgentToHostMessage other) { }
+        public NServiceBus.IntegrationTesting.Proto.ConnectMessage Connect { get; set; }
+        public NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage HandlerInvoked { get; set; }
+        public NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage MessageDispatched { get; set; }
+        public NServiceBus.IntegrationTesting.Proto.MessageFailedMessage MessageFailed { get; set; }
+        public NServiceBus.IntegrationTesting.Proto.AgentToHostMessage.PayloadOneofCase PayloadCase { get; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage> Parser { get; }
+        public int CalculateSize() { }
+        public void ClearPayload() { }
+        public NServiceBus.IntegrationTesting.Proto.AgentToHostMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.AgentToHostMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.AgentToHostMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+        public enum PayloadOneofCase
+        {
+            None = 0,
+            Connect = 1,
+            HandlerInvoked = 2,
+            MessageDispatched = 3,
+            MessageFailed = 4,
+        }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class ConnectMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.ConnectMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.ConnectMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.ConnectMessage>
+    {
+        public const int EndpointNameFieldNumber = 1;
+        public ConnectMessage() { }
+        public ConnectMessage(NServiceBus.IntegrationTesting.Proto.ConnectMessage other) { }
+        public string EndpointName { get; set; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.ConnectMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.ConnectMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.ConnectMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.ConnectMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class ExecuteScenarioMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage>
+    {
+        public const int ArgsFieldNumber = 2;
+        public const int CorrelationIdFieldNumber = 3;
+        public const int ScenarioNameFieldNumber = 1;
+        public ExecuteScenarioMessage() { }
+        public ExecuteScenarioMessage(NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage other) { }
+        public Google.Protobuf.Collections.MapField<string, string> Args { get; }
+        public string CorrelationId { get; set; }
+        public string ScenarioName { get; set; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class HandlerInvokedMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage>
+    {
+        public const int CorrelationIdFieldNumber = 6;
+        public const int EndpointNameFieldNumber = 1;
+        public const int HandlerTypeNameFieldNumber = 2;
+        public const int IsSagaFieldNumber = 7;
+        public const int MessageTypeNameFieldNumber = 3;
+        public const int SagaIdFieldNumber = 10;
+        public const int SagaIsCompletedFieldNumber = 12;
+        public const int SagaIsNewFieldNumber = 11;
+        public const int SagaNotFoundFieldNumber = 8;
+        public const int SagaTypeNameFieldNumber = 9;
+        public HandlerInvokedMessage() { }
+        public HandlerInvokedMessage(NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage other) { }
+        public string CorrelationId { get; set; }
+        public string EndpointName { get; set; }
+        public string HandlerTypeName { get; set; }
+        public bool IsSaga { get; set; }
+        public string MessageTypeName { get; set; }
+        public string SagaId { get; set; }
+        public bool SagaIsCompleted { get; set; }
+        public bool SagaIsNew { get; set; }
+        public bool SagaNotFound { get; set; }
+        public string SagaTypeName { get; set; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class HostToAgentMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.HostToAgentMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.HostToAgentMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.HostToAgentMessage>
+    {
+        public const int ExecuteScenarioFieldNumber = 2;
+        public const int ReadyFieldNumber = 1;
+        public HostToAgentMessage() { }
+        public HostToAgentMessage(NServiceBus.IntegrationTesting.Proto.HostToAgentMessage other) { }
+        public NServiceBus.IntegrationTesting.Proto.ExecuteScenarioMessage ExecuteScenario { get; set; }
+        public NServiceBus.IntegrationTesting.Proto.HostToAgentMessage.PayloadOneofCase PayloadCase { get; }
+        public NServiceBus.IntegrationTesting.Proto.ReadyMessage Ready { get; set; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.HostToAgentMessage> Parser { get; }
+        public int CalculateSize() { }
+        public void ClearPayload() { }
+        public NServiceBus.IntegrationTesting.Proto.HostToAgentMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.HostToAgentMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.HostToAgentMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+        public enum PayloadOneofCase
+        {
+            None = 0,
+            Ready = 1,
+            ExecuteScenario = 2,
+        }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class MessageDispatchedMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage>
+    {
+        public const int CorrelationIdFieldNumber = 4;
+        public const int EndpointNameFieldNumber = 1;
+        public const int IntentFieldNumber = 3;
+        public const int MessageTypeNameFieldNumber = 2;
+        public MessageDispatchedMessage() { }
+        public MessageDispatchedMessage(NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage other) { }
+        public string CorrelationId { get; set; }
+        public string EndpointName { get; set; }
+        public string Intent { get; set; }
+        public string MessageTypeName { get; set; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class MessageFailedMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.MessageFailedMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.MessageFailedMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.MessageFailedMessage>
+    {
+        public const int CorrelationIdFieldNumber = 4;
+        public const int EndpointNameFieldNumber = 1;
+        public const int ExceptionMessageFieldNumber = 3;
+        public const int HeadersFieldNumber = 5;
+        public MessageFailedMessage() { }
+        public MessageFailedMessage(NServiceBus.IntegrationTesting.Proto.MessageFailedMessage other) { }
+        public string CorrelationId { get; set; }
+        public string EndpointName { get; set; }
+        public string ExceptionMessage { get; set; }
+        public Google.Protobuf.Collections.MapField<string, string> Headers { get; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.MessageFailedMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.MessageFailedMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.MessageFailedMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.MessageFailedMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class ReadyMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.ReadyMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.ReadyMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.ReadyMessage>
+    {
+        public ReadyMessage() { }
+        public ReadyMessage(NServiceBus.IntegrationTesting.Proto.ReadyMessage other) { }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.ReadyMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.ReadyMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.ReadyMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.ReadyMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    public static class TestHostService
+    {
+        public static Google.Protobuf.Reflection.ServiceDescriptor Descriptor { get; }
+        public static Grpc.Core.ServerServiceDefinition BindService(NServiceBus.IntegrationTesting.Proto.TestHostService.TestHostServiceBase serviceImpl) { }
+        public static void BindService(Grpc.Core.ServiceBinderBase serviceBinder, NServiceBus.IntegrationTesting.Proto.TestHostService.TestHostServiceBase serviceImpl) { }
+        [Grpc.Core.BindServiceMethod(typeof(NServiceBus.IntegrationTesting.Proto.TestHostService), "BindService")]
+        public abstract class TestHostServiceBase
+        {
+            protected TestHostServiceBase() { }
+            public virtual System.Threading.Tasks.Task OpenChannel(Grpc.Core.IAsyncStreamReader<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage> requestStream, Grpc.Core.IServerStreamWriter<NServiceBus.IntegrationTesting.Proto.HostToAgentMessage> responseStream, Grpc.Core.ServerCallContext context) { }
+        }
+    }
+    public static class TestingReflection
+    {
+        public static Google.Protobuf.Reflection.FileDescriptor Descriptor { get; }
+    }
+}

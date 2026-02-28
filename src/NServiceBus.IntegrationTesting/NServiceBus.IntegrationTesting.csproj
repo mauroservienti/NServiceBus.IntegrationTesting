@@ -1,41 +1,52 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <PropertyGroup>
-        <Authors>Mauro Servienti</Authors>
-        <Description>NServiceBus integration testing support</Description>
-        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-        <PackageIcon>icon.png</PackageIcon>
-        <PackageTags>NServiceBus Integration Testing</PackageTags>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <NoWarn>$(NoWarn);NU5105</NoWarn>
-        <PackageOutputPath>..\..\nugets</PackageOutputPath>
+        <IsPackable>true</IsPackable>
+        <Description>Test host library for out-of-process NServiceBus integration testing using Docker containers and gRPC. Provides TestEnvironmentBuilder, ObserveContext, and the fluent assertion API.</Description>
     </PropertyGroup>
 
     <ItemGroup>
         <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
-        <PackageReference Include="NServiceBus" Version="9.2.2" />
-        <PackageReference Include="NServiceBus.AcceptanceTesting" Version="9.2.2" />
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="MinVer" Version="6.0.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
+    <!--
+        FrameworkReference gives us access to Kestrel and WebApplication
+        without needing the full Microsoft.NET.Sdk.Web SDK.
+    -->
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.29.3" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.67.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Testcontainers" Version="4.10.0" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.10.0" />
+        <PackageReference Include="Testcontainers.RabbitMq" Version="4.10.0" />
+        <PackageReference Include="WireMock.Net" Version="1.25.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+            Only generate server-side stubs here.
+            The client-side stubs are generated in the Agent project.
+        -->
+        <Protobuf Include="..\proto\testing.proto" GrpcServices="Server" />
     </ItemGroup>
 
 </Project>

@@ -1,26 +1,16 @@
-﻿using System.Threading.Tasks;
-using NServiceBus.AcceptanceTesting;
-using NServiceBus.IntegrationTesting;
-using NUnit.Framework;
+using NServiceBus;
+using NServiceBus.IntegrationTesting.Agent;
+using SampleMessages;
 
-namespace ScenarioSnippets
+namespace Snippets;
+
+// begin-snippet: scenario
+public class SomeMessageScenario : Scenario
 {
-    public class When_sending_AMessage
-    {
-        // begin-snippet: scenario-skeleton
-        [Test]
-        public async Task AReplyMessage_is_received_and_ASaga_is_started()
-        {
-            var context = await Scenario.Define<IntegrationScenarioContext>()
-                .WithEndpoint<MyServiceEndpoint>(/*...*/)
-                .WithEndpoint<MyOtherServiceEndpoint>(/*...*/)
-                .Done(ctx=>false)
-                .Run();
-        }
+    public override string Name => "SomeMessage";
 
-        class MyServiceEndpoint : EndpointConfigurationBuilder{ /* omitted */ }
-        class MyOtherServiceEndpoint : EndpointConfigurationBuilder{ /* omited */ }
-
-        // end-snippet
-    }
+    public override async Task Execute(IMessageSession session,
+        Dictionary<string, string> args, CancellationToken ct)
+        => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
+// end-snippet
