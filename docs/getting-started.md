@@ -637,7 +637,7 @@ await IntegrationTestingBootstrap.RunAsync(
     scenarios: [new SomeCommandScenario()],
     skipRules: [SkipRule.For<ProcessPayment>()]);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L166-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-bootstrap' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L173-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-bootstrap' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The message is consumed from the queue (no dead-lettering, no retries) and a `MessageSkippedEvent` is reported to the test host. Wait for it in the test:
@@ -654,7 +654,7 @@ var results = await _env.Observe(correlationId, cts.Token)
 var skip = results.MessageSkipped("ProcessPayment");
 Assert.That(skip.EndpointName, Is.EqualTo("YourEndpoint"));
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L180-L189' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-observation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L187-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-observation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also pass a predicate to skip only messages that meet a condition:
@@ -669,7 +669,7 @@ await IntegrationTestingBootstrap.RunAsync(
     scenarios: [new SomeCommandScenario()],
     skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L194-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-predicate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L201-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-predicate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `MessageSkipped` cannot be combined with `MessageFailed` in the same `ObserveContext`.
@@ -763,7 +763,7 @@ if (externalUrl is not null)
     var response = await _http.GetStringAsync($"{externalUrl}/api/data", ct);
 }
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L211-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L218-L225' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the test, configure the stub before triggering the scenario, then verify the request was received afterward:
@@ -834,7 +834,7 @@ _env = await new TestEnvironmentBuilder()
     .WithAgentConnectionTimeout(TimeSpan.FromMinutes(5))
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L154-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-agent-timeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L161-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-agent-timeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Complete example
@@ -1028,7 +1028,7 @@ public class WhenSomeMessageIsSent
 ```cs
 var (stdout, stderr) = await _env.GetEndpointContainerLogsAsync("YourEndpoint");
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L153-L153' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-get-container-logs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L152-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-get-container-logs' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Docker image build fails
@@ -1147,7 +1147,7 @@ await IntegrationTestingBootstrap.RunAsync(
     skipRules:          [SkipRule.For<ProcessPayment>()],                                    // optional
     sigTermGracePeriod: TimeSpan.FromSeconds(10));                                          // optional, default 5 s
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L226-L234' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L233-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `TimeoutRule`
@@ -1161,7 +1161,7 @@ TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5));
 // Compute the delay from the timeout message instance
 TimeoutRule.For<OrderProcessingTimeout>(msg => msg.CustomDelay);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L239-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L246-L252' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `SkipRule`
@@ -1175,5 +1175,5 @@ SkipRule.For<ProcessPayment>();
 // ACK only messages of type T that satisfy the predicate
 SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L250-L256' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L257-L263' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

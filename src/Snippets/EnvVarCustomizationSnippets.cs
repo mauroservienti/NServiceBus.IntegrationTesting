@@ -119,8 +119,7 @@ public class EnvVarCustomizationSnippets
             .UseInfrastructure(
                 key: "redis",
                 defaultEnvVarName: "REDIS_CONNECTION_STRING",
-                buildContainer: network => new ContainerBuilder()
-                    .WithImage("redis:7")
+                buildContainer: network => new ContainerBuilder("redis:7")
                     .WithNetwork(network)
                     .WithNetworkAliases("redis")
                     .Build(),

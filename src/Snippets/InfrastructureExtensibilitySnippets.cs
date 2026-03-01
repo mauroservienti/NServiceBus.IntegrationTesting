@@ -23,8 +23,7 @@ public static class TestEnvironmentBuilderRedisExtensions
         return builder.UseInfrastructure(
             RedisOptions.InfrastructureKey,
             opts.ConnectionStringEnvVarName,
-            network => new ContainerBuilder()
-                .WithImage(opts.ImageName)
+            network => new ContainerBuilder(opts.ImageName)
                 .WithNetwork(network)
                 .WithNetworkAliases("redis")
                 .Build(),

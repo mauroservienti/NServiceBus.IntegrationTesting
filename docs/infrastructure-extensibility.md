@@ -26,8 +26,7 @@ _env = await new TestEnvironmentBuilder()
     .UseInfrastructure(
         key: "redis",
         defaultEnvVarName: "REDIS_CONNECTION_STRING",
-        buildContainer: network => new ContainerBuilder()
-            .WithImage("redis:7")
+        buildContainer: network => new ContainerBuilder("redis:7")
             .WithNetwork(network)
             .WithNetworkAliases("redis")
             .Build(),
@@ -35,7 +34,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Parameters:
@@ -73,8 +72,7 @@ public static class TestEnvironmentBuilderRedisExtensions
         return builder.UseInfrastructure(
             RedisOptions.InfrastructureKey,
             opts.ConnectionStringEnvVarName,
-            network => new ContainerBuilder()
-                .WithImage(opts.ImageName)
+            network => new ContainerBuilder(opts.ImageName)
                 .WithNetwork(network)
                 .WithNetworkAliases("redis")
                 .Build(),
@@ -82,7 +80,7 @@ public static class TestEnvironmentBuilderRedisExtensions
     }
 }
 ```
-<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L7-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-class' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L7-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-class' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Callers see the same fluent API as the built-in packages:
@@ -96,7 +94,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L42-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-usage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L41-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `InfrastructureKey` property on the options class is what endpoints reference in
