@@ -391,11 +391,15 @@ public class WhenSomeCommandIsSent
 
 ### Executing a scenario
 
-```csharp
+<!-- snippet: gs-execute-scenario -->
+<a id='snippet-gs-execute-scenario'></a>
+```cs
 var correlationId = await _yourEndpoint.ExecuteScenarioAsync(
     "SomeCommand Scenario",
     new Dictionary<string, string> { { "ID", Guid.NewGuid().ToString() } });
 ```
+<sup><a href='/src/Snippets/GettingStartedObservingSnippets.cs#L14-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-execute-scenario' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 - `ExecuteScenarioAsync` returns a **correlation ID** — a string that ties all events
   produced by this scenario execution together.
@@ -410,7 +414,9 @@ The `ObserveContext` API lets you declare what you are waiting for before callin
 
 ### Waiting for a handler invocation
 
-```csharp
+<!-- snippet: gs-handler-invocation -->
+<a id='snippet-gs-handler-invocation'></a>
+```cs
 var results = await _env.Observe(correlationId, cts.Token)
     .HandlerInvoked("SomeMessageHandler")
     .HandlerInvoked("AnotherMessageHandler")
@@ -420,6 +426,8 @@ var results = await _env.Observe(correlationId, cts.Token)
 var evt = results.HandlerInvoked("SomeMessageHandler");
 Assert.That(evt.EndpointName, Is.EqualTo("YourEndpoint"));
 ```
+<sup><a href='/src/Snippets/GettingStartedObservingSnippets.cs#L26-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-handler-invocation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The string passed to `HandlerInvoked` identifies the handler class. Three forms are accepted and all resolve to the same type:
 
@@ -438,7 +446,9 @@ Use the short name for brevity. Use a more qualified form when two handlers shar
 
 Sagas are tracked separately from plain handlers, so you can distinguish between the two:
 
-```csharp
+<!-- snippet: gs-saga-invocation -->
+<a id='snippet-gs-saga-invocation'></a>
+```cs
 var results = await _env.Observe(correlationId, cts.Token)
     .SagaInvoked("OrderSaga")
     .WhenAllAsync();
@@ -451,6 +461,8 @@ Assert.Multiple(() =>
     Assert.That(sagaEvt.SagaIsCompleted, Is.False);
 });
 ```
+<sup><a href='/src/Snippets/GettingStartedObservingSnippets.cs#L43-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-saga-invocation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Fields available on a `HandlerInvokedEvent` for sagas:
 
@@ -466,7 +478,9 @@ Fields available on a `HandlerInvokedEvent` for sagas:
 
 ### Waiting for a message dispatch
 
-```csharp
+<!-- snippet: gs-message-dispatch -->
+<a id='snippet-gs-message-dispatch'></a>
+```cs
 var results = await _env.Observe(correlationId, cts.Token)
     .MessageDispatched("AnotherMessage")
     .WhenAllAsync();
@@ -478,6 +492,8 @@ Assert.Multiple(() =>
     Assert.That(dispatch.Intent, Is.EqualTo("Send"));   // or "Publish", "Reply", "RequestTimeout"
 });
 ```
+<sup><a href='/src/Snippets/GettingStartedObservingSnippets.cs#L63-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-message-dispatch' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The string passed to `MessageDispatched` identifies the message class. The same three forms accepted by `HandlerInvoked` (short name, namespace-qualified, assembly-qualified) all work here too.
 
@@ -485,7 +501,9 @@ The string passed to `MessageDispatched` identifies the message class. The same 
 
 There are cases in which we want to test the error path. For example, if we do something, we expect a message to land in the error queue. Use `MessageFailed()` alone when you expect a message to be permanently sent to the error queue. It cannot be combined with success conditions:
 
-```csharp
+<!-- snippet: gs-message-failure -->
+<a id='snippet-gs-message-failure'></a>
+```cs
 var results = await _env.Observe(correlationId, cts.Token)
     .MessageFailed()
     .WhenAllAsync();
@@ -500,6 +518,8 @@ Assert.Multiple(() =>
         Does.Contain("FailingMessage"));
 });
 ```
+<sup><a href='/src/Snippets/GettingStartedObservingSnippets.cs#L82-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-message-failure' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Fields available on a `MessageFailedEvent`:
 
@@ -528,13 +548,17 @@ immediately instead of waiting for the cancellation token to expire.
 This means you get a clear, descriptive error rather than a generic
 `OperationCanceledException` timeout:
 
-```csharp
+<!-- snippet: gs-fast-fail -->
+<a id='snippet-gs-fast-fail'></a>
+```cs
 // MessageFailedException is thrown if the handler fails permanently,
 // even though the test only registered success conditions.
 var results = await _env.Observe(correlationId, cts.Token)
     .HandlerInvoked("SomeMessageHandler")
     .WhenAllAsync();
 ```
+<sup><a href='/src/Snippets/GettingStartedObservingSnippets.cs#L104-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-fast-fail' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 `MessageFailedException` exposes `CorrelationId` and `Headers` properties for diagnostics.
 
@@ -544,16 +568,20 @@ var results = await _env.Observe(correlationId, cts.Token)
 
 Add as many endpoints as you need. Each must have its own `*.Testing` project and Dockerfile:
 
-```csharp
+<!-- snippet: gs-multi-endpoint -->
+<a id='snippet-gs-multi-endpoint'></a>
+```cs
 _env = await new TestEnvironmentBuilder()
     .WithDockerfileDirectory(srcDir)
-    .UseRabbitMq()
+    .UseRabbitMQ()
     .UsePostgreSql()
     .AddEndpoint("OrdersEndpoint", "OrdersEndpoint.Testing/Dockerfile")
     .AddEndpoint("BillingEndpoint", "BillingEndpoint.Testing/Dockerfile")
     .AddEndpoint("ShippingEndpoint", "ShippingEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L23-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-multi-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Endpoints in the same test environment share the Docker network. They can send messages to
 each other exactly as they would in production.
@@ -563,7 +591,9 @@ each other exactly as they would in production.
 Sagas that use `RequestTimeout` may have delays that are far too long for tests (minutes or
 hours in production). Use a `TimeoutRule` to shorten them in the `*.Testing` project:
 
-```csharp
+<!-- snippet: gs-timeout-bootstrap -->
+<a id='snippet-gs-timeout-bootstrap'></a>
+```cs
 // YourEndpoint.Testing/Program.cs
 await IntegrationTestingBootstrap.RunAsync(
     "YourEndpoint",
@@ -571,10 +601,14 @@ await IntegrationTestingBootstrap.RunAsync(
     scenarios: [new SomeCommandScenario()],
     timeoutRules: [TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5))]);
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L37-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-timeout-bootstrap' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Then wait for the timeout-triggered handler in your test:
 
-```csharp
+<!-- snippet: gs-timeout-assertions -->
+<a id='snippet-gs-timeout-assertions'></a>
+```cs
 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
 var results = await _env.Observe(correlationId, cts.Token)
@@ -586,23 +620,31 @@ var results = await _env.Observe(correlationId, cts.Token)
 Assert.That(results.MessageDispatched("OrderProcessingTimeout").Intent,
     Is.EqualTo("RequestTimeout"));
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L51-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-timeout-assertions' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Skipping messages
 
-Sometimes you want to test a scenario where a message is **not** processed — for example, verifying that when `PaymentProcessor` does not reply, an upstream saga escalates via a timeout. Use a `SkipRule` to ACK the message without invoking any handlers, and observe the skip in the test:
+Sometimes you want to test a scenario where a message is **not** processed — for example, verifying that when an endpoint does not handle a `ProcessPayment` message, an upstream saga escalates via a timeout. Use a `SkipRule` to ACK the message without invoking any handlers, and observe the skip in the test:
 
-```csharp
-// PaymentProcessor.Testing/Program.cs
+<!-- snippet: gs-skip-bootstrap -->
+<a id='snippet-gs-skip-bootstrap'></a>
+```cs
+// YourEndpoint.Testing/Program.cs
 await IntegrationTestingBootstrap.RunAsync(
-    "PaymentProcessor",
-    PaymentProcessorConfig.Create,
-    scenarios: [new ProcessPaymentScenario()],
+    "YourEndpoint",
+    YourEndpointConfig.Create,
+    scenarios: [new SomeCommandScenario()],
     skipRules: [SkipRule.For<ProcessPayment>()]);
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L166-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-bootstrap' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The message is consumed from the queue (no dead-lettering, no retries) and a `MessageSkippedEvent` is reported to the test host. Wait for it in the test:
 
-```csharp
+<!-- snippet: gs-skip-observation -->
+<a id='snippet-gs-skip-observation'></a>
+```cs
 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
 var results = await _env.Observe(correlationId, cts.Token)
@@ -610,14 +652,25 @@ var results = await _env.Observe(correlationId, cts.Token)
     .WhenAllAsync();
 
 var skip = results.MessageSkipped("ProcessPayment");
-Assert.That(skip.EndpointName, Is.EqualTo("PaymentProcessor"));
+Assert.That(skip.EndpointName, Is.EqualTo("YourEndpoint"));
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L180-L189' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-observation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 You can also pass a predicate to skip only messages that meet a condition:
 
-```csharp
-skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]
+<!-- snippet: gs-skip-predicate -->
+<a id='snippet-gs-skip-predicate'></a>
+```cs
+// YourEndpoint.Testing/Program.cs
+await IntegrationTestingBootstrap.RunAsync(
+    "YourEndpoint",
+    YourEndpointConfig.Create,
+    scenarios: [new SomeCommandScenario()],
+    skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]);
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L194-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-skip-predicate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 `MessageSkipped` cannot be combined with `MessageFailed` in the same `ObserveContext`.
 
@@ -625,16 +678,22 @@ skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]
 
 All `HandlerInvoked`, `SagaInvoked`, and `MessageDispatched` conditions support two additional overloads that let you encode business assertions directly in the done condition — the condition fires only when the predicate on the latest event returns `true`:
 
-```csharp
+<!-- snippet: gs-single-predicate -->
+<a id='snippet-gs-single-predicate'></a>
+```cs
 // Only fires when the saga is new — no need to assert afterward
 var results = await _env.Observe(correlationId, cts.Token)
     .SagaInvoked("OrderSaga", evt => evt.SagaIsNew)
     .WhenAllAsync();
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L70-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-single-predicate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 **List predicate** — the condition fires when the accumulated list of matching events satisfies the predicate. Use this when you need to reason about multiple events together:
 
-```csharp
+<!-- snippet: gs-list-predicate -->
+<a id='snippet-gs-list-predicate'></a>
+```cs
 // Wait until we have seen at least 3 dispatches of the same type
 var results = await _env.Observe(correlationId, cts.Token)
     .MessageDispatched("OrderStatusUpdated", all => all.Count >= 3)
@@ -643,6 +702,8 @@ var results = await _env.Observe(correlationId, cts.Token)
 var dispatches = results.MessageDispatches("OrderStatusUpdated");
 Assert.That(dispatches, Has.Count.GreaterThanOrEqualTo(3));
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L83-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-list-predicate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Running in CI
 
@@ -675,20 +736,26 @@ The image name must be **all lowercase** and match the endpoint name you pass to
 
 If your endpoint calls an external HTTP service, use `.UseWireMock()` to start an embedded [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) stub server. The framework automatically injects the `WIREMOCK_URL` environment variable into every endpoint container.
 
-```csharp
+<!-- snippet: gs-wiremock-setup -->
+<a id='snippet-gs-wiremock-setup'></a>
+```cs
 // *.Tests.csproj: add <PackageReference Include="WireMock.Net" Version="1.25.0" />
 
 _env = await new TestEnvironmentBuilder()
     .WithDockerfileDirectory(srcDir)
-    .UseRabbitMq()
+    .UseRabbitMQ()
     .UseWireMock()                       // starts the stub server
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L98-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-setup' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 In your endpoint, read `WIREMOCK_URL` from the environment:
 
-```csharp
+<!-- snippet: gs-wiremock-endpoint -->
+<a id='snippet-gs-wiremock-endpoint'></a>
+```cs
 // Only calls the external service when the variable is set (i.e., in test mode)
 var externalUrl = Environment.GetEnvironmentVariable("WIREMOCK_URL");
 if (externalUrl is not null)
@@ -696,13 +763,14 @@ if (externalUrl is not null)
     var response = await _http.GetStringAsync($"{externalUrl}/api/data", ct);
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L211-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 In the test, configure the stub before triggering the scenario, then verify the request was received afterward:
 
-```csharp
-using WireMock.RequestBuilders;
-using WireMock.ResponseBuilders;
-
+<!-- snippet: gs-wiremock-test -->
+<a id='snippet-gs-wiremock-test'></a>
+```cs
 [Test]
 public async Task Handler_calls_external_service()
 {
@@ -725,12 +793,16 @@ public async Task Handler_calls_external_service()
         Is.True);
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L110-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Dumping container logs on failure
 
 When a test fails, endpoint container logs are invaluable for diagnosing what went wrong. Add a `[TearDown]` method that dumps them only on failure:
 
-```csharp
+<!-- snippet: gs-dump-logs -->
+<a id='snippet-gs-dump-logs'></a>
+```cs
 [TearDown]
 public async Task DumpContainerLogsOnFailure()
 {
@@ -745,19 +817,25 @@ public async Task DumpContainerLogsOnFailure()
     TestContext.Out.WriteLine(stderr);
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L134-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-dump-logs' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Adjusting the agent connection timeout
 
 By default, `StartAsync` waits up to 120 seconds for all endpoint agents to connect. Adjust this if your Docker image builds or container startup is particularly slow:
 
-```csharp
+<!-- snippet: gs-agent-timeout -->
+<a id='snippet-gs-agent-timeout'></a>
+```cs
 _env = await new TestEnvironmentBuilder()
     .WithDockerfileDirectory(srcDir)
-    .UseRabbitMq()
+    .UseRabbitMQ()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .WithAgentConnectionTimeout(TimeSpan.FromMinutes(5))
     .StartAsync();
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L154-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-agent-timeout' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Complete example
 
@@ -765,7 +843,9 @@ The following end-to-end example mirrors the sample included with this repositor
 
 ### Production endpoint (`SampleEndpoint/`)
 
-```csharp
+<!-- snippet: gs-complete-config -->
+<a id='snippet-gs-complete-config'></a>
+```cs
 // SampleEndpoint/SampleEndpointConfig.cs
 public static class SampleEndpointConfig
 {
@@ -797,24 +877,27 @@ public static class SampleEndpointConfig
     }
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedCompleteExampleSnippets.cs#L15-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-complete-config' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Companion project (`SampleEndpoint.Testing/`)
 
-```csharp
+<!-- snippet: gs-complete-bootstrap -->
+<a id='snippet-gs-complete-bootstrap'></a>
+```cs
 // SampleEndpoint.Testing/Program.cs
-using NServiceBus.IntegrationTesting.Agent;
-using SampleEndpoint;
-using SampleEndpoint.Handlers;
-using SampleEndpoint.Testing;
-
 await IntegrationTestingBootstrap.RunAsync(
     "SampleEndpoint",
     SampleEndpointConfig.Create,
     scenarios: [new SomeMessageScenario(), new FailingMessageScenario()],
     timeoutRules: [TimeoutRule.For<SomeReplySagaTimeout>(TimeSpan.FromSeconds(5))]);
 ```
+<sup><a href='/src/Snippets/GettingStartedCompleteExampleSnippets.cs#L52-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-complete-bootstrap' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-```csharp
+<!-- snippet: gs-complete-scenario -->
+<a id='snippet-gs-complete-scenario'></a>
+```cs
 // SampleEndpoint.Testing/SomeMessageScenario.cs
 public class SomeMessageScenario : Scenario
 {
@@ -827,10 +910,14 @@ public class SomeMessageScenario : Scenario
         => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedCompleteExampleSnippets.cs#L63-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-complete-scenario' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Test fixture (`SampleEndpoint.Tests/`)
 
-```csharp
+<!-- snippet: gs-complete-test -->
+<a id='snippet-gs-complete-test'></a>
+```cs
 // SampleEndpoint.Tests/WhenSomeMessageIsSent.cs
 [TestFixture]
 [NonParallelizable]
@@ -846,7 +933,7 @@ public class WhenSomeMessageIsSent
 
         _env = await new TestEnvironmentBuilder()
             .WithDockerfileDirectory(srcDir)
-            .UseRabbitMq()
+            .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
             .AddEndpoint("AnotherEndpoint", "AnotherEndpoint.Testing/Dockerfile")
@@ -922,6 +1009,8 @@ public class WhenSomeMessageIsSent
     }
 }
 ```
+<sup><a href='/src/Snippets/GettingStartedCompleteExampleSnippets.cs#L77-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-complete-test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ---
 
@@ -933,9 +1022,14 @@ public class WhenSomeMessageIsSent
 - Check that `NSBUS_TESTING_HOST` is not blocked by a firewall rule on the host.
 - Ensure `WithExtraHost("host.docker.internal", "host-gateway")` resolves correctly on Linux Docker Engine (this is applied automatically by `TestEnvironmentBuilder`).
 - Dump the container logs for the failing endpoint to see the startup error:
-  ```csharp
-  var (out, err) = await _env.GetEndpointContainerLogsAsync("YourEndpoint");
-  ```
+
+<!-- snippet: gs-get-container-logs -->
+<a id='snippet-gs-get-container-logs'></a>
+```cs
+var (stdout, stderr) = await _env.GetEndpointContainerLogsAsync("YourEndpoint");
+```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L153-L153' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-get-container-logs' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Docker image build fails
 
@@ -973,7 +1067,7 @@ full NServiceBus headers of the failed message.
 | Method | Description |
 |---|---|
 | `.WithDockerfileDirectory(path)` | Sets the Docker build context root (required) |
-| `.UseRabbitMq(image?)` | Starts a RabbitMQ container; injects `RABBITMQ_CONNECTION_STRING` |
+| `.UseRabbitMQ(image?)` | Starts a RabbitMQ container; injects `RABBITMQ_CONNECTION_STRING` |
 | `.UsePostgreSql(image?)` | Starts a PostgreSQL container; injects `POSTGRESQL_CONNECTION_STRING` |
 | `.UseWireMock()` | Starts embedded WireMock stub server; injects `WIREMOCK_URL` |
 | `.AddEndpoint(name, dockerfile)` | Registers an endpoint container to build and start |
@@ -1007,6 +1101,8 @@ full NServiceBus headers of the failed message.
 | `.SagaInvoked(name)` | Same as `HandlerInvoked` but for saga invocations |
 | `.MessageDispatched(name)` | Wait for the first dispatch of the named message type |
 | `.MessageDispatched(name, predicate)` | Single-event or list predicate overloads |
+| `.MessageSkipped(name)` | Wait for the first skip of the named message type |
+| `.MessageSkipped(name, predicate)` | Single-event or list predicate overloads |
 | `.MessageFailed()` | Wait for a permanent failure (use alone) |
 | `.WhenAllAsync()` | Await all conditions; returns `ObserveResults` |
 
@@ -1020,6 +1116,8 @@ full NServiceBus headers of the failed message.
 | `SagaInvocations(name)` | All collected saga `HandlerInvokedEvent` instances |
 | `MessageDispatched(name)` | Last (or only) `MessageDispatchedEvent` |
 | `MessageDispatches(name)` | All collected `MessageDispatchedEvent` instances |
+| `MessageSkipped(name)` | Last (or only) `MessageSkippedEvent` |
+| `MessageSkips(name)` | All collected `MessageSkippedEvent` instances |
 | `MessageFailed()` | The `MessageFailedEvent` (`EndpointName`, `ExceptionMessage`, `Headers`, `CorrelationId`) |
 
 > **Note**: `HandlerInvocations` and `SagaInvocations` use separate result buckets that mirror the conditions registered on `ObserveContext`. Calling `results.HandlerInvocations("MySaga")` when the condition was registered with `.SagaInvoked("MySaga")` — or vice versa — throws `InvalidOperationException`.
@@ -1038,32 +1136,44 @@ message instead of a generic timeout.
 
 ### `IntegrationTestingBootstrap.RunAsync`
 
-```csharp
+<!-- snippet: gs-api-bootstrap -->
+<a id='snippet-gs-api-bootstrap'></a>
+```cs
 await IntegrationTestingBootstrap.RunAsync(
-    endpointName:      "YourEndpoint",
-    configFactory:     YourEndpointConfig.Create,
-    scenarios:         [new SomeCommandScenario()],     // optional
-    timeoutRules:      [TimeoutRule.For<T>(TimeSpan)],  // optional
-    skipRules:         [SkipRule.For<T>()],              // optional
-    sigTermGracePeriod: TimeSpan.FromSeconds(10));       // optional, default 5 s
+    endpointName:       "YourEndpoint",
+    configFactory:      YourEndpointConfig.Create,
+    scenarios:          [new SomeCommandScenario()],                                        // optional
+    timeoutRules:       [TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5))], // optional
+    skipRules:          [SkipRule.For<ProcessPayment>()],                                    // optional
+    sigTermGracePeriod: TimeSpan.FromSeconds(10));                                          // optional, default 5 s
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L226-L234' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### `TimeoutRule`
 
-```csharp
+<!-- snippet: gs-api-timeout-rule -->
+<a id='snippet-gs-api-timeout-rule'></a>
+```cs
 // Replace the scheduled delay for T with a fixed value
-TimeoutRule.For<SomeTimeout>(TimeSpan.FromSeconds(5))
+TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5));
 
 // Compute the delay from the timeout message instance
-TimeoutRule.For<SomeTimeout>(msg => msg.CustomDelay)
+TimeoutRule.For<OrderProcessingTimeout>(msg => msg.CustomDelay);
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L239-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### `SkipRule`
 
-```csharp
+<!-- snippet: gs-api-skip-rule -->
+<a id='snippet-gs-api-skip-rule'></a>
+```cs
 // ACK all messages of type T without invoking any handlers
-SkipRule.For<ProcessPayment>()
+SkipRule.For<ProcessPayment>();
 
 // ACK only messages of type T that satisfy the predicate
-SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)
+SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000);
 ```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L250-L256' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
