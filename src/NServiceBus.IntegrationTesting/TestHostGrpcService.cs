@@ -212,6 +212,69 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     }
 
     /// <summary>
+    /// Returns a Task that completes when the accumulated HandlerInvokedEvents for the
+    /// given correlation ID and saga type name satisfy <paramref name="until"/>.
+    /// Only events with IsSaga=true and a matching SagaTypeName are considered —
+    /// plain handler events with the same type name are ignored.
+    /// </summary>
+    internal async Task<IReadOnlyList<HandlerInvokedEvent>> WaitForSagaInvocationsAsync(
+        string correlationId,
+        string sagaTypeName,
+        Func<IReadOnlyList<HandlerInvokedEvent>, bool> until,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+
+        var handlerChannel = Channel.CreateUnbounded<HandlerInvokedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+        var failureChannel = Channel.CreateUnbounded<MessageFailedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+
+        lock (_handlerListenersLock)
+            _handlerListeners.Add(handlerChannel);
+        lock (_failedListenersLock)
+            _failedListeners.Add(failureChannel);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        try
+        {
+            var successTask = ScanForSagaEventsAsync(
+                handlerChannel.Reader, correlationId, sagaTypeName, until, cts.Token);
+            var failureTask = ScanForFailureEventAsync(
+                failureChannel.Reader, correlationId, cts.Token);
+
+            await Task.WhenAny(successTask, failureTask);
+            await cts.CancelAsync();
+
+            var sagaResults = await successTask;
+            var failureResult = await failureTask;
+
+            if (failureResult is not null)
+                throw new MessageFailedException(
+                    correlationId, failureResult.Headers, failureResult.ExceptionMessage);
+
+            if (sagaResults is not null)
+                return sagaResults;
+
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new OperationCanceledException(
+                $"Timed out waiting for saga '{sagaTypeName}' invocation(s) for correlation '{correlationId}'.",
+                cancellationToken);
+        }
+        finally
+        {
+            lock (_handlerListenersLock)
+                _handlerListeners.Remove(handlerChannel);
+            handlerChannel.Writer.TryComplete();
+
+            lock (_failedListenersLock)
+                _failedListeners.Remove(failureChannel);
+            failureChannel.Writer.TryComplete();
+        }
+    }
+
+    /// <summary>
     /// Convenience overload: returns the first MessageDispatchedEvent for the given
     /// correlation ID and message type name.
     /// </summary>
@@ -473,6 +536,33 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     // Scan helpers return null when the token is cancelled or the channel is closed
     // without collecting enough matching events — the caller interprets null as "not found".
 
+    /// <summary>
+    /// Soft type-name match. The agent sends AssemblyQualifiedName so the stored value
+    /// is of the form "Namespace.TypeName, AssemblyName, Version=…, Culture=…, PublicKeyToken=…".
+    /// Tests may supply any of:
+    ///   • the full AssemblyQualifiedName (exact match)
+    ///   • the namespace-qualified name only  ("Namespace.TypeName")
+    ///   • the simple short name             ("TypeName")
+    /// All three forms resolve to the same type, so all three match.
+    /// </summary>
+    internal static bool TypeNameMatches(string storedName, string queriedName)
+    {
+        if (storedName == queriedName)
+            return true;
+
+        // storedName may be assembly-qualified: split off the simple+namespace part.
+        var commaIndex = storedName.IndexOf(',');
+        var fullName = commaIndex >= 0 ? storedName[..commaIndex] : storedName;
+
+        if (fullName == queriedName)
+            return true;
+
+        // Match by short name (everything after the last dot in the full name).
+        var dotIndex = fullName.LastIndexOf('.');
+        var shortName = dotIndex >= 0 ? fullName[(dotIndex + 1)..] : fullName;
+        return shortName == queriedName;
+    }
+
     internal static async Task<IReadOnlyList<HandlerInvokedEvent>?> ScanForHandlerEventsAsync(
         ChannelReader<HandlerInvokedEvent> reader,
         string correlationId,
@@ -485,7 +575,31 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         {
             await foreach (var evt in reader.ReadAllAsync(cancellationToken))
             {
-                if (evt.CorrelationId == correlationId && evt.HandlerTypeName == handlerTypeName)
+                if (!evt.IsSaga && evt.CorrelationId == correlationId && TypeNameMatches(evt.HandlerTypeName, handlerTypeName))
+                {
+                    collected.Add(evt);
+                    if (isDone(collected))
+                        return collected;
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        return null;
+    }
+
+    internal static async Task<IReadOnlyList<HandlerInvokedEvent>?> ScanForSagaEventsAsync(
+        ChannelReader<HandlerInvokedEvent> reader,
+        string correlationId,
+        string sagaTypeName,
+        Func<IReadOnlyList<HandlerInvokedEvent>, bool> isDone,
+        CancellationToken cancellationToken)
+    {
+        var collected = new List<HandlerInvokedEvent>();
+        try
+        {
+            await foreach (var evt in reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.IsSaga && evt.CorrelationId == correlationId && TypeNameMatches(evt.SagaTypeName, sagaTypeName))
                 {
                     collected.Add(evt);
                     if (isDone(collected))
@@ -509,7 +623,7 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         {
             await foreach (var evt in reader.ReadAllAsync(cancellationToken))
             {
-                if (evt.CorrelationId == correlationId && evt.MessageTypeName == messageTypeName)
+                if (evt.CorrelationId == correlationId && TypeNameMatches(evt.MessageTypeName, messageTypeName))
                 {
                     collected.Add(evt);
                     if (isDone(collected))
