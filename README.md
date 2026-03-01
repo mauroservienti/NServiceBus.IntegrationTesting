@@ -5,7 +5,11 @@
 NServiceBus.IntegrationTesting enables testing end-to-end business scenarios against real
 production endpoints, real transports, and real persistence.
 
+> [!IMPORTANT]
 > **Disclaimer**: NServiceBus.IntegrationTesting is not affiliated with Particular Software and is not officially supported by Particular Software.
+
+> [!NOTE]
+> Version 3 is currently in beta, and it's available via the [Feedz.io pre-releases feed](https://f.feedz.io/mauroservienti/pre-releases/nuget/index.json).
 
 ---
 
@@ -198,6 +202,11 @@ NServiceBus.IntegrationTesting agents support NServiceBus versions 8, 9, and 10
 | 10 | `NServiceBus.IntegrationTesting.AgentV10` | net10.0 |
 | 9 | `NServiceBus.IntegrationTesting.AgentV9` | net8.0 |
 | 8 | `NServiceBus.IntegrationTesting.AgentV8` | net6.0 |
+
+## NuGet Packages
+
+- [NuGet stable releases](https://www.nuget.org/packages/NServiceBus.IntegrationTesting)
+- [Feedz.io pre-releases feed](https://f.feedz.io/mauroservienti/pre-releases/nuget/index.json)
 
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 
