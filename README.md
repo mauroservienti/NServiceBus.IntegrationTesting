@@ -120,6 +120,8 @@ public class WhenSomeMessageIsSent
 <sup><a href='/src/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-writing-a-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+For a full walkthrough and API reference see the **[documentation](docs/README.md)**.
+
 ### Key concepts
 
 **`TestEnvironmentBuilder`** — fluent builder that starts a Docker network, infrastructure
