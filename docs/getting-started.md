@@ -392,7 +392,15 @@ var evt = results.HandlerInvoked("SomeMessageHandler");
 Assert.That(evt.EndpointName, Is.EqualTo("YourEndpoint"));
 ```
 
-The string passed to `HandlerInvoked` is the **simple type name** of the handler class (e.g., `"SomeMessageHandler"` for `class SomeMessageHandler : IHandleMessages<SomeMessage>`).
+The string passed to `HandlerInvoked` identifies the handler class. Three forms are accepted and all resolve to the same type:
+
+| Form | Example |
+|---|---|
+| Short name | `"SomeMessageHandler"` |
+| Namespace-qualified | `"MyEndpoint.Handlers.SomeMessageHandler"` |
+| Assembly-qualified | `"MyEndpoint.Handlers.SomeMessageHandler, MyEndpoint, Version=1.0.0.0, ..."` |
+
+Use the short name for brevity. Use a more qualified form when two handlers share the same short name in different namespaces or assemblies.
 
 ### Waiting for a saga invocation
 
@@ -439,7 +447,7 @@ Assert.Multiple(() =>
 });
 ```
 
-The string passed to `MessageDispatched` is the **simple type name** of the message class.
+The string passed to `MessageDispatched` identifies the message class. The same three forms accepted by `HandlerInvoked` (short name, namespace-qualified, assembly-qualified) all work here too.
 
 ### Waiting for a message failure
 
@@ -850,7 +858,7 @@ public class WhenSomeMessageIsSent
 
 - Increase the `CancellationTokenSource` timeout. Long-running tests (e.g., saga timeouts) need enough headroom.
 - Make sure you have registered all expected conditions before calling `WhenAllAsync()`.
-- If a handler is not being invoked, check the routing configuration and that the message type name matches exactly (simple type name, not fully qualified).
+- If a handler is not being invoked, check the routing configuration and that the name passed to `HandlerInvoked` / `SagaInvoked` / `MessageDispatched` matches the handler or message class name (short name, namespace-qualified, or assembly-qualified are all accepted).
 
 ### `MessageFailedException` — message sent to error queue unexpectedly
 
