@@ -15,22 +15,22 @@ Each endpoint runs in its own Docker container. Endpoints can run **different NS
 
 ### How it works
 
-```text
-┌──────────────────────────────────────────┐
-│  Test process                            │
-│  TestHostServer (gRPC, dynamic port)     │
-└──────────────────┬───────────────────────┘
-         bidirectional streaming
-                   │
-        ┌──────────┴────────────┐
-        │                       │
-┌───────▼─────────┐   ┌─────────▼────────┐
-│ SampleEndpoint. │   │  AnotherEndpoint │
-│ NSB 10 / .NET 10│   │  NSB 9 / .NET 9  │
-│ container       │   │  container       │
-└─────────────────┘   └──────────────────┘
-        │                       │
-    RabbitMQ container    PostgreSQL container
+```mermaid
+graph TD
+    TestHost["Test process<br/>TestHostServer (gRPC, dynamic port)"]
+    
+    SampleEndpoint["SampleEndpoint<br/>NSB 10 / .NET 10<br/>container"]
+    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 9<br/>container"]
+    
+    RabbitMQ["RabbitMQ container (message broker)"]
+    PostgreSQL["PostgreSQL container (Sagas storage)"]
+    
+    TestHost <-->|bidirectional streaming| SampleEndpoint
+    TestHost <-->|bidirectional streaming| AnotherEndpoint
+    
+    SampleEndpoint <--> RabbitMQ
+    SampleEndpoint <--> PostgreSQL
+    AnotherEndpoint <--> RabbitMQ
 ```
 
 ### Writing a test
@@ -119,6 +119,8 @@ public class WhenSomeMessageIsSent
 ```
 <sup><a href='/src/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-writing-a-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+For a full walkthrough and API reference see the **[documentation](docs/README.md)**.
 
 ### Key concepts
 

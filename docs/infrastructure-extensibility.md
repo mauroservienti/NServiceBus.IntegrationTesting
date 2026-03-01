@@ -38,9 +38,12 @@ _env = await new TestEnvironmentBuilder()
 <sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-`key` is a stable string identifier for the infrastructure — endpoints use it in
-`InfrastructureEnvVarNames` to override the env var name on a per-endpoint basis (see
-[Customizing Environment Variable Names](env-var-customization.md)).
+Parameters:
+
+- `key` — a stable string identifier for this infrastructure piece. Endpoints use it as the dictionary key in `InfrastructureEnvVarNames` to override the env var name on a per-endpoint basis (see [Customizing Environment Variable Names](env-var-customization.md)).
+- `defaultEnvVarName` — the environment variable name injected into every endpoint container unless overridden.
+- `buildContainer` — a factory that receives the shared Docker network and returns the built `IContainer`. Attach the container to the network and give it a DNS alias so endpoints can reach it by hostname.
+- `connectionString` — the **string value** injected as the env var. This is whatever your endpoint reads and interprets — not something the framework parses. For a Redis container accessible at hostname `redis` on port `6379`, the value is `"redis:6379"`. Use the Docker network alias as the hostname, not `localhost`.
 
 ## Creating a reusable extension method
 

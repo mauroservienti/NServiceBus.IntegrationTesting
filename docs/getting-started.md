@@ -18,21 +18,22 @@ Unlike unit tests or acceptance tests that mock the transport, every message her
 
 ### How it works
 
-```text
-┌──────────────────────────────────────────┐
-│  Test process                            │
-│  TestHostServer (gRPC, dynamic port)     │
-└──────────────────┬───────────────────────┘
-         bidirectional streaming
-                   │
-        ┌──────────┴────────────┐
-        │                       │
-┌───────▼─────────┐   ┌─────────▼────────┐
-│  YourEndpoint   │   │  AnotherEndpoint │
-│  container      │   │  container       │
-└─────────────────┘   └──────────────────┘
-        │                       │
-    RabbitMQ container    PostgreSQL container
+```mermaid
+graph TD
+    TestHost["Test process<br/>TestHostServer (gRPC, dynamic port)"]
+    
+    SampleEndpoint["SampleEndpoint<br/>NSB 10 / .NET 10<br/>container"]
+    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 9<br/>container"]
+    
+    RabbitMQ["RabbitMQ container (message broker)"]
+    PostgreSQL["PostgreSQL container (Sagas storage)"]
+    
+    TestHost <-->|bidirectional streaming| SampleEndpoint
+    TestHost <-->|bidirectional streaming| AnotherEndpoint
+    
+    SampleEndpoint <--> RabbitMQ
+    SampleEndpoint <--> PostgreSQL
+    AnotherEndpoint <--> RabbitMQ
 ```
 
 1. The test process starts a lightweight **gRPC host** on a dynamic port.
@@ -134,13 +135,15 @@ Add a new console project alongside the production endpoint:
     <ProjectReference Include="..\YourEndpoint\YourEndpoint.csproj" />
   </ItemGroup>
 
-    <ItemGroup>
+  <ItemGroup>
     <!--
-      Reference the agent version that matches your NServiceBus major version:
-        NServiceBus 10 → NServiceBus.IntegrationTesting.AgentV10
-        NServiceBus 9  → NServiceBus.IntegrationTesting.AgentV9
+      Pick the agent package that matches your NServiceBus major version.
+      The agent major version equals the NServiceBus major version.
+
+      NServiceBus 10 (net10.0):  NServiceBus.IntegrationTesting.AgentV10
+      NServiceBus 9  (net9.0):   NServiceBus.IntegrationTesting.AgentV9
     -->
-    <PackageReference Include="..." Version="..." />
+    <PackageReference Include="NServiceBus.IntegrationTesting.AgentV10" Version="3.*" />
   </ItemGroup>
 </Project>
 ```
@@ -254,6 +257,16 @@ ENTRYPOINT ["dotnet", "YourEndpoint.Testing.dll"]
 
 > **Do not use `--no-restore`** on the `dotnet publish` step. On ARM64/Apple Silicon with Linux/AMD64 containers, the restore and publish must share the same RID context.
 
+### Add a `.dockerignore` file
+
+Place a `.dockerignore` file in the **build context directory** (the path you pass to `.WithDockerfileDirectory()`). Without it, a local `dotnet build` populates `bin/` and `obj/` with native artifacts that change the Testcontainers content hash (triggering unnecessary image rebuilds) and can interfere with `dotnet publish` inside the container on ARM64.
+
+```
+# <build-context-root>/.dockerignore
+**/bin/
+**/obj/
+```
+
 ## Step 5 — Create the test project
 
 Create a test project, using NUnit in the example below, that references both the testing framework and the `*.Testing` companion projects:
@@ -277,6 +290,12 @@ Create a test project, using NUnit in the example below, that references both th
     </PackageReference>
     <PackageReference Include="Testcontainers" Version="4.10.0" />
     <PackageReference Include="NServiceBus.IntegrationTesting" Version="3.*" />
+    <!--
+      Add the infrastructure extension packages you use.
+      Each lives in a separate NuGet package so you only pull in what you need.
+    -->
+    <PackageReference Include="NServiceBus.IntegrationTesting.RabbitMQ" Version="3.*" />
+    <PackageReference Include="NServiceBus.IntegrationTesting.PostgreSql" Version="3.*" />
   </ItemGroup>
 
   <ItemGroup>
@@ -296,6 +315,16 @@ Create a test project, using NUnit in the example below, that references both th
 ### Basic fixture structure
 
 Each test fixture manages a shared `TestEnvironment` that is started once at the beginning of the fixture and torn down afterward. Starting the environment (building Docker images, starting containers) is expensive, so share it across all tests in the fixture. NServiceBus endpoints should be stateless and thus reused across different tests. What might require being "fresh" before each test is the underlying infrastructure, such as the message broker, to prevent leftover in-flight messages or saga instances to affect the next test. The way tests are set up depends on your requirements.
+
+`[NonParallelizable]` prevents NUnit from running tests within the fixture concurrently. Integration tests share a single broker and database, so running them in parallel would cause correlation IDs, saga state, and in-flight messages from one test to interfere with another. Keep this attribute on every integration test fixture.
+
+#### Test isolation
+
+Each scenario execution is tied to a unique correlation ID, so events from different tests do not cross-contaminate the `ObserveContext` listeners. However, **saga state is persisted across tests** — a saga started in one test will still be in the database when the next test runs. Strategies for dealing with this:
+
+- **Use unique IDs per test** (recommended) — generate a fresh `Guid` for each test and pass it to the scenario. Each test then works with a distinct saga instance.
+- **Purge saga state in `[SetUp]`** — truncate the saga tables between tests if your persistence allows it.
+- **Restart the environment per fixture** — heavier but guarantees a clean slate; acceptable when fixture setup time is short.
 
 <!-- snippet: gs-test-fixture -->
 <a id='snippet-gs-test-fixture'></a>
@@ -403,6 +432,9 @@ The string passed to `HandlerInvoked` identifies the handler class. Three forms 
 Use the short name for brevity. Use a more qualified form when two handlers share the same short name in different namespaces or assemblies.
 
 ### Waiting for a saga invocation
+
+> [!IMPORTANT]
+> Saga invocations are tracked **separately** from plain handler invocations. Use `.SagaInvoked()` for sagas and `.HandlerInvoked()` for message handlers — calling the wrong one means the condition never fires and the test times out.
 
 Sagas are tracked separately from plain handlers, so you can distinguish between the two:
 
@@ -577,6 +609,33 @@ var results = await _env.Observe(correlationId, cts.Token)
 var dispatches = results.MessageDispatches("OrderStatusUpdated");
 Assert.That(dispatches, Has.Count.GreaterThanOrEqualTo(3));
 ```
+
+### Running in CI
+
+Integration tests work in CI without any special configuration, with one caveat: on Linux Docker Engine (GitHub Actions, most CI hosts), BuildKit tags images asynchronously. The framework uses a stable image tag of the form `localhost/nsb-integration-testing/{endpoint-name}:latest`. If the image was just built, the tag may not be visible immediately, causing the container startup to fail.
+
+The recommended fix is to **pre-build the endpoint images in a dedicated CI step** before running the tests, using the exact same tag:
+
+```yaml
+# .github/workflows/ci.yml (excerpt)
+- name: Pre-build endpoint Docker images
+  run: |
+    docker build \
+      -f src/YourEndpoint.Testing/Dockerfile \
+      -t localhost/nsb-integration-testing/yourendpoint:latest \
+      src/
+    docker build \
+      -f src/AnotherEndpoint.Testing/Dockerfile \
+      -t localhost/nsb-integration-testing/anotherendpoint:latest \
+      src/
+
+- name: Run integration tests
+  run: dotnet test src/YourEndpoint.Tests/
+```
+
+The image name must be **all lowercase** and match the endpoint name you pass to `.AddEndpoint()`. When the tag already exists, `TestEnvironmentBuilder` finds a full cache hit and skips the async tagging step entirely, so the race condition cannot occur.
+
+> **Note for `host.docker.internal`**: on Linux Docker Engine, containers cannot resolve `host.docker.internal` by default. `TestEnvironmentBuilder` automatically applies `WithExtraHost("host.docker.internal", "host-gateway")` to all endpoint containers, so this resolves without any action on your part.
 
 ### Stubbing external HTTP services with WireMock
 
@@ -847,7 +906,7 @@ public class WhenSomeMessageIsSent
 ### Docker image build fails
 
 - Verify the build context (`WithDockerfileDirectory`) points to the directory that contains all the projects referenced in the Dockerfile's `COPY` instructions.
-- Add a `.dockerignore` file in the build context directory that excludes `**/bin/` and `**/obj/` to prevent local build artifacts from contaminating container builds.
+- Ensure a `.dockerignore` file with `**/bin/` and `**/obj/` exists in the build context directory (see [Step 4](#step-4--write-the-dockerfile-for-the-companion-project)).
 
 ### Tests pass locally but fail in CI
 
@@ -928,6 +987,8 @@ full NServiceBus headers of the failed message.
 | `MessageDispatched(name)` | Last (or only) `MessageDispatchedEvent` |
 | `MessageDispatches(name)` | All collected `MessageDispatchedEvent` instances |
 | `MessageFailed()` | The `MessageFailedEvent` (`EndpointName`, `ExceptionMessage`, `Headers`, `CorrelationId`) |
+
+> **Note**: `HandlerInvocations` and `SagaInvocations` use separate result buckets that mirror the conditions registered on `ObserveContext`. Calling `results.HandlerInvocations("MySaga")` when the condition was registered with `.SagaInvoked("MySaga")` — or vice versa — throws `InvalidOperationException`.
 
 ### `MessageFailedException`
 
