@@ -1,4 +1,17 @@
 <Solution>
+  <Folder Name="/Agents/">
+    <Project Path="NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.Agent.v8/NServiceBus.IntegrationTesting.Agent.v8.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.Agent.v9/NServiceBus.IntegrationTesting.Agent.v9.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure packages/">
+    <Project Path="NServiceBus.IntegrationTesting.MongoDb/NServiceBus.IntegrationTesting.MongoDb.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.MySql/NServiceBus.IntegrationTesting.MySql.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.PostgreSql/NServiceBus.IntegrationTesting.PostgreSql.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.RabbitMQ/NServiceBus.IntegrationTesting.RabbitMQ.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.RavenDb/NServiceBus.IntegrationTesting.RavenDb.csproj" />
+    <Project Path="NServiceBus.IntegrationTesting.SqlServer/NServiceBus.IntegrationTesting.SqlServer.csproj" />
+  </Folder>
   <Folder Name="/Sample integration tests/">
     <Project Path="AnotherEndpoint.Testing/AnotherEndpoint.Testing.csproj" />
     <Project Path="AnotherEndpoint/AnotherEndpoint.csproj" />
@@ -9,11 +22,6 @@
     <Project Path="YetAnotherEndpoint.Testing/YetAnotherEndpoint.Testing.csproj" />
     <Project Path="YetAnotherEndpoint/YetAnotherEndpoint.csproj" />
   </Folder>
-  <Project Path="NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj" />
-  <Project Path="NServiceBus.IntegrationTesting.Agent.v8/NServiceBus.IntegrationTesting.Agent.v8.csproj" />
-  <Project Path="NServiceBus.IntegrationTesting.Agent.v9/NServiceBus.IntegrationTesting.Agent.v9.csproj" />
-  <Project Path="NServiceBus.IntegrationTesting.PostgreSql/NServiceBus.IntegrationTesting.PostgreSql.csproj" />
-  <Project Path="NServiceBus.IntegrationTesting.RabbitMQ/NServiceBus.IntegrationTesting.RabbitMQ.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.Tests/NServiceBus.IntegrationTesting.Tests.csproj" />
   <Project Path="NServiceBus.IntegrationTesting/NServiceBus.IntegrationTesting.csproj" />
   <Project Path="Snippets/Snippets.csproj" />

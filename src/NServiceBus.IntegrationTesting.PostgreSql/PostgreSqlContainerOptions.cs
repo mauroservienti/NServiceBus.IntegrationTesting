@@ -13,9 +13,9 @@ public sealed class PostgreSqlContainerOptions
     public static string InfrastructureKey => "postgresql";
 
     /// <summary>
-    /// The Docker image to use. Defaults to <c>postgres:15.1</c>.
+    /// The Docker image to use. Defaults to <c>postgres:latest</c>.
     /// </summary>
-    public string ImageName { get; set; } = "postgres:15.1";
+    public string ImageName { get; set; } = "postgres:latest";
 
     /// <summary>
     /// The environment variable name injected into all endpoint containers with the
