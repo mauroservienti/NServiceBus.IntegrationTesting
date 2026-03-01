@@ -23,7 +23,7 @@ graph TD
     TestHost["Test process<br/>TestHostServer (gRPC, dynamic port)"]
     
     SampleEndpoint["SampleEndpoint<br/>NSB 10 / .NET 10<br/>container"]
-    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 9<br/>container"]
+    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 8<br/>container"]
     
     RabbitMQ["RabbitMQ container (message broker)"]
     PostgreSQL["PostgreSQL container (Sagas storage)"]
@@ -138,10 +138,10 @@ Add a new console project alongside the production endpoint:
   <ItemGroup>
     <!--
       Pick the agent package that matches your NServiceBus major version.
-      The agent major version equals the NServiceBus major version.
 
       NServiceBus 10 (net10.0):  NServiceBus.IntegrationTesting.AgentV10
-      NServiceBus 9  (net9.0):   NServiceBus.IntegrationTesting.AgentV9
+      NServiceBus 9  (net8.0):   NServiceBus.IntegrationTesting.AgentV9
+      NServiceBus 8  (net6.0):   NServiceBus.IntegrationTesting.AgentV8
     -->
     <PackageReference Include="NServiceBus.IntegrationTesting.AgentV10" Version="3.*" />
   </ItemGroup>

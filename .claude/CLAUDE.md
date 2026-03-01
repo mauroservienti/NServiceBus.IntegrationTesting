@@ -26,20 +26,28 @@ against real transports/persistence in tests.
 - NServiceBus.Persistence.Sql: **9.0.0** + Npgsql **10.0.1**
 - Agent: `NServiceBus.IntegrationTesting.Agent.v10` (net10.0)
 
-### NServiceBus 9 (AnotherEndpoint, net9.0)
+### NServiceBus 9 (AnotherEndpoint, net8.0)
 
 - NServiceBus: **9.2.9**; NServiceBus.RabbitMQ: **9.2.2**
-- Agent: `NServiceBus.IntegrationTesting.Agent.v9` (net9.0)
+- Agent: `NServiceBus.IntegrationTesting.Agent.v9` (net8.0)
+
+### NServiceBus 8 (YetAnotherEndpoint, net8.0)
+
+- NServiceBus: **8.2.6**; NServiceBus.RabbitMQ: **8.0.1**
+- Agent: `NServiceBus.IntegrationTesting.Agent.v8` (net6.0; `<LangVersion>12</LangVersion>` required for C# 12 syntax in shared sources)
+- YetAnotherEndpoint targets net8.0 (not net6.0) because SampleMessages targets net8.0
 
 ### NSB version alignment rule
 
-Each NSB major version number equals the target .NET version: NSB 8→net8.0, NSB 9→net9.0,
-NSB 10→net10.0. NServiceBus.RabbitMQ matches NSB version for NSB 8 and 9; for NSB 10 it is
-offset by one (NSB 10 → RabbitMQ 11).
+NuGet TFMs actually shipped (NOT NSB version = .NET version):
+- NSB 10 → **net10.0** only
+- NSB 9 → **net8.0** only (NuGet lib/net8.0)
+- NSB 8 → **net6.0** + **net472** (NuGet lib/net6.0 and lib/net472)
+- NServiceBus.RabbitMQ mirrors NSB: v9→net8.0, v8→net6.0+net472, v11→net10.0
 
 ### Shared infrastructure
 
-- `SampleMessages`: **net8.0** (consumed by both net9.0 and net10.0 projects)
+- `SampleMessages`: **net8.0** (consumed by net8.0 and net10.0 projects)
 - Grpc.AspNetCore / Grpc.Net.Client / Grpc.Tools: **2.67.0**
 - Testcontainers / Testcontainers.RabbitMq / Testcontainers.PostgreSql: **4.10.0**
 

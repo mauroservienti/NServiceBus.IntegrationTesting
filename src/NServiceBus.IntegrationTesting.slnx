@@ -6,8 +6,11 @@
     <Project Path="SampleEndpoint.Tests/SampleEndpoint.Tests.csproj" />
     <Project Path="SampleEndpoint/SampleEndpoint.csproj" />
     <Project Path="SampleMessages/SampleMessages.csproj" />
+    <Project Path="YetAnotherEndpoint.Testing/YetAnotherEndpoint.Testing.csproj" />
+    <Project Path="YetAnotherEndpoint/YetAnotherEndpoint.csproj" />
   </Folder>
   <Project Path="NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.Agent.v8/NServiceBus.IntegrationTesting.Agent.v8.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.Agent.v9/NServiceBus.IntegrationTesting.Agent.v9.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.PostgreSql/NServiceBus.IntegrationTesting.PostgreSql.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.RabbitMQ/NServiceBus.IntegrationTesting.RabbitMQ.csproj" />

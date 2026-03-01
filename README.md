@@ -20,7 +20,7 @@ graph TD
     TestHost["Test process<br/>TestHostServer (gRPC, dynamic port)"]
     
     SampleEndpoint["SampleEndpoint<br/>NSB 10 / .NET 10<br/>container"]
-    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 9<br/>container"]
+    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 8<br/>container"]
     
     RabbitMQ["RabbitMQ container (message broker)"]
     PostgreSQL["PostgreSQL container (Sagas storage)"]
@@ -191,7 +191,13 @@ of the endpoint assembly.
 
 ## Supported NServiceBus versions
 
-NServiceBus.IntegrationTesting agents support NServiceBus versions 9 and 10
+NServiceBus.IntegrationTesting agents support NServiceBus versions 8, 9, and 10
+
+| NServiceBus version | Agent package | Target framework |
+|---|---|---|
+| 10 | `NServiceBus.IntegrationTesting.AgentV10` | net10.0 |
+| 9 | `NServiceBus.IntegrationTesting.AgentV9` | net8.0 |
+| 8 | `NServiceBus.IntegrationTesting.AgentV8` | net6.0 |
 
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 

@@ -42,6 +42,13 @@
         <ProjectReference Include="..\AnotherEndpoint.Testing\AnotherEndpoint.Testing.csproj"
                           ReferenceOutputAssembly="false"
                           Private="false" />
+        <!--
+            Build YetAnotherEndpoint.Testing for compile-time validation.
+            Docker image is built at test time.
+        -->
+        <ProjectReference Include="..\YetAnotherEndpoint.Testing\YetAnotherEndpoint.Testing.csproj"
+                          ReferenceOutputAssembly="false"
+                          Private="false" />
     </ItemGroup>
 
 </Project>

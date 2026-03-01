@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AnotherEndpoint\AnotherEndpoint.csproj" />
-        <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v9\NServiceBus.IntegrationTesting.Agent.v9.csproj" />
+        <ProjectReference Include="..\YetAnotherEndpoint\YetAnotherEndpoint.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.Agent.v8\NServiceBus.IntegrationTesting.Agent.v8.csproj" />
     </ItemGroup>
 
 </Project>
