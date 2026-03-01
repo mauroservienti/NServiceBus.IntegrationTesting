@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsPackable>true</IsPackable>
+        <Description>RavenDB extension for NServiceBus.IntegrationTesting. Adds UseRavenDB() to TestEnvironmentBuilder.</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
+        <PackageReference Include="MinVer" Version="6.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+            There is no official Testcontainers module for RavenDB.
+            The core Testcontainers package provides ContainerBuilder for generic containers.
+            The base package is already a transitive dependency via NServiceBus.IntegrationTesting,
+            but we reference it explicitly to make the dependency visible.
+        -->
+        <PackageReference Include="Testcontainers" Version="4.10.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
+    </ItemGroup>
+
+</Project>
