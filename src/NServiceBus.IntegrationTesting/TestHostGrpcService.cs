@@ -70,6 +70,19 @@ public sealed record MessageFailedEvent(
     string CorrelationId);
 
 /// <summary>
+/// Reported when a message is ACKed without invoking any handlers because a
+/// registered <c>SkipRule</c> matched it at the receiving endpoint.
+/// </summary>
+/// <param name="EndpointName">Name of the endpoint that skipped the message.</param>
+/// <param name="MessageTypeName">Full type name of the skipped message.</param>
+/// <param name="CorrelationId">Test correlation ID that ties this skip to a
+/// specific test scenario execution.</param>
+public sealed record MessageSkippedEvent(
+    string EndpointName,
+    string MessageTypeName,
+    string CorrelationId);
+
+/// <summary>
 /// Thrown by WaitFor* methods when the message with the watched correlation ID is
 /// permanently sent to the error queue before the expected event arrives.
 /// Allows tests to fail fast with a descriptive message instead of waiting
@@ -106,6 +119,9 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
 
     readonly object _failedListenersLock = new();
     readonly List<Channel<MessageFailedEvent>> _failedListeners = [];
+
+    readonly object _skippedListenersLock = new();
+    readonly List<Channel<MessageSkippedEvent>> _skippedListeners = [];
 
     /// <summary>
     /// Creates an ObserveContext for the given correlation ID. Add conditions with
@@ -391,6 +407,86 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     }
 
     /// <summary>
+    /// Convenience overload: returns the first MessageSkippedEvent for the given
+    /// correlation ID and message type name.
+    /// </summary>
+    internal async Task<MessageSkippedEvent> WaitForMessageSkippedAsync(
+        string correlationId,
+        string messageTypeName,
+        CancellationToken cancellationToken = default)
+    {
+        var results = await WaitForMessageSkipsAsync(
+            correlationId, messageTypeName,
+            until: static all => all.Count >= 1,
+            cancellationToken);
+        return results[0];
+    }
+
+    /// <summary>
+    /// Returns a Task that completes when the accumulated MessageSkippedEvents for the
+    /// given correlation ID and message type name satisfy <paramref name="until"/>.
+    /// Races against MessageFailedEvent: if the message is permanently dead before the
+    /// predicate is satisfied, throws MessageFailedException immediately.
+    /// Each call registers an independent listener — safe for concurrent tests.
+    /// </summary>
+    internal async Task<IReadOnlyList<MessageSkippedEvent>> WaitForMessageSkipsAsync(
+        string correlationId,
+        string messageTypeName,
+        Func<IReadOnlyList<MessageSkippedEvent>, bool> until,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+
+        var skippedChannel = Channel.CreateUnbounded<MessageSkippedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+        var failureChannel = Channel.CreateUnbounded<MessageFailedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+
+        lock (_skippedListenersLock)
+            _skippedListeners.Add(skippedChannel);
+        lock (_failedListenersLock)
+            _failedListeners.Add(failureChannel);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        try
+        {
+            var successTask = ScanForSkipEventsAsync(
+                skippedChannel.Reader, correlationId, messageTypeName, until, cts.Token);
+            var failureTask = ScanForFailureEventAsync(
+                failureChannel.Reader, correlationId, cts.Token);
+
+            await Task.WhenAny(successTask, failureTask);
+            await cts.CancelAsync();
+
+            var skippedResults = await successTask;
+            var failureResult = await failureTask;
+
+            if (failureResult is not null)
+                throw new MessageFailedException(
+                    correlationId, failureResult.Headers, failureResult.ExceptionMessage);
+
+            if (skippedResults is not null)
+                return skippedResults;
+
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new OperationCanceledException(
+                $"Timed out waiting for '{messageTypeName}' skip(s) for correlation '{correlationId}'.",
+                cancellationToken);
+        }
+        finally
+        {
+            lock (_skippedListenersLock)
+                _skippedListeners.Remove(skippedChannel);
+            skippedChannel.Writer.TryComplete();
+
+            lock (_failedListenersLock)
+                _failedListeners.Remove(failureChannel);
+            failureChannel.Writer.TryComplete();
+        }
+    }
+
+    /// <summary>
     /// Instructs the named agent to execute a registered scenario by name.
     /// Returns the correlation ID that ties all events produced by this execution together.
     /// </summary>
@@ -507,6 +603,18 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
                             foreach (var listener in _failedListeners)
                                 listener.Writer.TryWrite(failedEvent);
                         break;
+
+                    case AgentToHostMessage.PayloadOneofCase.MessageSkipped:
+                        var skippedEvt = message.MessageSkipped;
+                        var skippedEvent = new MessageSkippedEvent(
+                            skippedEvt.EndpointName,
+                            skippedEvt.MessageTypeName,
+                            skippedEvt.CorrelationId);
+
+                        lock (_skippedListenersLock)
+                            foreach (var listener in _skippedListeners)
+                                listener.Writer.TryWrite(skippedEvent);
+                        break;
                 }
             }
         }
@@ -619,6 +727,30 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         CancellationToken cancellationToken)
     {
         var collected = new List<MessageDispatchedEvent>();
+        try
+        {
+            await foreach (var evt in reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.CorrelationId == correlationId && TypeNameMatches(evt.MessageTypeName, messageTypeName))
+                {
+                    collected.Add(evt);
+                    if (isDone(collected))
+                        return collected;
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        return null;
+    }
+
+    internal static async Task<IReadOnlyList<MessageSkippedEvent>?> ScanForSkipEventsAsync(
+        ChannelReader<MessageSkippedEvent> reader,
+        string correlationId,
+        string messageTypeName,
+        Func<IReadOnlyList<MessageSkippedEvent>, bool> isDone,
+        CancellationToken cancellationToken)
+    {
+        var collected = new List<MessageSkippedEvent>();
         try
         {
             await foreach (var evt in reader.ReadAllAsync(cancellationToken))

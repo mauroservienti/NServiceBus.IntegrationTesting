@@ -187,6 +187,22 @@ public sealed class AgentService : IAsyncDisposable
             },
             cancellationToken);
 
+    internal Task ReportMessageSkippedAsync(
+        string messageTypeName,
+        string? correlationId,
+        CancellationToken cancellationToken = default)
+        => SendAsync(
+            new AgentToHostMessage
+            {
+                MessageSkipped = new MessageSkippedMessage
+                {
+                    EndpointName = _endpointName,
+                    MessageTypeName = messageTypeName,
+                    CorrelationId = correlationId ?? string.Empty
+                }
+            },
+            cancellationToken);
+
     internal Task ReportMessageFailedAsync(
         IReadOnlyDictionary<string, string> headers,
         string exceptionMessage,

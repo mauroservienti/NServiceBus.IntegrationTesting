@@ -5,7 +5,7 @@ NServiceBus.IntegrationTesting. By the end you will have:
 
 - A companion `*.Testing` project for each endpoint you want to test
 - One or more named **scenarios** that send messages from inside the endpoint process
-- An NUnit test project that starts Docker containers and asserts on handler invocations, message dispatches, saga state, and failure outcomes
+- An NUnit test project that starts Docker containers and asserts on handler invocations, message dispatches, saga state, message skips, and failure outcomes
 
 > [!NOTE]
 > This guide uses NUnit, but NServiceBus.IntegrationTesting works with any unit testing framework
@@ -587,6 +587,40 @@ Assert.That(results.MessageDispatched("OrderProcessingTimeout").Intent,
     Is.EqualTo("RequestTimeout"));
 ```
 
+### Skipping messages
+
+Sometimes you want to test a scenario where a message is **not** processed — for example, verifying that when `PaymentProcessor` does not reply, an upstream saga escalates via a timeout. Use a `SkipRule` to ACK the message without invoking any handlers, and observe the skip in the test:
+
+```csharp
+// PaymentProcessor.Testing/Program.cs
+await IntegrationTestingBootstrap.RunAsync(
+    "PaymentProcessor",
+    PaymentProcessorConfig.Create,
+    scenarios: [new ProcessPaymentScenario()],
+    skipRules: [SkipRule.For<ProcessPayment>()]);
+```
+
+The message is consumed from the queue (no dead-lettering, no retries) and a `MessageSkippedEvent` is reported to the test host. Wait for it in the test:
+
+```csharp
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+var results = await _env.Observe(correlationId, cts.Token)
+    .MessageSkipped("ProcessPayment")
+    .WhenAllAsync();
+
+var skip = results.MessageSkipped("ProcessPayment");
+Assert.That(skip.EndpointName, Is.EqualTo("PaymentProcessor"));
+```
+
+You can also pass a predicate to skip only messages that meet a condition:
+
+```csharp
+skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]
+```
+
+`MessageSkipped` cannot be combined with `MessageFailed` in the same `ObserveContext`.
+
 ### Predicate overloads
 
 All `HandlerInvoked`, `SagaInvoked`, and `MessageDispatched` conditions support two additional overloads that let you encode business assertions directly in the done condition — the condition fires only when the predicate on the latest event returns `true`:
@@ -1010,6 +1044,7 @@ await IntegrationTestingBootstrap.RunAsync(
     configFactory:     YourEndpointConfig.Create,
     scenarios:         [new SomeCommandScenario()],     // optional
     timeoutRules:      [TimeoutRule.For<T>(TimeSpan)],  // optional
+    skipRules:         [SkipRule.For<T>()],              // optional
     sigTermGracePeriod: TimeSpan.FromSeconds(10));       // optional, default 5 s
 ```
 
@@ -1021,4 +1056,14 @@ TimeoutRule.For<SomeTimeout>(TimeSpan.FromSeconds(5))
 
 // Compute the delay from the timeout message instance
 TimeoutRule.For<SomeTimeout>(msg => msg.CustomDelay)
+```
+
+### `SkipRule`
+
+```csharp
+// ACK all messages of type T without invoking any handlers
+SkipRule.For<ProcessPayment>()
+
+// ACK only messages of type T that satisfy the predicate
+SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)
 ```

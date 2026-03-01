@@ -40,6 +40,8 @@
         <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\Scenario.cs" Link="Scenario.cs" />
         <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\TimeoutRescheduleBehavior.cs" Link="TimeoutRescheduleBehavior.cs" />
         <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\TimeoutRule.cs" Link="TimeoutRule.cs" />
+        <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\SkipMessageBehavior.cs" Link="SkipMessageBehavior.cs" />
+        <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\SkipRule.cs" Link="SkipRule.cs" />
     </ItemGroup>
 
     <ItemGroup>
