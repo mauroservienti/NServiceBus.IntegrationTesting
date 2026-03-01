@@ -8,6 +8,7 @@
     <Project Path="SampleMessages/SampleMessages.csproj" />
   </Folder>
   <Project Path="NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj" />
+  <Project Path="NServiceBus.IntegrationTesting.Agent.v8/NServiceBus.IntegrationTesting.Agent.v8.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.Agent.v9/NServiceBus.IntegrationTesting.Agent.v9.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.PostgreSql/NServiceBus.IntegrationTesting.PostgreSql.csproj" />
   <Project Path="NServiceBus.IntegrationTesting.RabbitMQ/NServiceBus.IntegrationTesting.RabbitMQ.csproj" />
