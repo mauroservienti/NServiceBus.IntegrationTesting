@@ -59,6 +59,7 @@ jobs:
           retention-days: 2
   release:
     needs: build
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
       - name: Setup .NET
