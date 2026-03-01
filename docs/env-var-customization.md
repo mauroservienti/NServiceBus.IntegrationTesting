@@ -151,8 +151,7 @@ _env = await new TestEnvironmentBuilder()
     .UseInfrastructure(
         key: "redis",
         defaultEnvVarName: "REDIS_CONNECTION_STRING",
-        buildContainer: network => new ContainerBuilder()
-            .WithImage("redis:7")
+        buildContainer: network => new ContainerBuilder("redis:7")
             .WithNetwork(network)
             .WithNetworkAliases("redis")
             .Build(),
@@ -160,7 +159,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `key` you choose is what endpoints use in `InfrastructureEnvVarNames` to override the
