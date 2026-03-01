@@ -29,6 +29,18 @@ jobs:
         uses: actions/checkout@v3.3.0
         with:
           fetch-depth: 0
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            code:
+              - 'src/**'
+              - '!src/Snippets/**'
+              - '.github/workflows/**'
+              - 'Directory*.props'
+              - 'Directory*.targets'
+              - '*.sln'
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3.0.3
         with:
@@ -38,17 +50,20 @@ jobs:
       - name: Build
         run: dotnet build src --configuration Release
       - name: Pre-pull Docker base images
+        if: steps.changes.outputs.code == 'true' || github.ref_type == 'tag'
         run: |
           docker pull mcr.microsoft.com/dotnet/sdk:8.0
           docker pull mcr.microsoft.com/dotnet/sdk:10.0
           docker pull mcr.microsoft.com/dotnet/runtime:8.0
           docker pull mcr.microsoft.com/dotnet/runtime:10.0
       - name: Pre-build *.Testing endpoint Docker images
+        if: steps.changes.outputs.code == 'true' || github.ref_type == 'tag'
         run: |
           docker build -f src/SampleEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/sampleendpoint:latest src/
           docker build -f src/AnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/anotherendpoint:latest src/
           docker build -f src/YetAnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/yetanotherendpoint:latest src/
       - name: Test
+        if: steps.changes.outputs.code == 'true' || github.ref_type == 'tag'
         run: dotnet test src --configuration Release --no-build
       - name: Upload packages
         if: matrix.name == 'Linux'
