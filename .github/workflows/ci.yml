@@ -34,20 +34,20 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            9.0.x
             10.0.x
       - name: Build
         run: dotnet build src --configuration Release
       - name: Pre-pull Docker base images
         run: |
-          docker pull mcr.microsoft.com/dotnet/sdk:9.0
+          docker pull mcr.microsoft.com/dotnet/sdk:8.0
           docker pull mcr.microsoft.com/dotnet/sdk:10.0
-          docker pull mcr.microsoft.com/dotnet/runtime:9.0
+          docker pull mcr.microsoft.com/dotnet/runtime:8.0
           docker pull mcr.microsoft.com/dotnet/runtime:10.0
       - name: Pre-build *.Testing endpoint Docker images
         run: |
           docker build -f src/SampleEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/sampleendpoint:latest src/
           docker build -f src/AnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/anotherendpoint:latest src/
+          docker build -f src/YetAnotherEndpoint.Testing/Dockerfile -t localhost/nsb-integration-testing/yetanotherendpoint:latest src/
       - name: Test
         run: dotnet test src --configuration Release --no-build
       - name: Upload packages

@@ -2,7 +2,8 @@
 
     <PropertyGroup>
         <RootNamespace>NServiceBus.IntegrationTesting.Agent</RootNamespace>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
+        <LangVersion>12</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
