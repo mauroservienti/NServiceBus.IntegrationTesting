@@ -384,4 +384,98 @@ public class ScanHelpersTests
 
         Assert.That(result, Is.Null);
     }
+
+    // ── TypeNameMatches (soft match) ──────────────────────────────────────────
+
+    [Test]
+    public void TypeNameMatches_exact_match_on_assembly_qualified_name()
+    {
+        const string aqn = "My.NS.MyHandler, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        Assert.That(TestHostGrpcService.TypeNameMatches(aqn, aqn), Is.True);
+    }
+
+    [Test]
+    public void TypeNameMatches_namespace_qualified_name_matches_assembly_qualified_stored()
+    {
+        const string aqn = "My.NS.MyHandler, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        Assert.That(TestHostGrpcService.TypeNameMatches(aqn, "My.NS.MyHandler"), Is.True);
+    }
+
+    [Test]
+    public void TypeNameMatches_short_name_matches_assembly_qualified_stored()
+    {
+        const string aqn = "My.NS.MyHandler, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        Assert.That(TestHostGrpcService.TypeNameMatches(aqn, "MyHandler"), Is.True);
+    }
+
+    [Test]
+    public void TypeNameMatches_wrong_short_name_does_not_match()
+    {
+        const string aqn = "My.NS.MyHandler, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        Assert.That(TestHostGrpcService.TypeNameMatches(aqn, "OtherHandler"), Is.False);
+    }
+
+    [Test]
+    public void TypeNameMatches_wrong_namespace_does_not_match()
+    {
+        const string aqn = "My.NS.MyHandler, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        Assert.That(TestHostGrpcService.TypeNameMatches(aqn, "Other.NS.MyHandler"), Is.False);
+    }
+
+    [Test]
+    public void TypeNameMatches_short_name_does_not_match_prefix_substring()
+    {
+        // "Handler" must not match "MyHandler"
+        const string aqn = "My.NS.MyHandler, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        Assert.That(TestHostGrpcService.TypeNameMatches(aqn, "Handler"), Is.False);
+    }
+
+    [Test]
+    public async Task HandlerScan_matches_stored_assembly_qualified_name_using_short_name()
+    {
+        const string aqn = "My.NS.H, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        // Event stored with assembly-qualified name; query uses short name.
+        ch.Writer.TryWrite(new HandlerInvokedEvent(
+            EndpointName: "EP", HandlerTypeName: aqn, MessageTypeName: "Msg",
+            CorrelationId: Id, IsSaga: false, SagaNotFound: false,
+            SagaTypeName: "", SagaId: "", SagaIsNew: false, SagaIsCompleted: false));
+
+        var result = await TestHostGrpcService.ScanForHandlerEventsAsync(
+            ch.Reader, Id, "H", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SagaScan_matches_stored_assembly_qualified_name_using_short_name()
+    {
+        const string aqn = "My.NS.S, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(new HandlerInvokedEvent(
+            EndpointName: "EP", HandlerTypeName: aqn, MessageTypeName: "Msg",
+            CorrelationId: Id, IsSaga: true, SagaNotFound: false,
+            SagaTypeName: aqn, SagaId: "saga-id-1", SagaIsNew: false, SagaIsCompleted: false));
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
+
+    [Test]
+    public async Task DispatchScan_matches_stored_assembly_qualified_name_using_short_name()
+    {
+        const string aqn = "My.NS.M, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        var ch = Channel.CreateUnbounded<MessageDispatchedEvent>();
+        ch.Writer.TryWrite(new MessageDispatchedEvent("EP", aqn, "Send", Id));
+
+        var result = await TestHostGrpcService.ScanForDispatchEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
 }

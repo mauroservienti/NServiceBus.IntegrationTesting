@@ -32,14 +32,14 @@ sealed class ReportingBehavior : Behavior<IInvokeHandlerContext>
         var sagaInfo = BuildSagaInfo(context);
         if (sagaInfo is null)
             await _agentService.ReportHandlerInvokedAsync(
-                context.MessageHandler.HandlerType.Name,
-                context.MessageMetadata.MessageType.Name,
+                context.MessageHandler.HandlerType.AssemblyQualifiedName ?? context.MessageHandler.HandlerType.FullName ?? context.MessageHandler.HandlerType.Name,
+                context.MessageMetadata.MessageType.AssemblyQualifiedName ?? context.MessageMetadata.MessageType.FullName ?? context.MessageMetadata.MessageType.Name,
                 correlationId,
                 CancellationToken.None);
         else
             await _agentService.ReportSagaInvokedAsync(
-                context.MessageHandler.HandlerType.Name,
-                context.MessageMetadata.MessageType.Name,
+                context.MessageHandler.HandlerType.AssemblyQualifiedName ?? context.MessageHandler.HandlerType.FullName ?? context.MessageHandler.HandlerType.Name,
+                context.MessageMetadata.MessageType.AssemblyQualifiedName ?? context.MessageMetadata.MessageType.FullName ?? context.MessageMetadata.MessageType.Name,
                 correlationId,
                 sagaInfo,
                 CancellationToken.None);
