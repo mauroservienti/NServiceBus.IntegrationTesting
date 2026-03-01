@@ -22,6 +22,11 @@ public class ScanHelpersTests
             CorrelationId: correlationId, IsSaga: false, SagaNotFound: false,
             SagaTypeName: "", SagaId: "", SagaIsNew: false, SagaIsCompleted: false);
 
+    static HandlerInvokedEvent SagaEvent(string correlationId = Id, string sagaTypeName = "S") =>
+        new(EndpointName: "EP", HandlerTypeName: sagaTypeName, MessageTypeName: "Msg",
+            CorrelationId: correlationId, IsSaga: true, SagaNotFound: false,
+            SagaTypeName: sagaTypeName, SagaId: "saga-id-1", SagaIsNew: false, SagaIsCompleted: false);
+
     static MessageDispatchedEvent DispatchEvent(string correlationId = Id, string messageTypeName = "M") =>
         new(EndpointName: "EP", MessageTypeName: messageTypeName, Intent: "Send", CorrelationId: correlationId);
 
@@ -127,6 +132,115 @@ public class ScanHelpersTests
             ch.Reader, Id, "H", static all => all.Count >= 2, CancellationToken.None);
 
         Assert.That(result, Is.Not.Null);
+        Assert.That(result, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public async Task HandlerScan_ignores_saga_events_with_matching_handler_type_name()
+    {
+        // A saga event whose HandlerTypeName matches — must not be picked up by the handler scan.
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(SagaEvent(correlationId: Id, sagaTypeName: "H"));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForHandlerEventsAsync(
+            ch.Reader, Id, "H", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    // ── ScanForSagaEventsAsync ────────────────────────────────────────────────
+
+    [Test]
+    public async Task SagaScan_returns_null_when_channel_closed_without_match()
+    {
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(SagaEvent(correlationId: OtherId));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SagaScan_returns_null_when_cancelled_before_match()
+    {
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, cts.Token);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SagaScan_ignores_events_with_wrong_correlationId()
+    {
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(SagaEvent(correlationId: OtherId, sagaTypeName: "S"));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SagaScan_ignores_events_with_wrong_sagaTypeName()
+    {
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(SagaEvent(correlationId: Id, sagaTypeName: "Other"));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SagaScan_ignores_plain_handler_events_with_matching_type_name()
+    {
+        // A non-saga event whose HandlerTypeName matches — must not be picked up by the saga scan.
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(HandlerEvent(correlationId: Id, handlerTypeName: "S"));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SagaScan_returns_on_first_match()
+    {
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        var evt = SagaEvent();
+        ch.Writer.TryWrite(evt);
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result![0], Is.SameAs(evt));
+    }
+
+    [Test]
+    public async Task SagaScan_list_predicate_returns_only_after_n_matches()
+    {
+        var ch = Channel.CreateUnbounded<HandlerInvokedEvent>();
+        ch.Writer.TryWrite(SagaEvent());
+        ch.Writer.TryWrite(SagaEvent());
+
+        var result = await TestHostGrpcService.ScanForSagaEventsAsync(
+            ch.Reader, Id, "S", static all => all.Count >= 2, CancellationToken.None);
+
         Assert.That(result, Has.Count.EqualTo(2));
     }
 

@@ -90,7 +90,7 @@ public sealed class ObserveContext
                 "Use MessageFailed() alone when the test expects a failure outcome.");
         _sagaTasks.Add((
             sagaTypeName,
-            _grpcService.WaitForHandlerInvocationsAsync(_correlationId, sagaTypeName, until, _cancellationToken)));
+            _grpcService.WaitForSagaInvocationsAsync(_correlationId, sagaTypeName, until, _cancellationToken)));
         return this;
     }
 

@@ -29,12 +29,20 @@ sealed class ReportingBehavior : Behavior<IInvokeHandlerContext>
         // will retry them. The test host only cares about eventual successful outcomes;
         // permanent failures are surfaced via MessageFailedMessage (error queue hook).
         // Use CancellationToken.None: the context token may already be spent at this point.
-        await _agentService.ReportHandlerInvokedAsync(
-            context.MessageHandler.HandlerType.Name,
-            context.MessageMetadata.MessageType.Name,
-            correlationId,
-            BuildSagaInfo(context),
-            CancellationToken.None);
+        var sagaInfo = BuildSagaInfo(context);
+        if (sagaInfo is null)
+            await _agentService.ReportHandlerInvokedAsync(
+                context.MessageHandler.HandlerType.Name,
+                context.MessageMetadata.MessageType.Name,
+                correlationId,
+                CancellationToken.None);
+        else
+            await _agentService.ReportSagaInvokedAsync(
+                context.MessageHandler.HandlerType.Name,
+                context.MessageMetadata.MessageType.Name,
+                correlationId,
+                sagaInfo,
+                CancellationToken.None);
     }
 
     static SagaInfo? BuildSagaInfo(IInvokeHandlerContext context)

@@ -102,7 +102,6 @@ public sealed class AgentService : IAsyncDisposable
         string handlerTypeName,
         string messageTypeName,
         string? correlationId,
-        SagaInfo? sagaInfo,
         CancellationToken cancellationToken = default)
     {
         var msg = new HandlerInvokedMessage
@@ -113,17 +112,32 @@ public sealed class AgentService : IAsyncDisposable
             CorrelationId = correlationId ?? string.Empty
         };
 
-        if (sagaInfo is not null)
+        return SendAsync(new AgentToHostMessage { HandlerInvoked = msg }, cancellationToken);
+    }
+
+    internal Task ReportSagaInvokedAsync(
+        string handlerTypeName,
+        string messageTypeName,
+        string? correlationId,
+        SagaInfo sagaInfo,
+        CancellationToken cancellationToken = default)
+    {
+        var msg = new HandlerInvokedMessage
         {
-            msg.IsSaga = true;
-            msg.SagaNotFound = sagaInfo.NotFound;
-            if (!sagaInfo.NotFound)
-            {
-                msg.SagaTypeName = sagaInfo.TypeName;
-                msg.SagaId = sagaInfo.Id;
-                msg.SagaIsNew = sagaInfo.IsNew;
-                msg.SagaIsCompleted = sagaInfo.IsCompleted;
-            }
+            EndpointName = _endpointName,
+            HandlerTypeName = handlerTypeName,
+            MessageTypeName = messageTypeName,
+            CorrelationId = correlationId ?? string.Empty,
+            IsSaga = true,
+            SagaNotFound = sagaInfo.NotFound
+        };
+
+        if (!sagaInfo.NotFound)
+        {
+            msg.SagaTypeName = sagaInfo.TypeName;
+            msg.SagaId = sagaInfo.Id;
+            msg.SagaIsNew = sagaInfo.IsNew;
+            msg.SagaIsCompleted = sagaInfo.IsCompleted;
         }
 
         return SendAsync(new AgentToHostMessage { HandlerInvoked = msg }, cancellationToken);

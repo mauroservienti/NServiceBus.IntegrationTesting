@@ -212,6 +212,69 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
     }
 
     /// <summary>
+    /// Returns a Task that completes when the accumulated HandlerInvokedEvents for the
+    /// given correlation ID and saga type name satisfy <paramref name="until"/>.
+    /// Only events with IsSaga=true and a matching SagaTypeName are considered —
+    /// plain handler events with the same type name are ignored.
+    /// </summary>
+    internal async Task<IReadOnlyList<HandlerInvokedEvent>> WaitForSagaInvocationsAsync(
+        string correlationId,
+        string sagaTypeName,
+        Func<IReadOnlyList<HandlerInvokedEvent>, bool> until,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+
+        var handlerChannel = Channel.CreateUnbounded<HandlerInvokedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+        var failureChannel = Channel.CreateUnbounded<MessageFailedEvent>(
+            new UnboundedChannelOptions { SingleWriter = false, SingleReader = true });
+
+        lock (_handlerListenersLock)
+            _handlerListeners.Add(handlerChannel);
+        lock (_failedListenersLock)
+            _failedListeners.Add(failureChannel);
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+        try
+        {
+            var successTask = ScanForSagaEventsAsync(
+                handlerChannel.Reader, correlationId, sagaTypeName, until, cts.Token);
+            var failureTask = ScanForFailureEventAsync(
+                failureChannel.Reader, correlationId, cts.Token);
+
+            await Task.WhenAny(successTask, failureTask);
+            await cts.CancelAsync();
+
+            var sagaResults = await successTask;
+            var failureResult = await failureTask;
+
+            if (failureResult is not null)
+                throw new MessageFailedException(
+                    correlationId, failureResult.Headers, failureResult.ExceptionMessage);
+
+            if (sagaResults is not null)
+                return sagaResults;
+
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new OperationCanceledException(
+                $"Timed out waiting for saga '{sagaTypeName}' invocation(s) for correlation '{correlationId}'.",
+                cancellationToken);
+        }
+        finally
+        {
+            lock (_handlerListenersLock)
+                _handlerListeners.Remove(handlerChannel);
+            handlerChannel.Writer.TryComplete();
+
+            lock (_failedListenersLock)
+                _failedListeners.Remove(failureChannel);
+            failureChannel.Writer.TryComplete();
+        }
+    }
+
+    /// <summary>
     /// Convenience overload: returns the first MessageDispatchedEvent for the given
     /// correlation ID and message type name.
     /// </summary>
@@ -485,7 +548,31 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         {
             await foreach (var evt in reader.ReadAllAsync(cancellationToken))
             {
-                if (evt.CorrelationId == correlationId && evt.HandlerTypeName == handlerTypeName)
+                if (!evt.IsSaga && evt.CorrelationId == correlationId && evt.HandlerTypeName == handlerTypeName)
+                {
+                    collected.Add(evt);
+                    if (isDone(collected))
+                        return collected;
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        return null;
+    }
+
+    internal static async Task<IReadOnlyList<HandlerInvokedEvent>?> ScanForSagaEventsAsync(
+        ChannelReader<HandlerInvokedEvent> reader,
+        string correlationId,
+        string sagaTypeName,
+        Func<IReadOnlyList<HandlerInvokedEvent>, bool> isDone,
+        CancellationToken cancellationToken)
+    {
+        var collected = new List<HandlerInvokedEvent>();
+        try
+        {
+            await foreach (var evt in reader.ReadAllAsync(cancellationToken))
+            {
+                if (evt.IsSaga && evt.CorrelationId == correlationId && evt.SagaTypeName == sagaTypeName)
                 {
                     collected.Add(evt);
                     if (isDone(collected))
