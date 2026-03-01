@@ -16,6 +16,7 @@ public sealed class ObserveContext
     readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _handlerTasks = [];
     readonly List<(string TypeName, Task<IReadOnlyList<HandlerInvokedEvent>> Task)> _sagaTasks = [];
     readonly List<(string TypeName, Task<IReadOnlyList<MessageDispatchedEvent>> Task)> _dispatchedTasks = [];
+    readonly List<(string TypeName, Task<IReadOnlyList<MessageSkippedEvent>> Task)> _skippedTasks = [];
     Task<MessageFailedEvent>? _failedTask;
 
     internal ObserveContext(
@@ -128,6 +129,39 @@ public sealed class ObserveContext
     }
 
     /// <summary>
+    /// Wait for the first skip of the named message type at any endpoint.
+    /// </summary>
+    public ObserveContext MessageSkipped(string messageTypeName)
+        => MessageSkipped(messageTypeName, static all => all.Count >= 1);
+
+    /// <summary>
+    /// Wait for skips of the named message type until <paramref name="until"/> returns true.
+    /// The predicate receives the latest event and returns true when done.
+    /// </summary>
+    public ObserveContext MessageSkipped(string messageTypeName, Func<MessageSkippedEvent, bool> until)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+        return MessageSkipped(messageTypeName, all => until(all[^1]));
+    }
+
+    /// <summary>
+    /// Wait for skips of the named message type until <paramref name="until"/> returns true.
+    /// The predicate receives the growing list of matching events (oldest first).
+    /// </summary>
+    public ObserveContext MessageSkipped(string messageTypeName, Func<IReadOnlyList<MessageSkippedEvent>, bool> until)
+    {
+        ArgumentNullException.ThrowIfNull(until);
+        if (_failedTask is not null)
+            throw new InvalidOperationException(
+                "Cannot register MessageSkipped() when MessageFailed() is already registered. " +
+                "Use MessageFailed() alone when the test expects a failure outcome.");
+        _skippedTasks.Add((
+            messageTypeName,
+            _grpcService.WaitForMessageSkipsAsync(_correlationId, messageTypeName, until, _cancellationToken)));
+        return this;
+    }
+
+    /// <summary>
     /// Wait for a message with this correlation ID to be permanently sent to the error queue.
     /// Use this as the sole condition when the test expects a failure outcome.
     /// </summary>
@@ -137,7 +171,7 @@ public sealed class ObserveContext
             throw new InvalidOperationException(
                 "MessageFailed() has already been registered for this ObserveContext.");
 
-        if (_handlerTasks.Count > 0 || _sagaTasks.Count > 0 || _dispatchedTasks.Count > 0)
+        if (_handlerTasks.Count > 0 || _sagaTasks.Count > 0 || _dispatchedTasks.Count > 0 || _skippedTasks.Count > 0)
             throw new InvalidOperationException(
                 "Cannot register MessageFailed() when success conditions are already registered. " +
                 "Use MessageFailed() alone when the test expects a failure outcome.");
@@ -151,14 +185,15 @@ public sealed class ObserveContext
     /// </summary>
     public async Task<ObserveResults> WhenAllAsync()
     {
-        if (_handlerTasks.Count == 0 && _sagaTasks.Count == 0 && _dispatchedTasks.Count == 0 && _failedTask is null)
+        if (_handlerTasks.Count == 0 && _sagaTasks.Count == 0 && _dispatchedTasks.Count == 0 && _skippedTasks.Count == 0 && _failedTask is null)
             throw new InvalidOperationException(
                 "No conditions were registered. Call at least one of HandlerInvoked, SagaInvoked, " +
-                "MessageDispatched, or MessageFailed before awaiting WhenAllAsync.");
+                "MessageDispatched, MessageSkipped, or MessageFailed before awaiting WhenAllAsync.");
 
         IEnumerable<Task> allTasks = _handlerTasks.Select(t => (Task)t.Task)
             .Concat(_sagaTasks.Select(t => (Task)t.Task))
-            .Concat(_dispatchedTasks.Select(t => (Task)t.Task));
+            .Concat(_dispatchedTasks.Select(t => (Task)t.Task))
+            .Concat(_skippedTasks.Select(t => (Task)t.Task));
 
         if (_failedTask is not null)
             allTasks = allTasks.Append(_failedTask);
@@ -169,6 +204,7 @@ public sealed class ObserveContext
             _handlerTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
             _sagaTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
             _dispatchedTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
+            _skippedTasks.ToDictionary(t => t.TypeName, t => t.Task.Result),
             _failedTask?.Result);
     }
 }
@@ -181,17 +217,20 @@ public sealed class ObserveResults
     readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _handlerResults;
     readonly Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> _sagaResults;
     readonly Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> _dispatchedResults;
+    readonly Dictionary<string, IReadOnlyList<MessageSkippedEvent>> _skippedResults;
     readonly MessageFailedEvent? _failedResult;
 
     internal ObserveResults(
         Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> handlerResults,
         Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> sagaResults,
         Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> dispatchedResults,
+        Dictionary<string, IReadOnlyList<MessageSkippedEvent>> skippedResults,
         MessageFailedEvent? failedResult = null)
     {
         _handlerResults = handlerResults;
         _sagaResults = sagaResults;
         _dispatchedResults = dispatchedResults;
+        _skippedResults = skippedResults;
         _failedResult = failedResult;
     }
 
@@ -245,6 +284,23 @@ public sealed class ObserveResults
     /// </summary>
     public MessageDispatchedEvent MessageDispatched(string messageTypeName)
         => MessageDispatches(messageTypeName).Last();
+
+    /// <summary>
+    /// All collected skips of the named message type satisfying the condition
+    /// registered via ObserveContext.MessageSkipped.
+    /// </summary>
+    public IReadOnlyList<MessageSkippedEvent> MessageSkips(string messageTypeName)
+        => _skippedResults.TryGetValue(messageTypeName, out var list)
+            ? list
+            : throw new InvalidOperationException(
+                $"No MessageSkippedEvents for '{messageTypeName}' were observed.");
+
+    /// <summary>
+    /// The last (or only) skip of the named message type.
+    /// Equivalent to MessageSkips(name).Last() — convenient for the no-arg overload.
+    /// </summary>
+    public MessageSkippedEvent MessageSkipped(string messageTypeName)
+        => MessageSkips(messageTypeName).Last();
 
     /// <summary>
     /// The failure event recorded when a message was permanently sent to the error queue.

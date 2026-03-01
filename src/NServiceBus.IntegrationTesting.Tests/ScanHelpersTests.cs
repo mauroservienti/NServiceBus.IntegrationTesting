@@ -33,6 +33,9 @@ public class ScanHelpersTests
     static MessageFailedEvent FailureEvent(string correlationId = Id) =>
         new(EndpointName: "EP", Headers: new Dictionary<string, string>(), ExceptionMessage: "boom", CorrelationId: correlationId);
 
+    static MessageSkippedEvent SkipEvent(string correlationId = Id, string messageTypeName = "M") =>
+        new(EndpointName: "EP", MessageTypeName: messageTypeName, CorrelationId: correlationId);
+
     // ── ScanForHandlerEventsAsync ─────────────────────────────────────────────
 
     [Test]
@@ -473,6 +476,101 @@ public class ScanHelpersTests
         ch.Writer.TryWrite(new MessageDispatchedEvent("EP", aqn, "Send", Id));
 
         var result = await TestHostGrpcService.ScanForDispatchEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Has.Count.EqualTo(1));
+    }
+
+    // ── ScanForSkipEventsAsync ────────────────────────────────────────────────
+
+    [Test]
+    public async Task SkipScan_returns_null_when_channel_closed_without_match()
+    {
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        ch.Writer.TryWrite(SkipEvent(correlationId: OtherId));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SkipScan_returns_null_when_cancelled_before_match()
+    {
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, cts.Token);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SkipScan_ignores_events_with_wrong_correlationId()
+    {
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        ch.Writer.TryWrite(SkipEvent(correlationId: OtherId, messageTypeName: "M"));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SkipScan_ignores_events_with_wrong_messageTypeName()
+    {
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        ch.Writer.TryWrite(SkipEvent(correlationId: Id, messageTypeName: "Other"));
+        ch.Writer.Complete();
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Null);
+    }
+
+    [Test]
+    public async Task SkipScan_returns_on_first_match()
+    {
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        var evt = SkipEvent();
+        ch.Writer.TryWrite(evt);
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result![0], Is.SameAs(evt));
+    }
+
+    [Test]
+    public async Task SkipScan_list_predicate_returns_only_after_n_matches()
+    {
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        ch.Writer.TryWrite(SkipEvent());
+        ch.Writer.TryWrite(SkipEvent());
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
+            ch.Reader, Id, "M", static all => all.Count >= 2, CancellationToken.None);
+
+        Assert.That(result, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public async Task SkipScan_matches_stored_assembly_qualified_name_using_short_name()
+    {
+        const string aqn = "My.NS.M, MyAssembly, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+        var ch = Channel.CreateUnbounded<MessageSkippedEvent>();
+        ch.Writer.TryWrite(new MessageSkippedEvent("EP", aqn, Id));
+
+        var result = await TestHostGrpcService.ScanForSkipEventsAsync(
             ch.Reader, Id, "M", static all => all.Count >= 1, CancellationToken.None);
 
         Assert.That(result, Is.Not.Null);

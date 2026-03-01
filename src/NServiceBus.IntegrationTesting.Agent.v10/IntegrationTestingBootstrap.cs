@@ -32,6 +32,7 @@ public static class IntegrationTestingBootstrap
         Func<EndpointConfiguration> configFactory,
         IEnumerable<Scenario>? scenarios = null,
         IEnumerable<TimeoutRule>? timeoutRules = null,
+        IEnumerable<SkipRule>? skipRules = null,
         TimeSpan sigTermGracePeriod = default)
     {
         var gracePeriod = sigTermGracePeriod > TimeSpan.Zero ? sigTermGracePeriod : TimeSpan.FromSeconds(5);
@@ -64,6 +65,12 @@ public static class IntegrationTestingBootstrap
             config.Pipeline.Register(
                 new TimeoutRescheduleBehavior(rules),
                 "Shortens saga timeout delays for faster test execution");
+
+        var skips = skipRules?.ToList() ?? [];
+        if (skips.Count > 0)
+            config.Pipeline.Register(
+                new SkipMessageBehavior(skips, agentService),
+                "ACKs matching messages without invoking handlers and reports them to the test host");
 
         config.Recoverability().Failed(c => c.OnMessageSentToErrorQueue((failedMessage, ct) =>
         {

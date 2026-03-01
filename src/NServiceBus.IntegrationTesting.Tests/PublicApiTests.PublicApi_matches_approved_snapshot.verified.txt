@@ -48,6 +48,13 @@ namespace NServiceBus.IntegrationTesting
         public string CorrelationId { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> Headers { get; }
     }
+    public sealed class MessageSkippedEvent : System.IEquatable<NServiceBus.IntegrationTesting.MessageSkippedEvent>
+    {
+        public MessageSkippedEvent(string EndpointName, string MessageTypeName, string CorrelationId) { }
+        public string CorrelationId { get; init; }
+        public string EndpointName { get; init; }
+        public string MessageTypeName { get; init; }
+    }
     public sealed class ObserveContext
     {
         public NServiceBus.IntegrationTesting.ObserveContext HandlerInvoked(string handlerTypeName) { }
@@ -57,6 +64,9 @@ namespace NServiceBus.IntegrationTesting
         public NServiceBus.IntegrationTesting.ObserveContext MessageDispatched(string messageTypeName, System.Func<NServiceBus.IntegrationTesting.MessageDispatchedEvent, bool> until) { }
         public NServiceBus.IntegrationTesting.ObserveContext MessageDispatched(string messageTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageDispatchedEvent>, bool> until) { }
         public NServiceBus.IntegrationTesting.ObserveContext MessageFailed() { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageSkipped(string messageTypeName) { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageSkipped(string messageTypeName, System.Func<NServiceBus.IntegrationTesting.MessageSkippedEvent, bool> until) { }
+        public NServiceBus.IntegrationTesting.ObserveContext MessageSkipped(string messageTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageSkippedEvent>, bool> until) { }
         public NServiceBus.IntegrationTesting.ObserveContext SagaInvoked(string sagaTypeName) { }
         public NServiceBus.IntegrationTesting.ObserveContext SagaInvoked(string sagaTypeName, System.Func<NServiceBus.IntegrationTesting.HandlerInvokedEvent, bool> until) { }
         public NServiceBus.IntegrationTesting.ObserveContext SagaInvoked(string sagaTypeName, System.Func<System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent>, bool> until) { }
@@ -69,6 +79,8 @@ namespace NServiceBus.IntegrationTesting
         public NServiceBus.IntegrationTesting.MessageDispatchedEvent MessageDispatched(string messageTypeName) { }
         public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageDispatchedEvent> MessageDispatches(string messageTypeName) { }
         public NServiceBus.IntegrationTesting.MessageFailedEvent MessageFailed() { }
+        public NServiceBus.IntegrationTesting.MessageSkippedEvent MessageSkipped(string messageTypeName) { }
+        public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.MessageSkippedEvent> MessageSkips(string messageTypeName) { }
         public System.Collections.Generic.IReadOnlyList<NServiceBus.IntegrationTesting.HandlerInvokedEvent> SagaInvocations(string sagaTypeName) { }
         public NServiceBus.IntegrationTesting.HandlerInvokedEvent SagaInvoked(string sagaTypeName) { }
     }
@@ -120,12 +132,14 @@ namespace NServiceBus.IntegrationTesting.Proto
         public const int HandlerInvokedFieldNumber = 2;
         public const int MessageDispatchedFieldNumber = 3;
         public const int MessageFailedFieldNumber = 4;
+        public const int MessageSkippedFieldNumber = 5;
         public AgentToHostMessage() { }
         public AgentToHostMessage(NServiceBus.IntegrationTesting.Proto.AgentToHostMessage other) { }
         public NServiceBus.IntegrationTesting.Proto.ConnectMessage Connect { get; set; }
         public NServiceBus.IntegrationTesting.Proto.HandlerInvokedMessage HandlerInvoked { get; set; }
         public NServiceBus.IntegrationTesting.Proto.MessageDispatchedMessage MessageDispatched { get; set; }
         public NServiceBus.IntegrationTesting.Proto.MessageFailedMessage MessageFailed { get; set; }
+        public NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage MessageSkipped { get; set; }
         public NServiceBus.IntegrationTesting.Proto.AgentToHostMessage.PayloadOneofCase PayloadCase { get; }
         public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
         public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.AgentToHostMessage> Parser { get; }
@@ -146,6 +160,7 @@ namespace NServiceBus.IntegrationTesting.Proto
             HandlerInvoked = 2,
             MessageDispatched = 3,
             MessageFailed = 4,
+            MessageSkipped = 5,
         }
     }
     [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
@@ -303,6 +318,29 @@ namespace NServiceBus.IntegrationTesting.Proto
         public override int GetHashCode() { }
         public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
         public void MergeFrom(NServiceBus.IntegrationTesting.Proto.MessageFailedMessage other) { }
+        public override string ToString() { }
+        public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToString(),nq}")]
+    public sealed class MessageSkippedMessage : Google.Protobuf.IBufferMessage, Google.Protobuf.IDeepCloneable<NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage>, Google.Protobuf.IMessage, Google.Protobuf.IMessage<NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage>, System.IEquatable<NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage>
+    {
+        public const int CorrelationIdFieldNumber = 3;
+        public const int EndpointNameFieldNumber = 1;
+        public const int MessageTypeNameFieldNumber = 2;
+        public MessageSkippedMessage() { }
+        public MessageSkippedMessage(NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage other) { }
+        public string CorrelationId { get; set; }
+        public string EndpointName { get; set; }
+        public string MessageTypeName { get; set; }
+        public static Google.Protobuf.Reflection.MessageDescriptor Descriptor { get; }
+        public static Google.Protobuf.MessageParser<NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage> Parser { get; }
+        public int CalculateSize() { }
+        public NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage Clone() { }
+        public bool Equals(NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage other) { }
+        public override bool Equals(object other) { }
+        public override int GetHashCode() { }
+        public void MergeFrom(Google.Protobuf.CodedInputStream input) { }
+        public void MergeFrom(NServiceBus.IntegrationTesting.Proto.MessageSkippedMessage other) { }
         public override string ToString() { }
         public void WriteTo(Google.Protobuf.CodedOutputStream output) { }
     }

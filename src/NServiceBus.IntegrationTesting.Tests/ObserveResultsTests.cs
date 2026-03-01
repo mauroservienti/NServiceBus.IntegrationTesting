@@ -14,6 +14,9 @@ public class ObserveResultsTests
     static MessageDispatchedEvent MakeDispatchEvent(string correlationId = "c1", string messageTypeName = "Msg") =>
         new(EndpointName: "EP", MessageTypeName: messageTypeName, Intent: "Send", CorrelationId: correlationId);
 
+    static MessageSkippedEvent MakeSkippedEvent(string correlationId = "c1", string messageTypeName = "Msg") =>
+        new(EndpointName: "EP", MessageTypeName: messageTypeName, CorrelationId: correlationId);
+
     // ── HandlerInvocations ────────────────────────────────────────────────────
 
     [Test]
@@ -22,6 +25,7 @@ public class ObserveResultsTests
         var evt = MakeHandlerEvent(handlerTypeName: "MyHandler");
         var results = new ObserveResults(
             new Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> { ["MyHandler"] = [evt] },
+            [],
             [],
             []);
 
@@ -34,7 +38,7 @@ public class ObserveResultsTests
     [Test]
     public void HandlerInvocations_throws_when_key_missing()
     {
-        var results = new ObserveResults([], [], []);
+        var results = new ObserveResults([], [], [], []);
 
         var ex = Assert.Throws<InvalidOperationException>(
             () => results.HandlerInvocations("Missing"));
@@ -50,6 +54,7 @@ public class ObserveResultsTests
         var results = new ObserveResults(
             new Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> { ["H"] = [first, last] },
             [],
+            [],
             []);
 
         Assert.That(results.HandlerInvoked("H"), Is.SameAs(last));
@@ -64,6 +69,7 @@ public class ObserveResultsTests
         var results = new ObserveResults(
             [],
             new Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> { ["MySaga"] = [evt] },
+            [],
             []);
 
         var list = results.SagaInvocations("MySaga");
@@ -74,7 +80,7 @@ public class ObserveResultsTests
     [Test]
     public void SagaInvocations_throws_when_key_missing()
     {
-        var results = new ObserveResults([], [], []);
+        var results = new ObserveResults([], [], [], []);
 
         var ex = Assert.Throws<InvalidOperationException>(
             () => results.SagaInvocations("MissingSaga"));
@@ -90,6 +96,7 @@ public class ObserveResultsTests
         var results = new ObserveResults(
             new Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> { ["MySaga"] = [evt] },
             [],
+            [],
             []);
 
         Assert.Throws<InvalidOperationException>(() => results.SagaInvocations("MySaga"));
@@ -103,6 +110,7 @@ public class ObserveResultsTests
         var results = new ObserveResults(
             [],
             new Dictionary<string, IReadOnlyList<HandlerInvokedEvent>> { ["S"] = [first, last] },
+            [],
             []);
 
         Assert.That(results.SagaInvoked("S"), Is.SameAs(last));
@@ -117,7 +125,8 @@ public class ObserveResultsTests
         var results = new ObserveResults(
             [],
             [],
-            new Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> { ["OrderPlaced"] = [evt] });
+            new Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> { ["OrderPlaced"] = [evt] },
+            []);
 
         var list = results.MessageDispatches("OrderPlaced");
 
@@ -128,7 +137,7 @@ public class ObserveResultsTests
     [Test]
     public void MessageDispatches_throws_when_key_missing()
     {
-        var results = new ObserveResults([], [], []);
+        var results = new ObserveResults([], [], [], []);
 
         var ex = Assert.Throws<InvalidOperationException>(
             () => results.MessageDispatches("Ghost"));
@@ -144,8 +153,52 @@ public class ObserveResultsTests
         var results = new ObserveResults(
             [],
             [],
-            new Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> { ["M"] = [first, last] });
+            new Dictionary<string, IReadOnlyList<MessageDispatchedEvent>> { ["M"] = [first, last] },
+            []);
 
         Assert.That(results.MessageDispatched("M"), Is.SameAs(last));
+    }
+
+    // ── MessageSkips ──────────────────────────────────────────────────────────
+
+    [Test]
+    public void MessageSkips_returns_list_when_key_exists()
+    {
+        var evt = MakeSkippedEvent(messageTypeName: "PaymentRequest");
+        var results = new ObserveResults(
+            [],
+            [],
+            [],
+            new Dictionary<string, IReadOnlyList<MessageSkippedEvent>> { ["PaymentRequest"] = [evt] });
+
+        var list = results.MessageSkips("PaymentRequest");
+
+        Assert.That(list, Has.Count.EqualTo(1));
+        Assert.That(list[0], Is.SameAs(evt));
+    }
+
+    [Test]
+    public void MessageSkips_throws_when_key_missing()
+    {
+        var results = new ObserveResults([], [], [], []);
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => results.MessageSkips("Ghost"));
+
+        Assert.That(ex!.Message, Does.Contain("Ghost"));
+    }
+
+    [Test]
+    public void MessageSkipped_returns_last_event()
+    {
+        var first = MakeSkippedEvent(messageTypeName: "M");
+        var last = MakeSkippedEvent(messageTypeName: "M");
+        var results = new ObserveResults(
+            [],
+            [],
+            [],
+            new Dictionary<string, IReadOnlyList<MessageSkippedEvent>> { ["M"] = [first, last] });
+
+        Assert.That(results.MessageSkipped("M"), Is.SameAs(last));
     }
 }
