@@ -205,9 +205,3 @@ mdsnippets -c InPlaceOverwrite
 - **Child-process endpoints**: `AddProcessEndpoint(name, exe, envVars?)` alongside
   `AddEndpoint` for endpoints that cannot be containerised; agent already works via
   `NSBUS_TESTING_HOST=http://localhost:{port}` (no agent changes needed)
-- **Built-in transport/persistence support**: `TestEnvironmentBuilder` currently ships
-  `UseRabbitMq()` and `UsePostgreSql()` convenience methods that spin up the matching
-  Testcontainers module. Users can already bring their own external broker/DB without
-  framework support, but there are no built-in `UseXxx()` helpers for:
-  - Transports: AmazonSQS/SNS (LocalStack), Azure Service Bus, SQL Server Transport
-  - Persistence: MySQL, SQL Server, MongoDB, DynamoDB (LocalStack), RavenDB
