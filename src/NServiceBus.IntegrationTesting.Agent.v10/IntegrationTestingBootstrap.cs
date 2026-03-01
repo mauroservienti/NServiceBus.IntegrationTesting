@@ -101,7 +101,7 @@ public static class IntegrationTestingBootstrap
 
         try
         {
-            await Task.Delay(Timeout.Infinite, cts.Token);
+            await Task.Delay(System.Threading.Timeout.Infinite, cts.Token);
         }
         catch (OperationCanceledException) { }
 

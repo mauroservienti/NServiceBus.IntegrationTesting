@@ -191,7 +191,13 @@ of the endpoint assembly.
 
 ## Supported NServiceBus versions
 
-NServiceBus.IntegrationTesting agents support NServiceBus versions 9 and 10
+NServiceBus.IntegrationTesting agents support NServiceBus versions 8, 9, and 10
+
+| NServiceBus version | Agent package | Target framework |
+|---|---|---|
+| 10 | `NServiceBus.IntegrationTesting.AgentV10` | net10.0 |
+| 9 | `NServiceBus.IntegrationTesting.AgentV9` | net9.0 |
+| 8 | `NServiceBus.IntegrationTesting.AgentV8` | net8.0 |
 
 ## V1.x: in-process with NServiceBus.AcceptanceTesting
 
