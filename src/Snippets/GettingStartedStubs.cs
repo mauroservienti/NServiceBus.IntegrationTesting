@@ -14,7 +14,10 @@ namespace YourEndpoint.Messages
 
 namespace Snippets.GettingStarted
 {
-    public class OrderProcessingTimeout { }
+    public class OrderProcessingTimeout
+    {
+        public TimeSpan CustomDelay { get; init; }
+    }
 
     public class OrderStatusUpdated : IMessage { }
 }
@@ -22,6 +25,14 @@ namespace Snippets.GettingStarted
 namespace SampleEndpoint.Handlers
 {
     public class SomeReplySagaTimeout { }
+}
+
+namespace Snippets.GettingStartedSkip
+{
+    public class ProcessPayment : ICommand
+    {
+        public decimal Amount { get; set; }
+    }
 }
 
 namespace SampleEndpoint.Testing

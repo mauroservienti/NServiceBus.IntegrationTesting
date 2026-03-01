@@ -156,6 +156,11 @@ Fast unit tests — no Docker, no gRPC server required. Run with `dotnet test`.
 
 ## Documentation Snippets (mdsnippets)
 
+**Rule**: All C# code examples in `/docs/*.md` MUST live in `src/Snippets/` as compilable
+snippets and be referenced via `<!-- snippet: id -->`. Never write a bare ` ```csharp ` block
+for C# code — always create or reuse a snippet. Non-C# blocks (XML, Dockerfile, YAML, plain
+text) that are generic templates without a matching real repo file may stay inline.
+
 Code examples in `/docs/*.md` are kept in sync with compilable C# via **mdsnippets**.
 
 ### Snippet authoring

@@ -2,7 +2,9 @@ using NServiceBus.IntegrationTesting;
 using NServiceBus.IntegrationTesting.Agent;
 using NUnit.Framework;
 using Snippets.GettingStarted;
+using Snippets.GettingStartedConfig;
 using Snippets.GettingStartedScenario;
+using Snippets.GettingStartedSkip;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 
@@ -36,7 +38,7 @@ public class AdvancedSnippets
         // YourEndpoint.Testing/Program.cs
         await IntegrationTestingBootstrap.RunAsync(
             "YourEndpoint",
-            Snippets.GettingStartedConfig.YourEndpointConfig.Create,
+            YourEndpointConfig.Create,
             scenarios: [new SomeCommandScenario()],
             timeoutRules: [TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5))]);
         // end-snippet
@@ -145,6 +147,13 @@ public class AdvancedSnippets
     }
     // end-snippet
 
+    public async Task GetContainerLogs()
+    {
+        // begin-snippet: gs-get-container-logs
+        var (stdout, stderr) = await _env.GetEndpointContainerLogsAsync("YourEndpoint");
+        // end-snippet
+    }
+
     public async Task AgentTimeout()
     {
         string srcDir = null!;
@@ -156,6 +165,101 @@ public class AdvancedSnippets
             .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
             .WithAgentConnectionTimeout(TimeSpan.FromMinutes(5))
             .StartAsync();
+        // end-snippet
+    }
+
+    public async Task SkipBootstrap()
+    {
+        // begin-snippet: gs-skip-bootstrap
+        // YourEndpoint.Testing/Program.cs
+        await IntegrationTestingBootstrap.RunAsync(
+            "YourEndpoint",
+            YourEndpointConfig.Create,
+            scenarios: [new SomeCommandScenario()],
+            skipRules: [SkipRule.For<ProcessPayment>()]);
+        // end-snippet
+    }
+
+    public async Task SkipObservation()
+    {
+        string correlationId = null!;
+
+        // begin-snippet: gs-skip-observation
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        var results = await _env.Observe(correlationId, cts.Token)
+            .MessageSkipped("ProcessPayment")
+            .WhenAllAsync();
+
+        var skip = results.MessageSkipped("ProcessPayment");
+        Assert.That(skip.EndpointName, Is.EqualTo("YourEndpoint"));
+        // end-snippet
+    }
+
+    public async Task SkipPredicate()
+    {
+        // begin-snippet: gs-skip-predicate
+        // YourEndpoint.Testing/Program.cs
+        await IntegrationTestingBootstrap.RunAsync(
+            "YourEndpoint",
+            YourEndpointConfig.Create,
+            scenarios: [new SomeCommandScenario()],
+            skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]);
+        // end-snippet
+    }
+}
+
+class WireMockConsumerHandler
+{
+    readonly HttpClient _http = new();
+
+    async Task UseExternalService(CancellationToken ct)
+    {
+        // begin-snippet: gs-wiremock-endpoint
+        // Only calls the external service when the variable is set (i.e., in test mode)
+        var externalUrl = Environment.GetEnvironmentVariable("WIREMOCK_URL");
+        if (externalUrl is not null)
+        {
+            var response = await _http.GetStringAsync($"{externalUrl}/api/data", ct);
+        }
+        // end-snippet
+    }
+}
+
+static class ApiReferenceExamples
+{
+    public static async Task Bootstrap()
+    {
+        // begin-snippet: gs-api-bootstrap
+        await IntegrationTestingBootstrap.RunAsync(
+            endpointName:       "YourEndpoint",
+            configFactory:      YourEndpointConfig.Create,
+            scenarios:          [new SomeCommandScenario()],                                        // optional
+            timeoutRules:       [TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5))], // optional
+            skipRules:          [SkipRule.For<ProcessPayment>()],                                    // optional
+            sigTermGracePeriod: TimeSpan.FromSeconds(10));                                          // optional, default 5 s
+        // end-snippet
+    }
+
+    public static void TimeoutRuleExamples()
+    {
+        // begin-snippet: gs-api-timeout-rule
+        // Replace the scheduled delay for T with a fixed value
+        TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5));
+
+        // Compute the delay from the timeout message instance
+        TimeoutRule.For<OrderProcessingTimeout>(msg => msg.CustomDelay);
+        // end-snippet
+    }
+
+    public static void SkipRuleExamples()
+    {
+        // begin-snippet: gs-api-skip-rule
+        // ACK all messages of type T without invoking any handlers
+        SkipRule.For<ProcessPayment>();
+
+        // ACK only messages of type T that satisfy the predicate
+        SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000);
         // end-snippet
     }
 }
