@@ -18,21 +18,22 @@ Unlike unit tests or acceptance tests that mock the transport, every message her
 
 ### How it works
 
-```text
-┌──────────────────────────────────────────┐
-│  Test process                            │
-│  TestHostServer (gRPC, dynamic port)     │
-└──────────────────┬───────────────────────┘
-         bidirectional streaming
-                   │
-        ┌──────────┴────────────┐
-        │                       │
-┌───────▼─────────┐   ┌─────────▼────────┐
-│  YourEndpoint   │   │  AnotherEndpoint │
-│  container      │   │  container       │
-└─────────────────┘   └──────────────────┘
-        │                       │
-    RabbitMQ container    PostgreSQL container
+```mermaid
+graph TD
+    TestHost["Test process<br/>TestHostServer (gRPC, dynamic port)"]
+    
+    SampleEndpoint["SampleEndpoint<br/>NSB 10 / .NET 10<br/>container"]
+    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 9<br/>container"]
+    
+    RabbitMQ["RabbitMQ container (message broker)"]
+    PostgreSQL["PostgreSQL container (Sagas storage)"]
+    
+    TestHost <-->|bidirectional streaming| SampleEndpoint
+    TestHost <-->|bidirectional streaming| AnotherEndpoint
+    
+    SampleEndpoint <--> RabbitMQ
+    SampleEndpoint <--> PostgreSQL
+    AnotherEndpoint <--> RabbitMQ
 ```
 
 1. The test process starts a lightweight **gRPC host** on a dynamic port.
