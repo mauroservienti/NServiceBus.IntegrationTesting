@@ -22,7 +22,18 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The MySQL container is joined to the shared Docker network. All endpoint containers automatically receive the connection string via the `MYSQL_CONNECTION_STRING` environment variable — your endpoint reads it, no extra wiring needed.
+The MySQL container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `MYSQL_CONNECTION_STRING` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
+
+```csharp
+persistence.ConnectionBuilder(() =>
+    new MySqlConnection(Environment.GetEnvironmentVariable("MYSQL_CONNECTION_STRING")));
+```
+
+The injected value is an **ADO.NET connection string** (MySQL Connector/NET format):
+
+```
+Server=mysql;Port=3306;Database=mysqldb;Uid=root;Pwd=mysql
+```
 
 ## Defaults
 

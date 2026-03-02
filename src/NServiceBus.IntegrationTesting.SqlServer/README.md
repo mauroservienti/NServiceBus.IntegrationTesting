@@ -22,7 +22,18 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The SQL Server container is joined to the shared Docker network. All endpoint containers automatically receive the connection string via the `SQLSERVER_CONNECTION_STRING` environment variable — your endpoint reads it, no extra wiring needed.
+The SQL Server container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `SQLSERVER_CONNECTION_STRING` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
+
+```csharp
+persistence.ConnectionBuilder(() =>
+    new SqlConnection(Environment.GetEnvironmentVariable("SQLSERVER_CONNECTION_STRING")));
+```
+
+The injected value is an **ADO.NET connection string** (SQL Server format):
+
+```
+Server=mssql,1433;Database=master;User Id=sa;Password=...;TrustServerCertificate=True
+```
 
 ## Defaults
 
