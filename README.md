@@ -124,7 +124,8 @@ public class WhenSomeMessageIsSent
 <sup><a href='/src/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-writing-a-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For a full walkthrough and API reference see the **[documentation](docs/README.md)**.
+<!-- Intentionally not a relative link, since this README is also included in the NuGet package -->
+For a full walkthrough and API reference, see the **[documentation](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/README.md)** or the **[getting started guide](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/getting-started.md)**.
 
 ### Key concepts
 
