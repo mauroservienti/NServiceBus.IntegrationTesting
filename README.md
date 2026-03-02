@@ -204,18 +204,14 @@ The `*.Testing` companion project exists solely for integration tests. It:
    registrations. A minimal `Dockerfile` (build context: `src/`) looks like:
 
 ```dockerfile
-# Build context: src/
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj NServiceBus.IntegrationTesting.Agent.v10/
-COPY proto/ proto/
 COPY YourMessages/YourMessages.csproj YourMessages/
 COPY YourEndpoint/YourEndpoint.csproj YourEndpoint/
 COPY YourEndpoint.Testing/YourEndpoint.Testing.csproj YourEndpoint.Testing/
 RUN dotnet restore YourEndpoint.Testing/YourEndpoint.Testing.csproj
 
-COPY NServiceBus.IntegrationTesting.Agent.v10/ NServiceBus.IntegrationTesting.Agent.v10/
 COPY YourMessages/ YourMessages/
 COPY YourEndpoint/ YourEndpoint/
 COPY YourEndpoint.Testing/ YourEndpoint.Testing/

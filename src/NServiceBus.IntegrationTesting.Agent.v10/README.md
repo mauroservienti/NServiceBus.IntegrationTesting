@@ -56,18 +56,14 @@ MyEndpoint.Tests/            ← NUnit test project
 A minimal `Dockerfile` (build context: `src/`) looks like:
 
 ```dockerfile
-# Build context: src/
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj NServiceBus.IntegrationTesting.Agent.v10/
-COPY proto/ proto/
 COPY MyMessages/MyMessages.csproj MyMessages/
 COPY MyEndpoint/MyEndpoint.csproj MyEndpoint/
 COPY MyEndpoint.Testing/MyEndpoint.Testing.csproj MyEndpoint.Testing/
 RUN dotnet restore MyEndpoint.Testing/MyEndpoint.Testing.csproj
 
-COPY NServiceBus.IntegrationTesting.Agent.v10/ NServiceBus.IntegrationTesting.Agent.v10/
 COPY MyMessages/ MyMessages/
 COPY MyEndpoint/ MyEndpoint/
 COPY MyEndpoint.Testing/ MyEndpoint.Testing/
