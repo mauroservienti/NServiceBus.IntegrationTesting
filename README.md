@@ -1,15 +1,52 @@
 # NServiceBus.IntegrationTesting
 
-<img src="assets/icon.png" width="100" />
-
-NServiceBus.IntegrationTesting enables testing end-to-end business scenarios against real
-production endpoints, real transports, and real persistence.
+NServiceBus.IntegrationTesting enables testing end-to-end business scenarios against real production endpoints, real transports, and real persistence.
 
 > [!IMPORTANT]
 > **Disclaimer**: NServiceBus.IntegrationTesting is not affiliated with Particular Software and is not officially supported by Particular Software.
 
 > [!NOTE]
-> Version 3 is currently in beta, and it's available via the [Feedz.io pre-releases feed](https://f.feedz.io/mauroservienti/pre-releases/nuget/index.json).
+> Version 3 is a major rewrite with a new out-of-process architecture. Pre-release packages are available via the [Feedz.io pre-releases feed](https://f.feedz.io/mauroservienti/pre-releases/nuget/index.json).
+
+---
+
+## Prerequisites
+
+- [Docker](https://www.docker.com/products/docker-desktop/) installed and running — all endpoints and infrastructure run in containers
+- .NET 8 or .NET 10 SDK
+
+## Installation
+
+Install the core test-host package into your test project:
+
+```
+dotnet add package NServiceBus.IntegrationTesting
+```
+
+Add infrastructure extension packages for the transports and persistence your endpoints use:
+
+```
+dotnet add package NServiceBus.IntegrationTesting.RabbitMQ     # RabbitMQ transport
+dotnet add package NServiceBus.IntegrationTesting.PostgreSql   # PostgreSQL persistence or transport
+dotnet add package NServiceBus.IntegrationTesting.MySql        # MySQL persistence
+dotnet add package NServiceBus.IntegrationTesting.SqlServer    # SQL Server persistence or transport
+dotnet add package NServiceBus.IntegrationTesting.MongoDb      # MongoDB persistence
+dotnet add package NServiceBus.IntegrationTesting.RavenDb      # RavenDB persistence
+```
+
+Install the agent package into each `*.Testing` companion project, matching the NServiceBus version that endpoint uses:
+
+| NServiceBus version | Agent package | Target framework |
+|---|---|---|
+| 10 | `NServiceBus.IntegrationTesting.AgentV10` | net10.0 |
+| 9 | `NServiceBus.IntegrationTesting.AgentV9` | net8.0 |
+| 8 | `NServiceBus.IntegrationTesting.AgentV8` | net6.0 |
+
+```
+dotnet add package NServiceBus.IntegrationTesting.AgentV10   # for NServiceBus 10 endpoints
+dotnet add package NServiceBus.IntegrationTesting.AgentV9    # for NServiceBus 9 endpoints
+dotnet add package NServiceBus.IntegrationTesting.AgentV8    # for NServiceBus 8 endpoints
+```
 
 ---
 
@@ -19,22 +56,14 @@ Each endpoint runs in its own Docker container. Endpoints can run **different NS
 
 ### How it works
 
-```mermaid
-graph TD
-    TestHost["Test process<br/>TestHostServer (gRPC, dynamic port)"]
-    
-    SampleEndpoint["SampleEndpoint<br/>NSB 10 / .NET 10<br/>container"]
-    AnotherEndpoint["AnotherEndpoint<br/>NSB 9 / .NET 8<br/>container"]
-    
-    RabbitMQ["RabbitMQ container (message broker)"]
-    PostgreSQL["PostgreSQL container (Sagas storage)"]
-    
-    TestHost <-->|bidirectional streaming| SampleEndpoint
-    TestHost <-->|bidirectional streaming| AnotherEndpoint
-    
-    SampleEndpoint <--> RabbitMQ
-    SampleEndpoint <--> PostgreSQL
-    AnotherEndpoint <--> RabbitMQ
+```
+Test process
+└─ TestHostServer (gRPC, dynamic port)
+   ├─[bidirectional streaming]─► SampleEndpoint container (NSB 10 / .NET 10)
+   │                                └─► RabbitMQ container
+   │                                └─► PostgreSQL container
+   └─[bidirectional streaming]─► AnotherEndpoint container (NSB 9 / .NET 8)
+                                     └─► RabbitMQ container
 ```
 
 ### Writing a test
@@ -124,19 +153,16 @@ public class WhenSomeMessageIsSent
 <sup><a href='/src/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-writing-a-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+`FindRepoRoot()` is a helper you write once in your test project. It walks up from the test output directory until it finds the `.git` folder, giving `TestEnvironmentBuilder` a stable base path for Dockerfile locations regardless of where `dotnet test` is invoked from.
+
 <!-- Intentionally not a relative link, since this README is also included in the NuGet package -->
 For a full walkthrough and API reference, see the **[documentation](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/README.md)** or the **[getting started guide](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/getting-started.md)**.
 
 ### Key concepts
 
-**`TestEnvironmentBuilder`** — fluent builder that starts a Docker network, infrastructure
-containers, the gRPC test host, and all endpoint containers. Optionally adds
-[WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for HTTP stubbing via
-`.UseWireMock()`.
+**`TestEnvironmentBuilder`** — fluent builder that starts a Docker network, infrastructure containers, the gRPC test host, and all endpoint containers. Optionally adds [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for HTTP stubbing via `.UseWireMock()`.
 
-**Scenarios** — named entry points defined in the `*.Testing` companion project. A scenario
-runs _inside the endpoint process_, using the real `IMessageSession`, so no cross-process
-message serialization occurs:
+**Scenarios** — named entry points defined in the `*.Testing` companion project. A scenario runs _inside the endpoint process_, using the real `IMessageSession`, so no cross-process message serialization occurs:
 
 <!-- snippet: scenario -->
 <a id='snippet-scenario'></a>
@@ -153,18 +179,13 @@ public class SomeMessageScenario : Scenario
 <sup><a href='/src/Snippets/ScenarioSnippets.cs#L7-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-scenario' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-**`ObserveContext`** — fluent API for waiting on events correlated by scenario invocation.
-Conditions: `.HandlerInvoked`, `.SagaInvoked`, `.MessageDispatched`, `.MessageFailed`.
-Each condition type supports no-arg, single-event predicate, and list predicate overloads.
+**`ObserveContext`** — fluent API for waiting on events correlated by scenario invocation. Conditions: `.HandlerInvoked`, `.SagaInvoked`, `.MessageDispatched`, `.MessageFailed`. Each condition type supports no-arg, single-event predicate, and list predicate overloads.
 
-**Production / testing separation** — production endpoints have zero testing dependencies.
-Each endpoint has a companion `*.Testing` project that wraps the production config with
-`IntegrationTestingBootstrap` and registers scenarios.
+**Production / testing separation** — production endpoints have zero testing dependencies. Each endpoint has a companion `*.Testing` project that wraps the production config with `IntegrationTestingBootstrap` and registers scenarios.
 
 ### Why `*.Testing` companion projects?
 
-The production endpoint (`SampleEndpoint/`) has no reference to any testing library. It
-stays clean and deployable as-is.
+The production endpoint (`SampleEndpoint/`) has no reference to any testing library. It stays clean and deployable as-is.
 
 The `*.Testing` companion project exists solely for integration tests. It:
 
@@ -189,22 +210,22 @@ SampleEndpoint.Tests/            ← NUnit test project, references Testing only
   WhenSomeMessageIsSent.cs         compile-time validation (ReferenceOutputAssembly=false)
 ```
 
-The test project references the `*.Testing` project with `ReferenceOutputAssembly="false"`.
-This gives compile-time validation that the `*.Testing` project builds, while at test
-runtime the container image is built from its Dockerfile — there is no in-process loading
-of the endpoint assembly.
+The test project references the `*.Testing` project with `ReferenceOutputAssembly="false"`. This gives compile-time validation that the `*.Testing` project builds, while at test runtime the container image is built from its Dockerfile — there is no in-process loading of the endpoint assembly.
 
-## Supported NServiceBus versions
+## NuGet packages
 
-NServiceBus.IntegrationTesting agents support NServiceBus versions 8, 9, and 10
-
-| NServiceBus version | Agent package | Target framework |
-|---|---|---|
-| 10 | `NServiceBus.IntegrationTesting.AgentV10` | net10.0 |
-| 9 | `NServiceBus.IntegrationTesting.AgentV9` | net8.0 |
-| 8 | `NServiceBus.IntegrationTesting.AgentV8` | net6.0 |
-
-## NuGet Packages
+| Package | Purpose |
+|---|---|
+| `NServiceBus.IntegrationTesting` | Test host, `TestEnvironmentBuilder`, observe API |
+| `NServiceBus.IntegrationTesting.RabbitMQ` | RabbitMQ transport container |
+| `NServiceBus.IntegrationTesting.PostgreSql` | PostgreSQL persistence container |
+| `NServiceBus.IntegrationTesting.MySql` | MySQL persistence container |
+| `NServiceBus.IntegrationTesting.SqlServer` | SQL Server persistence container |
+| `NServiceBus.IntegrationTesting.MongoDb` | MongoDB persistence container |
+| `NServiceBus.IntegrationTesting.RavenDb` | RavenDB persistence container |
+| `NServiceBus.IntegrationTesting.AgentV10` | Agent for NServiceBus 10 (net10.0) |
+| `NServiceBus.IntegrationTesting.AgentV9` | Agent for NServiceBus 9 (net8.0) |
+| `NServiceBus.IntegrationTesting.AgentV8` | Agent for NServiceBus 8 (net6.0) |
 
 - [NuGet stable releases](https://www.nuget.org/packages/NServiceBus.IntegrationTesting)
 - [Feedz.io pre-releases feed](https://f.feedz.io/mauroservienti/pre-releases/nuget/index.json)
