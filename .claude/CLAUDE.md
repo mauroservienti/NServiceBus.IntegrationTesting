@@ -154,6 +154,13 @@ Fast unit tests — no Docker, no gRPC server required. Run with `dotnet test`.
 - Scan helpers are `internal static` in `TestHostGrpcService`; exposed via
   `InternalsVisibleTo` in `Properties/AssemblyInfo.cs`
 
+## NuGet Packaging Conventions
+
+- `src/Directory.Build.props` declares `<PackageReadmeFile>README.md</PackageReadmeFile>` (applies to all packable projects) and includes `assets/icon.png`
+- Each packable project has its own `README.md` in its project directory, included via `<None Include="README.md" Pack="true" PackagePath="\" />`
+- **Exception**: the core `NServiceBus.IntegrationTesting` package uses the root `README.md` via `<None Include="..\..\README.md" Pack="true" PackagePath="\" />`
+- The global `Directory.Build.props` does NOT include the root README — only the core package does explicitly. No `<None Remove>` pattern needed.
+
 ## Documentation Snippets (mdsnippets)
 
 **Rule**: All C# code examples in `/docs/*.md` MUST live in `src/Snippets/` as compilable
@@ -162,6 +169,8 @@ for C# code — always create or reuse a snippet. Non-C# blocks (XML, Dockerfile
 text) that are generic templates without a matching real repo file may stay inline.
 
 Code examples in `/docs/*.md` are kept in sync with compilable C# via **mdsnippets**.
+
+**Dockerfile examples must be from the user's perspective**: the agent arrives as a NuGet package, so Dockerfile examples should only `COPY` the user's own projects (Messages, Endpoint, Endpoint.Testing). Do NOT include `COPY` lines for agent source or `proto/` — those are internal repo details irrelevant to users.
 
 ### Snippet authoring
 
