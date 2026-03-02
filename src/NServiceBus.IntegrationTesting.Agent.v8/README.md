@@ -53,6 +53,34 @@ MyEndpoint.Testing/          ← references this package; wraps production confi
 MyEndpoint.Tests/            ← NUnit test project
 ```
 
+A minimal `Dockerfile` (build context: `src/`) looks like. Note: even though the agent targets `net6.0`, the endpoint project uses `net8.0` so the Docker base images are `sdk:8.0` and `runtime:8.0`:
+
+```dockerfile
+# Build context: src/
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY NServiceBus.IntegrationTesting.Agent.v8/NServiceBus.IntegrationTesting.Agent.v8.csproj NServiceBus.IntegrationTesting.Agent.v8/
+COPY proto/ proto/
+COPY MyMessages/MyMessages.csproj MyMessages/
+COPY MyEndpoint/MyEndpoint.csproj MyEndpoint/
+COPY MyEndpoint.Testing/MyEndpoint.Testing.csproj MyEndpoint.Testing/
+RUN dotnet restore MyEndpoint.Testing/MyEndpoint.Testing.csproj
+
+COPY NServiceBus.IntegrationTesting.Agent.v8/ NServiceBus.IntegrationTesting.Agent.v8/
+COPY MyMessages/ MyMessages/
+COPY MyEndpoint/ MyEndpoint/
+COPY MyEndpoint.Testing/ MyEndpoint.Testing/
+RUN dotnet publish MyEndpoint.Testing/MyEndpoint.Testing.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "MyEndpoint.Testing.dll"]
+```
+
+`TestEnvironmentBuilder` sets `NSBUS_TESTING_HOST` automatically when it starts the container — endpoints do not configure this.
+
 ## All packages
 
 | Package | Purpose |

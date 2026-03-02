@@ -22,7 +22,18 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The PostgreSQL container is joined to the shared Docker network. All endpoint containers automatically receive the connection string via the `POSTGRESQL_CONNECTION_STRING` environment variable — your endpoint reads it, no extra wiring needed.
+The PostgreSQL container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `POSTGRESQL_CONNECTION_STRING` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
+
+```csharp
+persistence.ConnectionBuilder(() =>
+    new NpgsqlConnection(Environment.GetEnvironmentVariable("POSTGRESQL_CONNECTION_STRING")));
+```
+
+The injected value is a standard **ADO.NET connection string**:
+
+```
+Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=postgres
+```
 
 ## Defaults
 

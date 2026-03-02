@@ -21,7 +21,19 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The RabbitMQ container is joined to the shared Docker network. All endpoint containers automatically receive the connection string via the `RABBITMQ_CONNECTION_STRING` environment variable — your endpoint reads it, no extra wiring needed.
+The RabbitMQ container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `RABBITMQ_CONNECTION_STRING` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
+
+```csharp
+var transport = new RabbitMQTransport(
+    RoutingTopology.Conventional(QueueType.Classic),
+    Environment.GetEnvironmentVariable("RABBITMQ_CONNECTION_STRING")!);
+```
+
+The injected value uses the **NServiceBus RabbitMQ transport** connection string format:
+
+```
+host=rabbitmq;username=guest;password=guest
+```
 
 ## Defaults
 

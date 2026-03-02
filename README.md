@@ -153,6 +153,9 @@ public class WhenSomeMessageIsSent
 <sup><a href='/src/Snippets/TestFixtureSnippets.cs#L6-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-writing-a-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+> [!NOTE]
+> The example uses **NUnit** (`[TestFixture]`, `[OneTimeSetUp]`, `Assert.Multiple`). xUnit or MSTest users need to adapt the fixture lifecycle and assertion calls accordingly.
+
 `FindRepoRoot()` is a helper you write once in your test project. It walks up from the test output directory until it finds the `.git` folder, giving `TestEnvironmentBuilder` a stable base path for Dockerfile locations regardless of where `dotnet test` is invoked from.
 
 <!-- Intentionally not a relative link, since this README is also included in the NuGet package -->
@@ -160,7 +163,7 @@ For a full walkthrough and API reference, see the **[documentation](https://gith
 
 ### Key concepts
 
-**`TestEnvironmentBuilder`** — fluent builder that starts a Docker network, infrastructure containers, the gRPC test host, and all endpoint containers. Optionally adds [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for HTTP stubbing via `.UseWireMock()`.
+**`TestEnvironmentBuilder`** — fluent builder that starts a Docker network, infrastructure containers, the gRPC test host, and all endpoint containers. Optionally adds [WireMock.Net](https://github.com/WireMock-Net/WireMock.Net) for HTTP stubbing via `.UseWireMock()`. It automatically injects `NSBUS_TESTING_HOST` into every endpoint container so the agent knows where to connect — endpoints do not configure this themselves.
 
 **Scenarios** — named entry points defined in the `*.Testing` companion project. A scenario runs _inside the endpoint process_, using the real `IMessageSession`, so no cross-process message serialization occurs:
 
@@ -198,7 +201,31 @@ The `*.Testing` companion project exists solely for integration tests. It:
    constructors, no leaking of test concerns into production types.
 3. **Provides the Dockerfile** — builds a container image from the companion project, not
    from the production project. Only the testing image carries the agent and scenario
-   registrations.
+   registrations. A minimal `Dockerfile` (build context: `src/`) looks like:
+
+```dockerfile
+# Build context: src/
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY NServiceBus.IntegrationTesting.Agent.v10/NServiceBus.IntegrationTesting.Agent.v10.csproj NServiceBus.IntegrationTesting.Agent.v10/
+COPY proto/ proto/
+COPY YourMessages/YourMessages.csproj YourMessages/
+COPY YourEndpoint/YourEndpoint.csproj YourEndpoint/
+COPY YourEndpoint.Testing/YourEndpoint.Testing.csproj YourEndpoint.Testing/
+RUN dotnet restore YourEndpoint.Testing/YourEndpoint.Testing.csproj
+
+COPY NServiceBus.IntegrationTesting.Agent.v10/ NServiceBus.IntegrationTesting.Agent.v10/
+COPY YourMessages/ YourMessages/
+COPY YourEndpoint/ YourEndpoint/
+COPY YourEndpoint.Testing/ YourEndpoint.Testing/
+RUN dotnet publish YourEndpoint.Testing/YourEndpoint.Testing.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "YourEndpoint.Testing.dll"]
+```
 
 ```text
 SampleEndpoint/                  ← production code, zero test dependencies

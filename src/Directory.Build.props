@@ -11,6 +11,7 @@
         <Authors>Mauro Servienti</Authors>
         <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <PackageIcon>icon.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageTags>NServiceBus Integration Testing</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -22,12 +23,10 @@
         <PackageOutputPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)', '..', 'nugets'))</PackageOutputPath>
         <!-- Ensure packages version at minum at 2.x regardless of existing git tags. -->
         <MinVerMinimumMajorMinor>3.0</MinVerMinimumMajorMinor>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
         <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
-        <None Include="..\..\README.md"       Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>

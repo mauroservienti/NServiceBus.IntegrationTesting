@@ -22,9 +22,22 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The RavenDB container is joined to the shared Docker network. All endpoint containers automatically receive the server URL via the `RAVENDB_URL` environment variable — your endpoint reads it, no extra wiring needed.
+The RavenDB container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `RAVENDB_URL` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
 
-The container runs with `--Setup.Mode=None` so no setup wizard is required. The injected value is an HTTP URL: `http://ravendb:8080`.
+```csharp
+var persistence = endpointConfiguration.UsePersistence<RavenDBPersistence>();
+persistence.SetDefaultDocumentStore(new DocumentStore
+{
+    Urls = [Environment.GetEnvironmentVariable("RAVENDB_URL")!],
+    Database = "MyEndpoint"
+});
+```
+
+The container runs with `--Setup.Mode=None` so no setup wizard is required. The injected value is an **HTTP URL**:
+
+```
+http://ravendb:8080
+```
 
 ## Defaults
 

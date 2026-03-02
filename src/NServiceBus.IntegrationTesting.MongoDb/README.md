@@ -22,7 +22,19 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The MongoDB container is joined to the shared Docker network. All endpoint containers automatically receive the connection string via the `MONGODB_CONNECTION_STRING` environment variable — your endpoint reads it, no extra wiring needed.
+The MongoDB container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `MONGODB_CONNECTION_STRING` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
+
+```csharp
+var persistence = endpointConfiguration.UsePersistence<NServiceBus.MongoPersistence>();
+persistence.MongoClient(new MongoClient(
+    Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING")));
+```
+
+The injected value is a **MongoDB connection string URI**:
+
+```
+mongodb://mongodb:27017
+```
 
 ## Defaults
 
