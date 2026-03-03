@@ -98,10 +98,10 @@ namespace NServiceBus.IntegrationTesting
     public sealed class TestEnvironmentBuilder
     {
         public TestEnvironmentBuilder() { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? configure = null) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? containerOptions = null) { }
         public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.TestEnvironment> StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseInfrastructure(string key, string defaultEnvVarName, System.Func<DotNet.Testcontainers.Networks.INetwork, DotNet.Testcontainers.Containers.IContainer> buildContainer, string connectionString) { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock(System.Action<NServiceBus.IntegrationTesting.WireMockOptions>? configure = null) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock(System.Action<NServiceBus.IntegrationTesting.WireMockOptions>? wireMockOptions = null) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithAgentConnectionTimeout(System.TimeSpan timeout) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithDockerfileDirectory(string directory) { }
     }

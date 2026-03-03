@@ -69,20 +69,20 @@ public sealed class TestEnvironmentBuilder
     /// Registers an endpoint to run as a Docker container.
     /// <paramref name="dockerfile"/> is the path to the Dockerfile relative to the
     /// directory set via WithDockerfileDirectory.
-    /// Use the optional <paramref name="configure"/> callback to override per-endpoint
+    /// Use the optional <paramref name="containerOptions"/> callback to override per-endpoint
     /// environment variable names via
     /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> or to inject
     /// additional static environment variables.
     /// </summary>
     public TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile,
-        Action<EndpointContainerOptions>? configure = null)
+        Action<EndpointContainerOptions>? containerOptions = null)
     {
         if (_endpoints.Any(e => e.EndpointName == endpointName))
             throw new ArgumentException(
                 $"An endpoint named '{endpointName}' has already been added.", nameof(endpointName));
 
         var options = new EndpointContainerOptions();
-        configure?.Invoke(options);
+        containerOptions?.Invoke(options);
         _endpoints.Add(new EndpointRegistration(endpointName, dockerfile, options));
         return this;
     }
@@ -90,16 +90,16 @@ public sealed class TestEnvironmentBuilder
     /// <summary>
     /// Starts an embedded WireMock.Net server in the test process. All endpoint containers
     /// receive the WireMock URL as an environment variable (default name: <c>WIREMOCK_URL</c>).
-    /// Use the optional <paramref name="configure"/> callback to override the variable name.
+    /// Use the optional <paramref name="wireMockOptions"/> callback to override the variable name.
     /// Per-endpoint overrides are set via
     /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using the key
     /// <see cref="WireMockOptions.InfrastructureKey"/>.
     /// Access the server via <see cref="TestEnvironment.WireMock"/>.
     /// </summary>
-    public TestEnvironmentBuilder UseWireMock(Action<WireMockOptions>? configure = null)
+    public TestEnvironmentBuilder UseWireMock(Action<WireMockOptions>? wireMockOptions = null)
     {
         _wireMockOptions = new WireMockOptions();
-        configure?.Invoke(_wireMockOptions);
+        wireMockOptions?.Invoke(_wireMockOptions);
         return this;
     }
 

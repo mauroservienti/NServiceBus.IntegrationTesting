@@ -56,17 +56,21 @@ public static class TestEnvironmentBuilderRedisExtensions
 {
     public static TestEnvironmentBuilder UseRedis(
         this TestEnvironmentBuilder builder,
-        Action<RedisOptions>? configure = null)
+        Action<RedisOptions>? containerOptions = null,
+        Func<ContainerBuilder, ContainerBuilder>? containerBuilder = null)
     {
         var opts = new RedisOptions();
-        configure?.Invoke(opts);
+        containerOptions?.Invoke(opts);
         return builder.UseInfrastructure(
             opts.Key,
             opts.ConnectionStringEnvVarName,
-            network => new ContainerBuilder(opts.ImageName)
-                .WithNetwork(network)
-                .WithNetworkAliases(opts.NetworkAlias)
-                .Build(),
+            network =>
+            {
+                var builder = new ContainerBuilder(opts.ImageName)
+                    .WithNetwork(network)
+                    .WithNetworkAliases(opts.NetworkAlias);
+                return (containerBuilder?.Invoke(builder) ?? builder).Build();
+            },
             $"{opts.NetworkAlias}:6379");
     }
 }

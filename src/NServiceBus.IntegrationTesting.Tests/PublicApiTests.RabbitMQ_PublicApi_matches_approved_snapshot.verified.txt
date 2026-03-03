@@ -11,6 +11,6 @@ namespace NServiceBus.IntegrationTesting
     }
     public static class TestEnvironmentBuilderRabbitMqExtensions
     {
-        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMQ(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.RabbitMqContainerOptions>? configure = null) { }
+        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRabbitMQ(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.RabbitMqContainerOptions>? containerOptions = null, System.Func<Testcontainers.RabbitMq.RabbitMqBuilder, Testcontainers.RabbitMq.RabbitMqBuilder>? containerBuilder = null) { }
     }
 }

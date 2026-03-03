@@ -1067,8 +1067,12 @@ full NServiceBus headers of the failed message.
 | Method | Description |
 |---|---|
 | `.WithDockerfileDirectory(path)` | Sets the Docker build context root (required) |
-| `.UseRabbitMQ(image?)` | Starts a RabbitMQ container; injects `RABBITMQ_CONNECTION_STRING` |
-| `.UsePostgreSql(image?)` | Starts a PostgreSQL container; injects `POSTGRESQL_CONNECTION_STRING` |
+| `.UseRabbitMQ(containerOptions?, containerBuilder?)` | Starts a RabbitMQ container; injects `RABBITMQ_CONNECTION_STRING` |
+| `.UsePostgreSql(containerOptions?, containerBuilder?)` | Starts a PostgreSQL container; injects `POSTGRESQL_CONNECTION_STRING` |
+| `.UseMySQL(containerOptions?, containerBuilder?)` | Starts a MySQL container; injects `MYSQL_CONNECTION_STRING` |
+| `.UseSqlServer(containerOptions?, containerBuilder?)` | Starts a SQL Server container; injects `SQLSERVER_CONNECTION_STRING` |
+| `.UseMongoDB(containerOptions?, containerBuilder?)` | Starts a MongoDB container; injects `MONGODB_CONNECTION_STRING` |
+| `.UseRavenDB(containerOptions?, containerBuilder?)` | Starts a RavenDB container; injects `RAVENDB_CONNECTION_STRING` |
 | `.UseWireMock()` | Starts embedded WireMock stub server; injects `WIREMOCK_URL` |
 | `.AddEndpoint(name, dockerfile)` | Registers an endpoint container to build and start |
 | `.WithAgentConnectionTimeout(ts)` | Overrides the 120 s default connection wait |
