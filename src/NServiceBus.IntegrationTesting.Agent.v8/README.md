@@ -30,7 +30,9 @@ Do **not** add it to the production endpoint project or the test project.
 await IntegrationTestingBootstrap.RunAsync(
     "MyEndpoint",
     MyEndpointConfig.Create,
-    scenarios: [new MyScenario()]);
+    scenarios: [new MyScenario()],
+    timeoutRules: [/* optional: shorten saga timeout durations for tests */],
+    skipRules: [/* optional: skip specific message types handling during tests */]);
 ```
 
 `IntegrationTestingBootstrap.RunAsync` wires the agent into the endpoint pipeline, starts the endpoint, connects to the test host via the `NSBUS_TESTING_HOST` environment variable, and blocks until the container is stopped (Ctrl+C or SIGTERM).
@@ -50,7 +52,8 @@ MyEndpoint.Testing/          ← references this package; wraps production confi
   Program.cs                 ← IntegrationTestingBootstrap.RunAsync(...)
   MyScenario.cs              ← implements Scenario base class
   Dockerfile                 ← builds the testable container image
-MyEndpoint.Tests/            ← NUnit test project
+MyEndpoint.Tests/            ← references MyEndpoint.Testing with
+                               ReferenceOutputAssembly="false"
 ```
 
 A minimal `Dockerfile` looks like. Note: even though the agent NuGet package targets `net6.0`, the endpoint project uses `net8.0` so the Docker base images are `sdk:8.0` and `runtime:8.0`:

@@ -35,6 +35,8 @@ The injected value is an **ADO.NET connection string** (MySQL Connector/NET form
 Server=mysql;Port=3306;Database=mysqldb;Uid=root;Pwd=mysql
 ```
 
+The hostname `mysql` is the container's name on the shared Docker network — endpoints reach it by that name without any extra configuration.
+
 ## Defaults
 
 | Setting | Default |
@@ -71,4 +73,4 @@ For per-endpoint variable name overrides, see [Customizing Environment Variable 
 
 ## Documentation
 
-For the full walkthrough and API reference, see the **[documentation](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/README.md)**.
+For the full walkthrough and API reference, see the **[getting started guide](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/getting-started.md)**.

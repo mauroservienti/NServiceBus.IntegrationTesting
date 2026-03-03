@@ -10,7 +10,7 @@ public class SomeMessageScenario : Scenario
     public override string Name => "SomeMessage";
 
     public override async Task Execute(IMessageSession session,
-        Dictionary<string, string> args, CancellationToken ct)
+        Dictionary<string, string> args, CancellationToken cancellationToken = default)
         => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
 // end-snippet
