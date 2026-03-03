@@ -1074,7 +1074,7 @@ full NServiceBus headers of the failed message.
 | `.UseMongoDB(containerOptions?, containerBuilder?)` | Starts a MongoDB container; injects `MONGODB_CONNECTION_STRING` |
 | `.UseRavenDB(containerOptions?, containerBuilder?)` | Starts a RavenDB container; injects `RAVENDB_CONNECTION_STRING` |
 | `.UseWireMock()` | Starts embedded WireMock stub server; injects `WIREMOCK_URL` |
-| `.AddEndpoint(name, dockerfile)` | Registers an endpoint container to build and start |
+| `.AddEndpoint(name, dockerfile, containerOptions?, containerBuilder?)` | Registers an endpoint container to build and start |
 | `.WithAgentConnectionTimeout(ts)` | Overrides the 120 s default connection wait |
 | `.StartAsync()` | Builds and starts everything; returns `TestEnvironment` |
 
@@ -1094,6 +1094,8 @@ full NServiceBus headers of the failed message.
 |---|---|
 | `EndpointName` | The logical name of the endpoint |
 | `ExecuteScenarioAsync(name, args?, ct?)` | Triggers a scenario; returns the correlation ID |
+| `GetMappedPort(containerPort)` | Returns the host-side port Testcontainers mapped to `containerPort` |
+| `GetBaseUrl(containerPort, scheme?)` | Returns `{scheme}://localhost:{mappedPort}`; `scheme` defaults to `"http"` |
 
 ### `ObserveContext`
 

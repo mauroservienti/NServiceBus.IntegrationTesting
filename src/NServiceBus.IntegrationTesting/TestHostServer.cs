@@ -21,13 +21,6 @@ public sealed class TestHostServer : IAsyncDisposable
     internal TestHostGrpcService GrpcService { get; } = new();
 
     /// <summary>
-    /// Returns a handle for the named endpoint. Use the handle to wait for the agent
-    /// to connect and to execute scenarios.
-    /// </summary>
-    public EndpointHandle GetEndpoint(string endpointName)
-        => new(GrpcService, endpointName);
-
-    /// <summary>
     /// Creates an ObserveContext for the given correlation ID. Add conditions with
     /// HandlerInvoked / MessageDispatched, then call WhenAllAsync() to wait for all of them.
     /// </summary>

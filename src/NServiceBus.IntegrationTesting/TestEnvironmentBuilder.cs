@@ -29,7 +29,8 @@ public sealed class TestEnvironmentBuilder
         Func<INetwork, IContainer> BuildContainer,
         string ConnectionString);
 
-    record EndpointRegistration(string EndpointName, string Dockerfile, EndpointContainerOptions Options);
+    record EndpointRegistration(string EndpointName, string Dockerfile, EndpointContainerOptions Options,
+        Func<ContainerBuilder, ContainerBuilder>? ContainerBuilderCallback);
 
     /// <summary>
     /// Registers a custom infrastructure container. The container is started on the shared
@@ -73,9 +74,18 @@ public sealed class TestEnvironmentBuilder
     /// environment variable names via
     /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> or to inject
     /// additional static environment variables.
+    /// Use the optional <paramref name="containerBuilder"/> callback to further customize the
+    /// container beyond what <paramref name="containerOptions"/> supports — for example, to
+    /// expose ports via <c>b.WithPortBinding(port, assignRandomHostPort: true)</c>, add volume
+    /// mounts, or set custom wait strategies. Retrieve the mapped host port after
+    /// <see cref="StartAsync"/> via <see cref="EndpointHandle.GetMappedPort"/> or
+    /// <see cref="EndpointHandle.GetBaseUrl"/>.
+    /// Because Testcontainers builders are immutable, the callback must return the result of
+    /// the chain.
     /// </summary>
     public TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile,
-        Action<EndpointContainerOptions>? containerOptions = null)
+        Action<EndpointContainerOptions>? containerOptions = null,
+        Func<ContainerBuilder, ContainerBuilder>? containerBuilder = null)
     {
         if (_endpoints.Any(e => e.EndpointName == endpointName))
             throw new ArgumentException(
@@ -83,7 +93,7 @@ public sealed class TestEnvironmentBuilder
 
         var options = new EndpointContainerOptions();
         containerOptions?.Invoke(options);
-        _endpoints.Add(new EndpointRegistration(endpointName, dockerfile, options));
+        _endpoints.Add(new EndpointRegistration(endpointName, dockerfile, options, containerBuilder));
         return this;
     }
 
@@ -173,11 +183,12 @@ public sealed class TestEnvironmentBuilder
             // and the subsequent ExistsWithIdAsync check succeeds, avoiding the BuildKit race
             // condition where the async tagging completes after Testcontainers checks.
             var imageEntries = _endpoints
-                .Select(ep => (ep.EndpointName, ep.Options, Image: new ImageFromDockerfileBuilder()
-                    .WithDockerfileDirectory(_dockerfileDirectory)
-                    .WithDockerfile(ep.Dockerfile)
-                    .WithName($"localhost/nsb-integration-testing/{ep.EndpointName.ToLowerInvariant()}:latest")
-                    .Build()))
+                .Select(ep => (ep.EndpointName, ep.Options, ep.ContainerBuilderCallback,
+                    Image: new ImageFromDockerfileBuilder()
+                        .WithDockerfileDirectory(_dockerfileDirectory)
+                        .WithDockerfile(ep.Dockerfile)
+                        .WithName($"localhost/nsb-integration-testing/{ep.EndpointName.ToLowerInvariant()}:latest")
+                        .Build()))
                 .ToList();
 
             await Task.WhenAll(imageEntries.Select(e => e.Image.CreateAsync(cancellationToken)));
@@ -216,11 +227,12 @@ public sealed class TestEnvironmentBuilder
                     foreach (var (key, value) in e.Options.EnvironmentVariables)
                         envVars[key] = value;
 
-                    return (e.EndpointName, Container: (IContainer)new ContainerBuilder(e.Image.FullName)
+                    var cb = new ContainerBuilder(e.Image.FullName)
                         .WithNetwork(network)
                         .WithEnvironment(envVars)
-                        .WithExtraHost("host.docker.internal", "host-gateway")
-                        .Build());
+                        .WithExtraHost("host.docker.internal", "host-gateway");
+                    return (e.EndpointName,
+                        Container: (IContainer)(e.ContainerBuilderCallback?.Invoke(cb) ?? cb).Build());
                 })
                 .ToList();
 
@@ -231,7 +243,7 @@ public sealed class TestEnvironmentBuilder
             agentCts.CancelAfter(_agentConnectionTimeout);
 
             await Task.WhenAll(_endpoints.Select(ep =>
-                testHost.GetEndpoint(ep.EndpointName).WaitForConnectedAsync(agentCts.Token)));
+                testHost.GrpcService.WaitForAgentAsync(ep.EndpointName, agentCts.Token)));
 
             return new TestEnvironment(
                 testHost,
