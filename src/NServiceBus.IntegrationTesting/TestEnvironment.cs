@@ -38,7 +38,12 @@ public sealed class TestEnvironment : IAsyncDisposable
 
     /// <summary>Returns a handle to the named endpoint.</summary>
     public EndpointHandle GetEndpoint(string endpointName)
-        => _testHost.GetEndpoint(endpointName);
+    {
+        if (!_endpointContainers.TryGetValue(endpointName, out var container))
+            throw new InvalidOperationException(
+                $"No endpoint named '{endpointName}' was registered.");
+        return new EndpointHandle(_testHost.GrpcService, endpointName, container);
+    }
 
     /// <summary>
     /// Creates an ObserveContext for the given correlation ID. Add conditions with

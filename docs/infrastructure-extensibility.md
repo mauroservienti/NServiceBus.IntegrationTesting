@@ -166,6 +166,25 @@ as the second argument. It receives the pre-configured builder and must return t
 Because Testcontainers builders are immutable, each `With*` call returns a new instance. The
 callback must return the result of the chain — not just call methods on the input.
 
+The same `containerBuilder` escape hatch is available on `AddEndpoint`. The primary use case
+there is exposing container ports so the test process can query the endpoint over HTTP:
+
+```csharp
+.AddEndpoint("MyEndpoint", "MyEndpoint.Testing/Dockerfile",
+    containerBuilder: b => b.WithPortBinding(8080, assignRandomHostPort: true))
+```
+
+Retrieve the mapped host port after `StartAsync` via `EndpointHandle`:
+
+```csharp
+var baseUrl = _env.GetEndpoint("MyEndpoint").GetBaseUrl(8080);
+// e.g. "http://localhost:52341"
+var client = new HttpClient { BaseAddress = new Uri(baseUrl) };
+```
+
+Always use `assignRandomHostPort: true` — fixed host ports cause conflicts when tests run in
+parallel across multiple suites or CI jobs.
+
 `ConnectionStringEnvVarName` is auto-derived from `Key` when left unset (e.g. key `"redis"` →
 `REDIS_CONNECTION_STRING`). Set it explicitly only when you need a name that doesn't follow that
 convention.

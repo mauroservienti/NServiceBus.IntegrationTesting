@@ -11,6 +11,8 @@ namespace NServiceBus.IntegrationTesting
     {
         public string EndpointName { get; }
         public System.Threading.Tasks.Task<string> ExecuteScenarioAsync(string scenarioName, System.Collections.Generic.Dictionary<string, string>? args = null, System.Threading.CancellationToken cancellationToken = default) { }
+        public string GetBaseUrl(int containerPort, string scheme = "http") { }
+        public int GetMappedPort(int containerPort) { }
     }
     public sealed class HandlerInvokedEvent : System.IEquatable<NServiceBus.IntegrationTesting.HandlerInvokedEvent>
     {
@@ -98,7 +100,7 @@ namespace NServiceBus.IntegrationTesting
     public sealed class TestEnvironmentBuilder
     {
         public TestEnvironmentBuilder() { }
-        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? containerOptions = null) { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? containerOptions = null, System.Func<DotNet.Testcontainers.Builders.ContainerBuilder, DotNet.Testcontainers.Builders.ContainerBuilder>? containerBuilder = null) { }
         public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.TestEnvironment> StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseInfrastructure(string key, string defaultEnvVarName, System.Func<DotNet.Testcontainers.Networks.INetwork, DotNet.Testcontainers.Containers.IContainer> buildContainer, string connectionString) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock(System.Action<NServiceBus.IntegrationTesting.WireMockOptions>? wireMockOptions = null) { }
@@ -112,7 +114,6 @@ namespace NServiceBus.IntegrationTesting
         public string ContainerAddress { get; }
         public int Port { get; }
         public System.Threading.Tasks.ValueTask DisposeAsync() { }
-        public NServiceBus.IntegrationTesting.EndpointHandle GetEndpoint(string endpointName) { }
         public NServiceBus.IntegrationTesting.ObserveContext Observe(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task StartAsync() { }
     }

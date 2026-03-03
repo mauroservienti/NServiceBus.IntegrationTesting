@@ -1,20 +1,26 @@
+using DotNet.Testcontainers.Containers;
+
 namespace NServiceBus.IntegrationTesting;
 
 /// <summary>
 /// A handle to a named endpoint registered with the test host.
-/// Provides endpoint-scoped operations: waiting for the agent to connect
-/// and executing scenarios.
+/// Provides endpoint-scoped operations: waiting for the agent to connect,
+/// executing scenarios, and resolving host-side mapped ports for any container
+/// ports exposed via the <c>containerBuilder</c> callback on
+/// <see cref="TestEnvironmentBuilder.AddEndpoint"/>.
 /// </summary>
 public sealed class EndpointHandle
 {
     readonly TestHostGrpcService _grpcService;
+    readonly IContainer _container;
 
     public string EndpointName { get; }
 
-    internal EndpointHandle(TestHostGrpcService grpcService, string endpointName)
+    internal EndpointHandle(TestHostGrpcService grpcService, string endpointName, IContainer container)
     {
         _grpcService = grpcService;
         EndpointName = endpointName;
+        _container = container;
     }
 
     /// <summary>
@@ -32,4 +38,24 @@ public sealed class EndpointHandle
         Dictionary<string, string>? args = null,
         CancellationToken cancellationToken = default)
         => _grpcService.ExecuteScenarioAsync(EndpointName, scenarioName, args, cancellationToken);
+
+    /// <summary>
+    /// Returns the host-side port that Testcontainers mapped to
+    /// <paramref name="containerPort"/>. The port must have been declared via
+    /// <c>b.WithPortBinding(<paramref name="containerPort"/>, assignRandomHostPort: true)</c>
+    /// in the <c>containerBuilder</c> callback passed to
+    /// <see cref="TestEnvironmentBuilder.AddEndpoint"/>.
+    /// </summary>
+    public int GetMappedPort(int containerPort)
+        => _container.GetMappedPublicPort(containerPort);
+
+    /// <summary>
+    /// Returns a base URL (<c>{scheme}://localhost:{mappedPort}</c>) for the given
+    /// container port. The port must have been declared via
+    /// <c>b.WithPortBinding(<paramref name="containerPort"/>, assignRandomHostPort: true)</c>
+    /// in the <c>containerBuilder</c> callback passed to
+    /// <see cref="TestEnvironmentBuilder.AddEndpoint"/>.
+    /// </summary>
+    public string GetBaseUrl(int containerPort, string scheme = "http")
+        => $"{scheme}://localhost:{GetMappedPort(containerPort)}";
 }
