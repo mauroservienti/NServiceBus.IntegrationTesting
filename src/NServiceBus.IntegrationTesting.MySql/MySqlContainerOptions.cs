@@ -68,6 +68,27 @@ public sealed class MySqlContainerOptions
     /// </summary>
     public string ImageName { get; set; } = "mysql:latest";
 
+    /// <summary>
+    /// The database name. When <see langword="null"/>, the Testcontainers default
+    /// (<c>mysqldb</c>) is used. The same resolved value is injected into the connection
+    /// string and passed to <see cref="Testcontainers.MySql.MySqlBuilder.WithDatabase"/>.
+    /// </summary>
+    public string? Database { get; set; }
+
+    /// <summary>
+    /// The MySQL username. When <see langword="null"/>, the Testcontainers default
+    /// (<c>root</c>) is used. The same resolved value is injected into the connection
+    /// string and passed to <see cref="Testcontainers.MySql.MySqlBuilder.WithUsername"/>.
+    /// </summary>
+    public string? Username { get; set; }
+
+    /// <summary>
+    /// The MySQL password. When <see langword="null"/>, the Testcontainers default
+    /// (<c>mysql</c>) is used. The same resolved value is injected into the connection
+    /// string and passed to <see cref="Testcontainers.MySql.MySqlBuilder.WithPassword"/>.
+    /// </summary>
+    public string? Password { get; set; }
+
     string? _connectionStringEnvVarName;
 
     /// <summary>

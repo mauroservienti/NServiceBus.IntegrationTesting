@@ -32,11 +32,13 @@ public static class TestEnvironmentBuilderRabbitMqExtensions
             opts.ConnectionStringEnvVarName,
             network =>
             {
-                var cb = new RabbitMqBuilder(opts.ImageName)
+                var builder = new RabbitMqBuilder(opts.ImageName)
                     .WithNetwork(network)
-                    .WithNetworkAliases(opts.NetworkAlias);
-                return (containerBuilder?.Invoke(cb) ?? cb).Build();
+                    .WithNetworkAliases(opts.NetworkAlias)
+                    .WithUsername(opts.Username ?? RabbitMqBuilder.DefaultUsername)
+                    .WithPassword(opts.Password ?? RabbitMqBuilder.DefaultPassword);
+                return (containerBuilder?.Invoke(builder) ?? builder).Build();
             },
-            $"host={opts.NetworkAlias};username={RabbitMqBuilder.DefaultUsername};password={RabbitMqBuilder.DefaultPassword}");
+            $"host={opts.NetworkAlias};username={opts.Username ?? RabbitMqBuilder.DefaultUsername};password={opts.Password ?? RabbitMqBuilder.DefaultPassword}");
     }
 }

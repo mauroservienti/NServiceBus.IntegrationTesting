@@ -45,6 +45,8 @@ The hostname `sqlserver` is the container's name on the shared Docker network â€
 | Environment variable | `SQLSERVER_CONNECTION_STRING` (derived from key) |
 | Network alias | `sqlserver` (same as key) |
 | Docker image | `mcr.microsoft.com/mssql/server:latest` |
+| Database | `master` (Testcontainers default) |
+| Password (SA) | Testcontainers default |
 
 ## Customization
 
@@ -55,6 +57,8 @@ The hostname `sqlserver` is the container's name on the shared Docker network â€
     opts.NetworkAlias = "sqlserver-2";      // Docker hostname within the shared network (defaults to key)
     opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "mcr.microsoft.com/mssql/server:2022-latest";
+    opts.Database = "mydb";                 // used in the connection string (not pre-created in the container)
+    opts.Password = "MyStr0ngP@ssword";     // injected into both the container and the connection string
 })
 ```
 

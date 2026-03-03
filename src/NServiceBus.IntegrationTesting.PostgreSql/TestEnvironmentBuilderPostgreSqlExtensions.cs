@@ -27,6 +27,9 @@ public static class TestEnvironmentBuilderPostgreSqlExtensions
     {
         var opts = new PostgreSqlContainerOptions();
         containerOptions?.Invoke(opts);
+        var database = opts.Database ?? PostgreSqlBuilder.DefaultDatabase;
+        var username = opts.Username ?? PostgreSqlBuilder.DefaultUsername;
+        var password = opts.Password ?? PostgreSqlBuilder.DefaultPassword;
         return builder.UseInfrastructure(
             opts.Key,
             opts.ConnectionStringEnvVarName,
@@ -34,10 +37,13 @@ public static class TestEnvironmentBuilderPostgreSqlExtensions
             {
                 var builder = new PostgreSqlBuilder(opts.ImageName)
                     .WithNetwork(network)
-                    .WithNetworkAliases(opts.NetworkAlias);
+                    .WithNetworkAliases(opts.NetworkAlias)
+                    .WithDatabase(database)
+                    .WithUsername(username)
+                    .WithPassword(password);
                 return (containerBuilder?.Invoke(builder) ?? builder).Build();
             },
-            $"Host={opts.NetworkAlias};Port=5432;Database={PostgreSqlBuilder.DefaultDatabase}" +
-            $";Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}");
+            $"Host={opts.NetworkAlias};Port=5432;Database={database}" +
+            $";Username={username};Password={password}");
     }
 }
