@@ -156,7 +156,7 @@ public class WhenSomeMessageIsSent
 > [!NOTE]
 > The example uses **NUnit** (`[TestFixture]`, `[OneTimeSetUp]`, `Assert.Multiple`). xUnit or MSTest users need to adapt the fixture lifecycle and assertion calls accordingly.
 
-`FindRepoRoot()` is a helper you write once in your test project. It walks up from the test output directory until it finds the `.git` folder, giving `TestEnvironmentBuilder` a stable base path for Dockerfile locations regardless of where `dotnet test` is invoked from.
+`FindRepoRoot()` is a helper you write once in your test project. It walks up from the test output directory until it finds a marker — `.git`, a `.sln` file, or any other anchor that matches where your Dockerfiles are rooted — giving `TestEnvironmentBuilder` a stable base path regardless of where `dotnet test` is invoked from.
 
 <!-- Intentionally not a relative link, since this README is also included in the NuGet package -->
 For a full walkthrough and API reference, see the **[documentation](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/README.md)** or the **[getting started guide](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/getting-started.md)**.
@@ -175,14 +175,21 @@ public class SomeMessageScenario : Scenario
     public override string Name => "SomeMessage";
 
     public override async Task Execute(IMessageSession session,
-        Dictionary<string, string> args, CancellationToken ct)
+        Dictionary<string, string> args, CancellationToken cancellationToken = default)
         => await session.Send(new SomeMessage { Id = Guid.Parse(args["ID"]) });
 }
 ```
 <sup><a href='/src/Snippets/ScenarioSnippets.cs#L7-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-scenario' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-**`ObserveContext`** — fluent API for waiting on events correlated by scenario invocation. Conditions: `.HandlerInvoked`, `.SagaInvoked`, `.MessageDispatched`, `.MessageFailed`. Each condition type supports no-arg, single-event predicate, and list predicate overloads.
+**`ObserveContext`** — fluent API for waiting on events correlated by scenario invocation. Register all conditions before calling `.WhenAllAsync()` — the same method names serve double duty: called on the builder they register a condition; called on the returned `ObserveResults` they retrieve the matched event. If the cancellation token fires before all conditions are met, `WhenAllAsync()` throws `OperationCanceledException`. Each condition type supports no-arg, single-event predicate, and list predicate overloads.
+
+| Condition | Key result properties |
+|---|---|
+| `.HandlerInvoked(name)` | `.EndpointName` |
+| `.SagaInvoked(name)` | `.EndpointName`, `.SagaIsNew`, `.SagaIsCompleted` |
+| `.MessageDispatched(name)` | `.EndpointName`, `.Intent` (e.g. `"Publish"`, `"Send"`) |
+| `.MessageFailed()` | `.EndpointName`, `.ExceptionMessage` |
 
 **Production / testing separation** — production endpoints have zero testing dependencies. Each endpoint has a companion `*.Testing` project that wraps the production config with `IntegrationTestingBootstrap` and registers scenarios.
 
