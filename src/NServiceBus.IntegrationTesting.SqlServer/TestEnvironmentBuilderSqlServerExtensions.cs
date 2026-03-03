@@ -10,11 +10,12 @@ public static class TestEnvironmentBuilderSqlServerExtensions
     /// <summary>
     /// Adds a SQL Server container to the environment. All endpoint containers receive a
     /// connection string environment variable pointing to it via the Docker network.
-    /// Use the optional <paramref name="configure"/> callback to override the Docker image
-    /// or the global default environment variable name
-    /// (default: <c>SQLSERVER_CONNECTION_STRING</c>). Per-endpoint overrides are set via
-    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using the key
-    /// <see cref="SqlServerContainerOptions.InfrastructureKey"/>.
+    /// Use the optional <paramref name="configure"/> callback to override the Docker image,
+    /// the environment variable name, or set a custom <see cref="SqlServerContainerOptions.Key"/>
+    /// and <see cref="SqlServerContainerOptions.NetworkAlias"/> to register multiple instances.
+    /// Per-endpoint overrides are set via
+    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using
+    /// <see cref="SqlServerContainerOptions.Key"/>.
     /// </summary>
     public static TestEnvironmentBuilder UseSqlServer(
         this TestEnvironmentBuilder builder,
@@ -23,13 +24,13 @@ public static class TestEnvironmentBuilderSqlServerExtensions
         var opts = new SqlServerContainerOptions();
         configure?.Invoke(opts);
         return builder.UseInfrastructure(
-            SqlServerContainerOptions.InfrastructureKey,
+            opts.Key,
             opts.ConnectionStringEnvVarName,
             network => new MsSqlBuilder(opts.ImageName)
                 .WithNetwork(network)
-                .WithNetworkAliases("mssql")
+                .WithNetworkAliases(opts.NetworkAlias)
                 .Build(),
-            $"Server=mssql,1433;Database={MsSqlBuilder.DefaultDatabase}" +
+            $"Server={opts.NetworkAlias},1433;Database={MsSqlBuilder.DefaultDatabase}" +
             $";User Id=sa;Password={MsSqlBuilder.DefaultPassword};TrustServerCertificate=True");
     }
 }

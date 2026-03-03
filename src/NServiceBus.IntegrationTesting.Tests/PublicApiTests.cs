@@ -37,4 +37,32 @@ public class PublicApiTests
         var publicApi = typeof(PostgreSqlContainerOptions).Assembly.GeneratePublicApi(Options);
         return Verifier.Verify(publicApi);
     }
+
+    [Test]
+    public Task MySql_PublicApi_matches_approved_snapshot()
+    {
+        var publicApi = typeof(MySqlContainerOptions).Assembly.GeneratePublicApi(Options);
+        return Verifier.Verify(publicApi);
+    }
+
+    [Test]
+    public Task MongoDb_PublicApi_matches_approved_snapshot()
+    {
+        var publicApi = typeof(MongoDbContainerOptions).Assembly.GeneratePublicApi(Options);
+        return Verifier.Verify(publicApi);
+    }
+
+    [Test]
+    public Task SqlServer_PublicApi_matches_approved_snapshot()
+    {
+        var publicApi = typeof(SqlServerContainerOptions).Assembly.GeneratePublicApi(Options);
+        return Verifier.Verify(publicApi);
+    }
+
+    [Test]
+    public Task RavenDb_PublicApi_matches_approved_snapshot()
+    {
+        var publicApi = typeof(RavenDbContainerOptions).Assembly.GeneratePublicApi(Options);
+        return Verifier.Verify(publicApi);
+    }
 }

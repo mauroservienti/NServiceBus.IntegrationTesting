@@ -32,16 +32,18 @@ persistence.ConnectionBuilder(() =>
 The injected value is an **ADO.NET connection string** (SQL Server format):
 
 ```
-Server=mssql,1433;Database=master;User Id=sa;Password=...;TrustServerCertificate=True
+Server=sqlserver,1433;Database=master;User Id=sa;Password=...;TrustServerCertificate=True
 ```
 
-The hostname `mssql` is the container's name on the shared Docker network — endpoints reach it by that name without any extra configuration.
+The hostname `sqlserver` is the container's name on the shared Docker network — endpoints reach it by that name without any extra configuration.
 
 ## Defaults
 
 | Setting | Default |
 |---|---|
-| Environment variable | `SQLSERVER_CONNECTION_STRING` |
+| Key | `sqlserver` |
+| Environment variable | `SQLSERVER_CONNECTION_STRING` (derived from key) |
+| Network alias | `sqlserver` (same as key) |
 | Docker image | `mcr.microsoft.com/mssql/server:latest` |
 
 ## Customization
@@ -49,7 +51,9 @@ The hostname `mssql` is the container's name on the shared Docker network — en
 ```csharp
 .UseSqlServer(opts =>
 {
-    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR";
+    opts.Key = "sqlserver-2";               // changes key; also auto-derives new env var name
+    opts.NetworkAlias = "sqlserver-2";      // Docker hostname within the shared network (defaults to key)
+    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "mcr.microsoft.com/mssql/server:2022-latest";
 })
 ```

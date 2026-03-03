@@ -1,16 +1,20 @@
 # Infrastructure Extensibility
 
-`TestEnvironmentBuilder` ships with built-in support for two infrastructure containers, each in
+`TestEnvironmentBuilder` ships with built-in support for infrastructure containers, each in
 its own optional NuGet package:
 
 | Package | Method | Default env var |
 |---|---|---|
 | `NServiceBus.IntegrationTesting.RabbitMQ` | `UseRabbitMQ()` | `RABBITMQ_CONNECTION_STRING` |
 | `NServiceBus.IntegrationTesting.PostgreSql` | `UsePostgreSql()` | `POSTGRESQL_CONNECTION_STRING` |
+| `NServiceBus.IntegrationTesting.MySql` | `UseMySQL()` | `MYSQL_CONNECTION_STRING` |
+| `NServiceBus.IntegrationTesting.SqlServer` | `UseSqlServer()` | `SQLSERVER_CONNECTION_STRING` |
+| `NServiceBus.IntegrationTesting.MongoDb` | `UseMongoDB()` | `MONGODB_CONNECTION_STRING` |
+| `NServiceBus.IntegrationTesting.RavenDb` | `UseRavenDB()` | `RAVENDB_CONNECTION_STRING` |
 
-Both are extension methods on `TestEnvironmentBuilder`. You only need to reference the packages
+All are extension methods on `TestEnvironmentBuilder`. You only need to reference the packages
 that match your stack; the core `NServiceBus.IntegrationTesting` package has no dependency on
-either Testcontainers module.
+any Testcontainers module.
 
 ## Adding any other infrastructure (one-off)
 
@@ -57,8 +61,48 @@ options class makes the image name and env var name configurable without couplin
 public sealed class RedisOptions
 {
     public static string InfrastructureKey => "redis";
+
+    string _key = InfrastructureKey;
+    public string Key
+    {
+        get => _key;
+        set
+        {
+            if (string.IsNullOrEmpty(value) ||
+                !value.All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c == '-') ||
+                value[0] == '-' || value[^1] == '-')
+                throw new ArgumentException(
+                    $"'{value}' is not a valid key. Keys must contain only lowercase letters, digits, and hyphens, and must not start or end with a hyphen.",
+                    nameof(value));
+            _key = value;
+        }
+    }
+
+    string? _networkAlias;
+    public string NetworkAlias
+    {
+        get => _networkAlias ?? Key;
+        set
+        {
+            if (string.IsNullOrEmpty(value) ||
+                !value.All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c == '-') ||
+                value[0] == '-' || value[^1] == '-')
+                throw new ArgumentException(
+                    $"'{value}' is not a valid network alias. Aliases must contain only lowercase letters, digits, and hyphens, and must not start or end with a hyphen.",
+                    nameof(value));
+            _networkAlias = value;
+        }
+    }
+
     public string ImageName { get; set; } = "redis:7";
-    public string ConnectionStringEnvVarName { get; set; } = "REDIS_CONNECTION_STRING";
+
+    string? _connectionStringEnvVarName;
+    public string ConnectionStringEnvVarName
+    {
+        get => _connectionStringEnvVarName
+            ?? Key.Replace("-", "_").ToUpperInvariant() + "_CONNECTION_STRING";
+        set => _connectionStringEnvVarName = value;
+    }
 }
 
 public static class TestEnvironmentBuilderRedisExtensions
@@ -70,17 +114,17 @@ public static class TestEnvironmentBuilderRedisExtensions
         var opts = new RedisOptions();
         configure?.Invoke(opts);
         return builder.UseInfrastructure(
-            RedisOptions.InfrastructureKey,
+            opts.Key,
             opts.ConnectionStringEnvVarName,
             network => new ContainerBuilder(opts.ImageName)
                 .WithNetwork(network)
-                .WithNetworkAliases("redis")
+                .WithNetworkAliases(opts.NetworkAlias)
                 .Build(),
-            "redis:6379");
+            $"{opts.NetworkAlias}:6379");
     }
 }
 ```
-<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L7-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-class' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L7-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-class' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Callers see the same fluent API as the built-in packages:
@@ -94,8 +138,43 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L41-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-usage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L81-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `InfrastructureKey` property on the options class is what endpoints reference in
-`InfrastructureEnvVarNames` to override the env var name on a per-endpoint basis.
+The `Key` instance property on the options class is what endpoints reference in
+`InfrastructureEnvVarNames` to override the env var name on a per-endpoint basis. The static
+`InfrastructureKey` exposes the canonical default value and is useful when you haven't changed
+`Key`.
+
+`ConnectionStringEnvVarName` is auto-derived from `Key` when left unset (e.g. key `"redis"` →
+`REDIS_CONNECTION_STRING`). Set it explicitly only when you need a name that doesn't follow that
+convention.
+
+`NetworkAlias` is the DNS name other containers on the Docker network use to reach this one.
+It appears as the hostname in the injected connection string value.
+
+### Multiple instances of the same type
+
+Because `Key` and `NetworkAlias` are settable, you can register more than one container of
+the same type. Give each a distinct `Key` and `NetworkAlias`:
+
+```csharp
+_env = await new TestEnvironmentBuilder()
+    .WithDockerfileDirectory(srcDir)
+    .UseRabbitMQ()
+    .UsePostgreSql(opts =>
+    {
+        opts.Key = "postgresql-primary";
+        opts.NetworkAlias = "postgres-primary";
+    })
+    .UsePostgreSql(opts =>
+    {
+        opts.Key = "postgresql-replica";
+        opts.NetworkAlias = "postgres-replica";
+    })
+    .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
+    .StartAsync();
+```
+
+Each instance gets its own env var (auto-derived: `POSTGRESQL_PRIMARY_CONNECTION_STRING` and
+`POSTGRESQL_REPLICA_CONNECTION_STRING`) and is reachable at its own Docker network hostname.

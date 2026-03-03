@@ -10,11 +10,12 @@ public static class TestEnvironmentBuilderRavenDbExtensions
     /// <summary>
     /// Adds a RavenDB container to the environment. All endpoint containers receive an
     /// environment variable with the RavenDB server URL pointing to it via the Docker network.
-    /// Use the optional <paramref name="configure"/> callback to override the Docker image
-    /// or the global default environment variable name
-    /// (default: <c>RAVENDB_URL</c>). Per-endpoint overrides are set via
-    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using the key
-    /// <see cref="RavenDbContainerOptions.InfrastructureKey"/>.
+    /// Use the optional <paramref name="configure"/> callback to override the Docker image,
+    /// the environment variable name, or set a custom <see cref="RavenDbContainerOptions.Key"/>
+    /// and <see cref="RavenDbContainerOptions.NetworkAlias"/> to register multiple instances.
+    /// Per-endpoint overrides are set via
+    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using
+    /// <see cref="RavenDbContainerOptions.Key"/>.
     /// <para>
     /// The container runs with <c>--Setup.Mode=None</c> so no setup wizard is required.
     /// The injected value is an HTTP URL: <c>http://ravendb:8080</c>.
@@ -27,15 +28,15 @@ public static class TestEnvironmentBuilderRavenDbExtensions
         var opts = new RavenDbContainerOptions();
         configure?.Invoke(opts);
         return builder.UseInfrastructure(
-            RavenDbContainerOptions.InfrastructureKey,
+            opts.Key,
             opts.ConnectionStringEnvVarName,
             network => new ContainerBuilder(opts.ImageName)
                 .WithNetwork(network)
-                .WithNetworkAliases("ravendb")
+                .WithNetworkAliases(opts.NetworkAlias)
                 .WithEnvironment("RAVEN_ARGS", $"--Setup.Mode=None --ServerUrl=http://0.0.0.0:{opts.Port}")
                 .WithExposedPort(opts.Port)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(opts.Port))
                 .Build(),
-            $"http://ravendb:{opts.Port}");
+            $"http://{opts.NetworkAlias}:{opts.Port}");
     }
 }

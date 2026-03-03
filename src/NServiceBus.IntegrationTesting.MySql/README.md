@@ -41,7 +41,9 @@ The hostname `mysql` is the container's name on the shared Docker network — en
 
 | Setting | Default |
 |---|---|
-| Environment variable | `MYSQL_CONNECTION_STRING` |
+| Key | `mysql` |
+| Environment variable | `MYSQL_CONNECTION_STRING` (derived from key) |
+| Network alias | `mysql` |
 | Docker image | `mysql:latest` |
 
 ## Customization
@@ -49,7 +51,9 @@ The hostname `mysql` is the container's name on the shared Docker network — en
 ```csharp
 .UseMySQL(opts =>
 {
-    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR";
+    opts.Key = "mysql-2";                   // changes key; also auto-derives new env var name
+    opts.NetworkAlias = "mysql-2";          // Docker hostname within the shared network (defaults to key)
+    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "mysql:8";
 })
 ```

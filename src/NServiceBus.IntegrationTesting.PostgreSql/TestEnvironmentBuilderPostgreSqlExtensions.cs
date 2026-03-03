@@ -10,11 +10,12 @@ public static class TestEnvironmentBuilderPostgreSqlExtensions
     /// <summary>
     /// Adds a PostgreSQL container to the environment. All endpoint containers receive a
     /// connection string environment variable pointing to it via the Docker network.
-    /// Use the optional <paramref name="configure"/> callback to override the Docker image
-    /// or the global default environment variable name
-    /// (default: <c>POSTGRESQL_CONNECTION_STRING</c>). Per-endpoint overrides are set via
-    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using the key
-    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>.
+    /// Use the optional <paramref name="configure"/> callback to override the Docker image,
+    /// the environment variable name, or set a custom <see cref="PostgreSqlContainerOptions.Key"/>
+    /// and <see cref="PostgreSqlContainerOptions.NetworkAlias"/> to register multiple instances.
+    /// Per-endpoint overrides are set via
+    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using
+    /// <see cref="PostgreSqlContainerOptions.Key"/>.
     /// </summary>
     public static TestEnvironmentBuilder UsePostgreSql(
         this TestEnvironmentBuilder builder,
@@ -23,13 +24,13 @@ public static class TestEnvironmentBuilderPostgreSqlExtensions
         var opts = new PostgreSqlContainerOptions();
         configure?.Invoke(opts);
         return builder.UseInfrastructure(
-            PostgreSqlContainerOptions.InfrastructureKey,
+            opts.Key,
             opts.ConnectionStringEnvVarName,
             network => new PostgreSqlBuilder(opts.ImageName)
                 .WithNetwork(network)
-                .WithNetworkAliases("postgres")
+                .WithNetworkAliases(opts.NetworkAlias)
                 .Build(),
-            $"Host=postgres;Port=5432;Database={PostgreSqlBuilder.DefaultDatabase}" +
+            $"Host={opts.NetworkAlias};Port=5432;Database={PostgreSqlBuilder.DefaultDatabase}" +
             $";Username={PostgreSqlBuilder.DefaultUsername};Password={PostgreSqlBuilder.DefaultPassword}");
     }
 }
