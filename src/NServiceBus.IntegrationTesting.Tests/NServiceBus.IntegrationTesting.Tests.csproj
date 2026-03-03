@@ -22,6 +22,10 @@
         <ProjectReference Include="..\NServiceBus.IntegrationTesting\NServiceBus.IntegrationTesting.csproj" />
         <ProjectReference Include="..\NServiceBus.IntegrationTesting.RabbitMQ\NServiceBus.IntegrationTesting.RabbitMQ.csproj" />
         <ProjectReference Include="..\NServiceBus.IntegrationTesting.PostgreSql\NServiceBus.IntegrationTesting.PostgreSql.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.MySql\NServiceBus.IntegrationTesting.MySql.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.MongoDb\NServiceBus.IntegrationTesting.MongoDb.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.SqlServer\NServiceBus.IntegrationTesting.SqlServer.csproj" />
+        <ProjectReference Include="..\NServiceBus.IntegrationTesting.RavenDb\NServiceBus.IntegrationTesting.RavenDb.csproj" />
     </ItemGroup>
 
 </Project>

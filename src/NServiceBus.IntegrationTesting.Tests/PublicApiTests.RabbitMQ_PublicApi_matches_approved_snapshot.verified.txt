@@ -5,6 +5,8 @@ namespace NServiceBus.IntegrationTesting
         public RabbitMqContainerOptions() { }
         public string ConnectionStringEnvVarName { get; set; }
         public string ImageName { get; set; }
+        public string Key { get; set; }
+        public string NetworkAlias { get; set; }
         public static string InfrastructureKey { get; }
     }
     public static class TestEnvironmentBuilderRabbitMqExtensions

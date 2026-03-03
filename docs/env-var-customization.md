@@ -7,6 +7,10 @@ into endpoint containers using a fixed set of environment variable names:
 |---|---|
 | RabbitMQ connection string | `RABBITMQ_CONNECTION_STRING` |
 | PostgreSQL connection string | `POSTGRESQL_CONNECTION_STRING` |
+| MySQL connection string | `MYSQL_CONNECTION_STRING` |
+| SQL Server connection string | `SQLSERVER_CONNECTION_STRING` |
+| MongoDB connection string | `MONGODB_CONNECTION_STRING` |
+| RavenDB connection string | `RAVENDB_CONNECTION_STRING` |
 | WireMock URL | `WIREMOCK_URL` |
 
 In practice, endpoints owned by different teams often follow different naming conventions. One
@@ -16,8 +20,8 @@ default** for all endpoints, and a **per-endpoint override** for individual cont
 
 ## Global defaults
 
-Pass a configuration callback to `UseRabbitMQ()` or `UsePostgreSql()` to change the env var
-name injected into every endpoint container:
+Pass a configuration callback to any `UseXxx()` method to change the env var name injected
+into every endpoint container:
 
 <!-- snippet: env-var-global-rabbitmq -->
 <a id='snippet-env-var-global-rabbitmq'></a>
@@ -43,8 +47,8 @@ _env = await new TestEnvironmentBuilder()
 <sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L27-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-global-postgresql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-> Both callbacks are optional. Calling `UseRabbitMQ()` or `UsePostgreSql()` with no arguments
-> continues to use the default names shown in the table above.
+> All callbacks are optional. Calling any `UseXxx()` with no arguments continues to use the
+> default names shown in the table above.
 
 ## Per-endpoint overrides
 
@@ -139,7 +143,7 @@ _env = await new TestEnvironmentBuilder()
 
 ## Adding custom infrastructure with `UseInfrastructure`
 
-`UseRabbitMQ()` and `UsePostgreSql()` are convenience wrappers around the general-purpose
+All `UseXxx()` methods are convenience wrappers around the general-purpose
 `UseInfrastructure()` method. You can use it directly to add any Testcontainers-managed
 infrastructure — no framework changes needed:
 
@@ -170,10 +174,10 @@ env var name for that infrastructure.
 For each endpoint container, the env var name is resolved as follows:
 
 1. **Per-endpoint override** — `InfrastructureEnvVarNames[key]` in `EndpointContainerOptions`
-2. **Global default** — `defaultEnvVarName` passed to `UseInfrastructure` (or the
-   `ConnectionStringEnvVarName` on `RabbitMqContainerOptions` / `PostgreSqlContainerOptions`)
-3. **Built-in default** — the names in the table at the top of this page (for `UseRabbitMQ`
-   and `UsePostgreSql` specifically)
+2. **Options default** — `ConnectionStringEnvVarName` on the infrastructure options class.
+   When not set explicitly, this is auto-derived from `Key` by uppercasing it, replacing
+   hyphens with underscores, and appending `_CONNECTION_STRING` (e.g. `Key = "postgresql"`
+   → `POSTGRESQL_CONNECTION_STRING`).
 
 The connection string *value* (i.e., the actual address and credentials) is always computed by
 the framework; only the *name* of the environment variable is customizable.

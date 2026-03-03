@@ -42,7 +42,9 @@ The hostname `mongodb` is the container's name on the shared Docker network — 
 
 | Setting | Default |
 |---|---|
-| Environment variable | `MONGODB_CONNECTION_STRING` |
+| Key | `mongodb` |
+| Environment variable | `MONGODB_CONNECTION_STRING` (derived from key) |
+| Network alias | `mongodb` |
 | Docker image | `mongo:latest` |
 
 ## Customization
@@ -50,7 +52,9 @@ The hostname `mongodb` is the container's name on the shared Docker network — 
 ```csharp
 .UseMongoDB(opts =>
 {
-    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR";
+    opts.Key = "mongodb-2";                 // changes key; also auto-derives new env var name
+    opts.NetworkAlias = "mongodb-2";        // Docker hostname within the shared network (defaults to key)
+    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "mongo:7";
 })
 ```

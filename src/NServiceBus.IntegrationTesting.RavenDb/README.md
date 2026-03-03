@@ -22,13 +22,13 @@ _env = await new TestEnvironmentBuilder()
     .StartAsync();
 ```
 
-The RavenDB container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `RAVENDB_URL` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
+The RavenDB container is joined to the shared Docker network and `TestEnvironmentBuilder` injects the `RAVENDB_CONNECTION_STRING` environment variable into every endpoint container. No Docker network wiring is needed on your side — your endpoint just reads the variable at startup:
 
 ```csharp
 var persistence = endpointConfiguration.UsePersistence<RavenDBPersistence>();
 persistence.SetDefaultDocumentStore(new DocumentStore
 {
-    Urls = [Environment.GetEnvironmentVariable("RAVENDB_URL")!],
+    Urls = [Environment.GetEnvironmentVariable("RAVENDB_CONNECTION_STRING")!],
     Database = "MyEndpoint"
 });
 ```
@@ -45,7 +45,9 @@ The hostname `ravendb` is the container's name on the shared Docker network — 
 
 | Setting | Default |
 |---|---|
-| Environment variable | `RAVENDB_URL` |
+| Key | `ravendb` |
+| Environment variable | `RAVENDB_CONNECTION_STRING` (derived from key) |
+| Network alias | `ravendb` |
 | Docker image | `ravendb/ravendb:latest` |
 | Port | `8080` |
 
@@ -54,7 +56,9 @@ The hostname `ravendb` is the container's name on the shared Docker network — 
 ```csharp
 .UseRavenDB(opts =>
 {
-    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR";
+    opts.Key = "ravendb-2";                 // changes key; also auto-derives new env var name
+    opts.NetworkAlias = "ravendb-2";        // Docker hostname within the shared network (defaults to key)
+    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "ravendb/ravendb:6.0-latest";
     opts.Port = 8080;
 })

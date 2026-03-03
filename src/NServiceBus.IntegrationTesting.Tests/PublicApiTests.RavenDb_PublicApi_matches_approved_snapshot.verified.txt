@@ -1,0 +1,17 @@
+﻿namespace NServiceBus.IntegrationTesting
+{
+    public sealed class RavenDbContainerOptions
+    {
+        public RavenDbContainerOptions() { }
+        public string ConnectionStringEnvVarName { get; set; }
+        public string ImageName { get; set; }
+        public string Key { get; set; }
+        public string NetworkAlias { get; set; }
+        public int Port { get; set; }
+        public static string InfrastructureKey { get; }
+    }
+    public static class TestEnvironmentBuilderRavenDbExtensions
+    {
+        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRavenDB(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.RavenDbContainerOptions>? configure = null) { }
+    }
+}

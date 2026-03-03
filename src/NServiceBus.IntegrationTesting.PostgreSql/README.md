@@ -32,16 +32,18 @@ persistence.ConnectionBuilder(() =>
 The injected value is a standard **ADO.NET connection string**:
 
 ```
-Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=postgres
+Host=postgresql;Port=5432;Database=postgres;Username=postgres;Password=postgres
 ```
 
-The hostname `postgres` is the container's name on the shared Docker network — endpoints reach it by that name without any extra configuration.
+The hostname `postgresql` is the container's name on the shared Docker network — endpoints reach it by that name without any extra configuration.
 
 ## Defaults
 
 | Setting | Default |
 |---|---|
-| Environment variable | `POSTGRESQL_CONNECTION_STRING` |
+| Key | `postgresql` |
+| Environment variable | `POSTGRESQL_CONNECTION_STRING` (derived from key) |
+| Network alias | `postgresql` (same as key) |
 | Docker image | `postgres:latest` |
 
 ## Customization
@@ -49,7 +51,9 @@ The hostname `postgres` is the container's name on the shared Docker network —
 ```csharp
 .UsePostgreSql(opts =>
 {
-    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR";
+    opts.Key = "postgresql-2";              // changes key; also auto-derives new env var name
+    opts.NetworkAlias = "postgresql-2";     // Docker hostname within the shared network (defaults to key)
+    opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "postgres:16";
 })
 ```

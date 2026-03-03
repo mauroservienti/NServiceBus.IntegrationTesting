@@ -10,11 +10,12 @@ public static class TestEnvironmentBuilderMySqlExtensions
     /// <summary>
     /// Adds a MySQL container to the environment. All endpoint containers receive a
     /// connection string environment variable pointing to it via the Docker network.
-    /// Use the optional <paramref name="configure"/> callback to override the Docker image
-    /// or the global default environment variable name
-    /// (default: <c>MYSQL_CONNECTION_STRING</c>). Per-endpoint overrides are set via
-    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using the key
-    /// <see cref="MySqlContainerOptions.InfrastructureKey"/>.
+    /// Use the optional <paramref name="configure"/> callback to override the Docker image,
+    /// the environment variable name, or set a custom <see cref="MySqlContainerOptions.Key"/>
+    /// and <see cref="MySqlContainerOptions.NetworkAlias"/> to register multiple instances.
+    /// Per-endpoint overrides are set via
+    /// <see cref="EndpointContainerOptions.InfrastructureEnvVarNames"/> using
+    /// <see cref="MySqlContainerOptions.Key"/>.
     /// </summary>
     public static TestEnvironmentBuilder UseMySQL(
         this TestEnvironmentBuilder builder,
@@ -23,13 +24,13 @@ public static class TestEnvironmentBuilderMySqlExtensions
         var opts = new MySqlContainerOptions();
         configure?.Invoke(opts);
         return builder.UseInfrastructure(
-            MySqlContainerOptions.InfrastructureKey,
+            opts.Key,
             opts.ConnectionStringEnvVarName,
             network => new MySqlBuilder(opts.ImageName)
                 .WithNetwork(network)
-                .WithNetworkAliases("mysql")
+                .WithNetworkAliases(opts.NetworkAlias)
                 .Build(),
-            $"Server=mysql;Port=3306;Database={MySqlBuilder.DefaultDatabase}" +
+            $"Server={opts.NetworkAlias};Port=3306;Database={MySqlBuilder.DefaultDatabase}" +
             $";Uid={MySqlBuilder.DefaultUsername};Pwd={MySqlBuilder.DefaultPassword}");
     }
 }

@@ -8,8 +8,48 @@ namespace Snippets.InfrastructureExtensibility;
 public sealed class RedisOptions
 {
     public static string InfrastructureKey => "redis";
+
+    string _key = InfrastructureKey;
+    public string Key
+    {
+        get => _key;
+        set
+        {
+            if (string.IsNullOrEmpty(value) ||
+                !value.All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c == '-') ||
+                value[0] == '-' || value[^1] == '-')
+                throw new ArgumentException(
+                    $"'{value}' is not a valid key. Keys must contain only lowercase letters, digits, and hyphens, and must not start or end with a hyphen.",
+                    nameof(value));
+            _key = value;
+        }
+    }
+
+    string? _networkAlias;
+    public string NetworkAlias
+    {
+        get => _networkAlias ?? Key;
+        set
+        {
+            if (string.IsNullOrEmpty(value) ||
+                !value.All(c => char.IsAsciiLetterLower(c) || char.IsAsciiDigit(c) || c == '-') ||
+                value[0] == '-' || value[^1] == '-')
+                throw new ArgumentException(
+                    $"'{value}' is not a valid network alias. Aliases must contain only lowercase letters, digits, and hyphens, and must not start or end with a hyphen.",
+                    nameof(value));
+            _networkAlias = value;
+        }
+    }
+
     public string ImageName { get; set; } = "redis:7";
-    public string ConnectionStringEnvVarName { get; set; } = "REDIS_CONNECTION_STRING";
+
+    string? _connectionStringEnvVarName;
+    public string ConnectionStringEnvVarName
+    {
+        get => _connectionStringEnvVarName
+            ?? Key.Replace("-", "_").ToUpperInvariant() + "_CONNECTION_STRING";
+        set => _connectionStringEnvVarName = value;
+    }
 }
 
 public static class TestEnvironmentBuilderRedisExtensions
@@ -21,13 +61,13 @@ public static class TestEnvironmentBuilderRedisExtensions
         var opts = new RedisOptions();
         configure?.Invoke(opts);
         return builder.UseInfrastructure(
-            RedisOptions.InfrastructureKey,
+            opts.Key,
             opts.ConnectionStringEnvVarName,
             network => new ContainerBuilder(opts.ImageName)
                 .WithNetwork(network)
-                .WithNetworkAliases("redis")
+                .WithNetworkAliases(opts.NetworkAlias)
                 .Build(),
-            "redis:6379");
+            $"{opts.NetworkAlias}:6379");
     }
 }
 // end-snippet
