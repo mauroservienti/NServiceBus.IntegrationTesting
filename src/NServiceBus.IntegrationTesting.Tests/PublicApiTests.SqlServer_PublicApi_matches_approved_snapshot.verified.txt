@@ -11,6 +11,6 @@
     }
     public static class TestEnvironmentBuilderSqlServerExtensions
     {
-        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseSqlServer(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.SqlServerContainerOptions>? configure = null) { }
+        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseSqlServer(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.SqlServerContainerOptions>? containerOptions = null, System.Func<Testcontainers.MsSql.MsSqlBuilder, Testcontainers.MsSql.MsSqlBuilder>? containerBuilder = null) { }
     }
 }

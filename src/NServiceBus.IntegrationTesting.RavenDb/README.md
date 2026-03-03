@@ -64,6 +64,17 @@ The hostname `ravendb` is the container's name on the shared Docker network — 
 })
 ```
 
+For advanced container configuration beyond what `containerOptions` exposes (custom volumes, extra
+environment variables, non-standard wait strategies), pass a `containerBuilder` callback:
+
+```csharp
+.UseRavenDB(
+    containerBuilder: b => b
+        .WithLabel("env", "test"))
+```
+
+Because Testcontainers builders are immutable, the callback must return the result of the chain.
+
 For per-endpoint variable name overrides, see [Customizing Environment Variable Names](https://github.com/mauroservienti/NServiceBus.IntegrationTesting/blob/master/docs/env-var-customization.md).
 
 ## All packages

@@ -11,6 +11,6 @@ namespace NServiceBus.IntegrationTesting
     }
     public static class TestEnvironmentBuilderPostgreSqlExtensions
     {
-        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UsePostgreSql(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.PostgreSqlContainerOptions>? configure = null) { }
+        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UsePostgreSql(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.PostgreSqlContainerOptions>? containerOptions = null, System.Func<Testcontainers.PostgreSql.PostgreSqlBuilder, Testcontainers.PostgreSql.PostgreSqlBuilder>? containerBuilder = null) { }
     }
 }

@@ -109,22 +109,26 @@ public static class TestEnvironmentBuilderRedisExtensions
 {
     public static TestEnvironmentBuilder UseRedis(
         this TestEnvironmentBuilder builder,
-        Action<RedisOptions>? configure = null)
+        Action<RedisOptions>? containerOptions = null,
+        Func<ContainerBuilder, ContainerBuilder>? containerBuilder = null)
     {
         var opts = new RedisOptions();
-        configure?.Invoke(opts);
+        containerOptions?.Invoke(opts);
         return builder.UseInfrastructure(
             opts.Key,
             opts.ConnectionStringEnvVarName,
-            network => new ContainerBuilder(opts.ImageName)
-                .WithNetwork(network)
-                .WithNetworkAliases(opts.NetworkAlias)
-                .Build(),
+            network =>
+            {
+                var builder = new ContainerBuilder(opts.ImageName)
+                    .WithNetwork(network)
+                    .WithNetworkAliases(opts.NetworkAlias);
+                return (containerBuilder?.Invoke(builder) ?? builder).Build();
+            },
             $"{opts.NetworkAlias}:6379");
     }
 }
 ```
-<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L7-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-class' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L7-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-class' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Callers see the same fluent API as the built-in packages:
@@ -138,13 +142,29 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L81-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-usage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/InfrastructureExtensibilitySnippets.cs#L85-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-infra-extension-usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Key` instance property on the options class is what endpoints reference in
 `InfrastructureEnvVarNames` to override the env var name on a per-endpoint basis. The static
 `InfrastructureKey` exposes the canonical default value and is useful when you haven't changed
 `Key`.
+
+### Escape hatch: full container customization
+
+When `containerOptions` doesn't expose everything you need — custom volumes, extra environment
+variables, non-standard wait strategies, additional labels — pass a `containerBuilder` callback
+as the second argument. It receives the pre-configured builder and must return the modified one:
+
+```csharp
+.UseRedis(
+    containerBuilder: b => b
+        .WithEnvironment("REDIS_PASSWORD", "secret")
+        .WithLabel("env", "test"))
+```
+
+Because Testcontainers builders are immutable, each `With*` call returns a new instance. The
+callback must return the result of the chain — not just call methods on the input.
 
 `ConnectionStringEnvVarName` is auto-derived from `Key` when left unset (e.g. key `"redis"` →
 `REDIS_CONNECTION_STRING`). Set it explicitly only when you need a name that doesn't follow that

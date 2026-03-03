@@ -12,6 +12,6 @@
     }
     public static class TestEnvironmentBuilderRavenDbExtensions
     {
-        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRavenDB(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.RavenDbContainerOptions>? configure = null) { }
+        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseRavenDB(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.RavenDbContainerOptions>? containerOptions = null, System.Func<DotNet.Testcontainers.Builders.ContainerBuilder, DotNet.Testcontainers.Builders.ContainerBuilder>? containerBuilder = null) { }
     }
 }

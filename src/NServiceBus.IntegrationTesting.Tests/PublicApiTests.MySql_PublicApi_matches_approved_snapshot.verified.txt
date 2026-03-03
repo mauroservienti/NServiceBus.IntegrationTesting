@@ -11,6 +11,6 @@
     }
     public static class TestEnvironmentBuilderMySqlExtensions
     {
-        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseMySQL(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.MySqlContainerOptions>? configure = null) { }
+        public static NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseMySQL(this NServiceBus.IntegrationTesting.TestEnvironmentBuilder builder, System.Action<NServiceBus.IntegrationTesting.MySqlContainerOptions>? containerOptions = null, System.Func<Testcontainers.MySql.MySqlBuilder, Testcontainers.MySql.MySqlBuilder>? containerBuilder = null) { }
     }
 }
