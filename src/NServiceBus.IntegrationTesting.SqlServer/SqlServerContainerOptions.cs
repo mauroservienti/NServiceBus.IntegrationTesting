@@ -68,6 +68,20 @@ public sealed class SqlServerContainerOptions
     /// </summary>
     public string ImageName { get; set; } = "mcr.microsoft.com/mssql/server:latest";
 
+    /// <summary>
+    /// The database name used in the injected connection string. When <see langword="null"/>,
+    /// the Testcontainers default (<c>master</c>) is used. The database is not pre-created in
+    /// the container; the application or persistence layer is responsible for creating it.
+    /// </summary>
+    public string? Database { get; set; }
+
+    /// <summary>
+    /// The SA password. When <see langword="null"/>, the Testcontainers default is used.
+    /// The same resolved value is injected into the connection string and passed to
+    /// <see cref="Testcontainers.MsSql.MsSqlBuilder.WithPassword"/>.
+    /// </summary>
+    public string? Password { get; set; }
+
     string? _connectionStringEnvVarName;
 
     /// <summary>

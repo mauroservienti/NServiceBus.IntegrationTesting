@@ -84,4 +84,18 @@ public sealed class RabbitMqContainerOptions
             ?? Key.Replace("-", "_").ToUpperInvariant() + "_CONNECTION_STRING";
         set => _connectionStringEnvVarName = value;
     }
+
+    /// <summary>
+    /// The RabbitMQ username. When <see langword="null"/>, the Testcontainers default
+    /// (<c>guest</c>) is used. The same resolved value is injected into the connection string
+    /// and passed to <see cref="Testcontainers.RabbitMq.RabbitMqBuilder.WithUsername"/>.
+    /// </summary>
+    public string? Username { get; set; }
+
+    /// <summary>
+    /// The RabbitMQ password. When <see langword="null"/>, the Testcontainers default
+    /// (<c>guest</c>) is used. The same resolved value is injected into the connection string
+    /// and passed to <see cref="Testcontainers.RabbitMq.RabbitMqBuilder.WithPassword"/>.
+    /// </summary>
+    public string? Password { get; set; }
 }

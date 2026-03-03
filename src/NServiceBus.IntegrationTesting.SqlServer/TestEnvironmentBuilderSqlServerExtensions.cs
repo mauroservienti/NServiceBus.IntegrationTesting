@@ -28,6 +28,8 @@ public static class TestEnvironmentBuilderSqlServerExtensions
     {
         var opts = new SqlServerContainerOptions();
         containerOptions?.Invoke(opts);
+        var database = opts.Database ?? MsSqlBuilder.DefaultDatabase;
+        var password = opts.Password ?? MsSqlBuilder.DefaultPassword;
         return builder.UseInfrastructure(
             opts.Key,
             opts.ConnectionStringEnvVarName,
@@ -35,11 +37,11 @@ public static class TestEnvironmentBuilderSqlServerExtensions
             {
                 var builder = new MsSqlBuilder(opts.ImageName)
                     .WithNetwork(network)
-                    .WithNetworkAliases(opts.NetworkAlias);
-                
+                    .WithNetworkAliases(opts.NetworkAlias)
+                    .WithPassword(password);
                 return (containerBuilder?.Invoke(builder) ?? builder).Build();
             },
-            $"Server={opts.NetworkAlias},1433;Database={MsSqlBuilder.DefaultDatabase}" +
-            $";User Id=sa;Password={MsSqlBuilder.DefaultPassword};TrustServerCertificate=True");
+            $"Server={opts.NetworkAlias},1433;Database={database}" +
+            $";User Id=sa;Password={password};TrustServerCertificate=True");
     }
 }

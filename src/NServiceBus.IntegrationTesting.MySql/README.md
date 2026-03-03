@@ -43,8 +43,11 @@ The hostname `mysql` is the container's name on the shared Docker network — en
 |---|---|
 | Key | `mysql` |
 | Environment variable | `MYSQL_CONNECTION_STRING` (derived from key) |
-| Network alias | `mysql` |
+| Network alias | `mysql` (same as key) |
 | Docker image | `mysql:latest` |
+| Database | `mysqldb` (Testcontainers default) |
+| Username | `root` (Testcontainers default) |
+| Password | `mysql` (Testcontainers default) |
 
 ## Customization
 
@@ -55,6 +58,9 @@ The hostname `mysql` is the container's name on the shared Docker network — en
     opts.NetworkAlias = "mysql-2";          // Docker hostname within the shared network (defaults to key)
     opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "mysql:8";
+    opts.Database = "mydb";                 // injected into both the container and the connection string
+    opts.Username = "myuser";
+    opts.Password = "mypassword";
 })
 ```
 

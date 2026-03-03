@@ -27,6 +27,9 @@ public static class TestEnvironmentBuilderMySqlExtensions
     {
         var opts = new MySqlContainerOptions();
         containerOptions?.Invoke(opts);
+        var database = opts.Database ?? MySqlBuilder.DefaultDatabase;
+        var username = opts.Username ?? MySqlBuilder.DefaultUsername;
+        var password = opts.Password ?? MySqlBuilder.DefaultPassword;
         return builder.UseInfrastructure(
             opts.Key,
             opts.ConnectionStringEnvVarName,
@@ -34,10 +37,13 @@ public static class TestEnvironmentBuilderMySqlExtensions
             {
                 var builder = new MySqlBuilder(opts.ImageName)
                     .WithNetwork(network)
-                    .WithNetworkAliases(opts.NetworkAlias);
+                    .WithNetworkAliases(opts.NetworkAlias)
+                    .WithDatabase(database)
+                    .WithUsername(username)
+                    .WithPassword(password);
                 return (containerBuilder?.Invoke(builder) ?? builder).Build();
             },
-            $"Server={opts.NetworkAlias};Port=3306;Database={MySqlBuilder.DefaultDatabase}" +
-            $";Uid={MySqlBuilder.DefaultUsername};Pwd={MySqlBuilder.DefaultPassword}");
+            $"Server={opts.NetworkAlias};Port=3306;Database={database}" +
+            $";Uid={username};Pwd={password}");
     }
 }

@@ -43,8 +43,10 @@ The hostname `rabbitmq` is the container's name on the shared Docker network —
 |---|---|
 | Key | `rabbitmq` |
 | Environment variable | `RABBITMQ_CONNECTION_STRING` (derived from key) |
-| Network alias | `rabbitmq` |
+| Network alias | `rabbitmq` (same as key) |
 | Docker image | `rabbitmq:management` |
+| Username | `guest` (Testcontainers default) |
+| Password | `guest` (Testcontainers default) |
 
 ## Customization
 
@@ -55,6 +57,8 @@ The hostname `rabbitmq` is the container's name on the shared Docker network —
     opts.NetworkAlias = "rabbitmq-2";       // Docker hostname within the shared network (defaults to key)
     opts.ConnectionStringEnvVarName = "MY_CUSTOM_VAR"; // explicit env var name override
     opts.ImageName = "rabbitmq:3-management";
+    opts.Username = "myuser";               // injected into both the container and the connection string
+    opts.Password = "mypassword";
 })
 ```
 

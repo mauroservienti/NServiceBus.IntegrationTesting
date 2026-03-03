@@ -68,6 +68,27 @@ public sealed class PostgreSqlContainerOptions
     /// </summary>
     public string ImageName { get; set; } = "postgres:latest";
 
+    /// <summary>
+    /// The database name. When <see langword="null"/>, the Testcontainers default
+    /// (<c>postgres</c>) is used. The same resolved value is injected into the connection
+    /// string and passed to <see cref="Testcontainers.PostgreSql.PostgreSqlBuilder.WithDatabase"/>.
+    /// </summary>
+    public string? Database { get; set; }
+
+    /// <summary>
+    /// The PostgreSQL username. When <see langword="null"/>, the Testcontainers default
+    /// (<c>postgres</c>) is used. The same resolved value is injected into the connection
+    /// string and passed to <see cref="Testcontainers.PostgreSql.PostgreSqlBuilder.WithUsername"/>.
+    /// </summary>
+    public string? Username { get; set; }
+
+    /// <summary>
+    /// The PostgreSQL password. When <see langword="null"/>, the Testcontainers default
+    /// (<c>postgres</c>) is used. The same resolved value is injected into the connection
+    /// string and passed to <see cref="Testcontainers.PostgreSql.PostgreSqlBuilder.WithPassword"/>.
+    /// </summary>
+    public string? Password { get; set; }
+
     string? _connectionStringEnvVarName;
 
     /// <summary>
