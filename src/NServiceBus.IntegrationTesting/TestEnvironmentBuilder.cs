@@ -22,6 +22,7 @@ public sealed class TestEnvironmentBuilder
 
     readonly List<InfrastructureDeclaration> _infrastructure = [];
     readonly List<EndpointRegistration> _endpoints = [];
+    readonly List<ContainerRegistration> _containers = [];
 
     record InfrastructureDeclaration(
         string Key,
@@ -30,6 +31,9 @@ public sealed class TestEnvironmentBuilder
         string ConnectionString);
 
     record EndpointRegistration(string EndpointName, string Dockerfile, EndpointContainerOptions Options,
+        Func<ContainerBuilder, ContainerBuilder>? ContainerBuilderCallback);
+
+    record ContainerRegistration(string Name, string Dockerfile, EndpointContainerOptions Options,
         Func<ContainerBuilder, ContainerBuilder>? ContainerBuilderCallback);
 
     /// <summary>
@@ -135,13 +139,40 @@ public sealed class TestEnvironmentBuilder
         Action<EndpointContainerOptions>? containerOptions = null,
         Func<ContainerBuilder, ContainerBuilder>? containerBuilder = null)
     {
-        if (_endpoints.Any(e => e.EndpointName == endpointName))
+        if (_endpoints.Any(e => e.EndpointName == endpointName) ||
+            _containers.Any(c => c.Name == endpointName))
             throw new ArgumentException(
                 $"An endpoint named '{endpointName}' has already been added.", nameof(endpointName));
 
         var options = new EndpointContainerOptions();
         containerOptions?.Invoke(options);
         _endpoints.Add(new EndpointRegistration(endpointName, dockerfile, options, containerBuilder));
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a container that participates in the test environment (same Docker network,
+    /// same lifecycle) but does not host an NServiceBus agent. Use this for non-NServiceBus
+    /// services such as ASP.NET Web APIs, sidecars, or other dependencies that your endpoints
+    /// communicate with during tests. Access the running container via
+    /// <see cref="TestEnvironment.GetContainer"/>.
+    /// <para>
+    /// Unlike <see cref="AddEndpoint"/>, no agent-connection wait is performed for containers
+    /// registered with this method.
+    /// </para>
+    /// </summary>
+    public TestEnvironmentBuilder AddContainer(string name, string dockerfile,
+        Action<EndpointContainerOptions>? containerOptions = null,
+        Func<ContainerBuilder, ContainerBuilder>? containerBuilder = null)
+    {
+        if (_containers.Any(c => c.Name == name) ||
+            _endpoints.Any(e => e.EndpointName == name))
+            throw new ArgumentException(
+                $"A container named '{name}' has already been added.", nameof(name));
+
+        var options = new EndpointContainerOptions();
+        containerOptions?.Invoke(options);
+        _containers.Add(new ContainerRegistration(name, dockerfile, options, containerBuilder));
         return this;
     }
 
@@ -189,7 +220,7 @@ public sealed class TestEnvironmentBuilder
         List<IContainer> infraContainers = [];
         TestHostServer? testHost = null;
         WireMockServer? wireMock = null;
-        List<(string EndpointName, IContainer Container)> containerEntries = [];
+        List<(string Name, bool HasAgent, IContainer Container)> containerEntries = [];
 
         try
         {
@@ -231,11 +262,16 @@ public sealed class TestEnvironmentBuilder
             // and the subsequent ExistsWithIdAsync check succeeds, avoiding the BuildKit race
             // condition where the async tagging completes after Testcontainers checks.
             var imageEntries = _endpoints
-                .Select(ep => (ep.EndpointName, ep.Options, ep.ContainerBuilderCallback,
+                .Select(ep => (Name: ep.EndpointName, ep.Options, ep.ContainerBuilderCallback,
+                    HasAgent: true, ep.Dockerfile))
+                .Concat(_containers
+                    .Select(c => (Name: c.Name, c.Options, c.ContainerBuilderCallback,
+                        HasAgent: false, c.Dockerfile)))
+                .Select(r => (r.Name, r.Options, r.ContainerBuilderCallback, r.HasAgent,
                     Image: new ImageFromDockerfileBuilder()
                         .WithDockerfileDirectory(_dockerfileDirectory)
-                        .WithDockerfile(ep.Dockerfile)
-                        .WithName($"localhost/nsb-integration-testing/{ep.EndpointName.ToLowerInvariant()}:latest")
+                        .WithDockerfile(r.Dockerfile)
+                        .WithName($"localhost/nsb-integration-testing/{r.Name.ToLowerInvariant()}:latest")
                         .Build()))
                 .ToList();
 
@@ -279,7 +315,7 @@ public sealed class TestEnvironmentBuilder
                         .WithNetwork(network)
                         .WithEnvironment(envVars)
                         .WithExtraHost("host.docker.internal", "host-gateway");
-                    return (e.EndpointName,
+                    return (e.Name, e.HasAgent,
                         Container: (IContainer)(e.ContainerBuilderCallback?.Invoke(cb) ?? cb).Build());
                 })
                 .ToList();
@@ -290,21 +326,52 @@ public sealed class TestEnvironmentBuilder
             using var agentCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             agentCts.CancelAfter(_agentConnectionTimeout);
 
-            await Task.WhenAll(_endpoints.Select(ep =>
-                testHost.GrpcService.WaitForAgentAsync(ep.EndpointName, agentCts.Token)));
+            var agentWaitTasks = _endpoints
+                .Select(async ep =>
+                {
+                    bool connected;
+                    try
+                    {
+                        await testHost.GrpcService.WaitForAgentAsync(ep.EndpointName, agentCts.Token);
+                        connected = true;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        connected = false;
+                    }
+                    return (ep.EndpointName, connected);
+                })
+                .ToList();
+
+            var agentResults = await Task.WhenAll(agentWaitTasks);
+            var notConnected = agentResults
+                .Where(r => !r.connected)
+                .Select(r => r.EndpointName)
+                .ToList();
+
+            if (notConnected.Count > 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                throw new InvalidOperationException(
+                    $"The following endpoints did not connect within the {_agentConnectionTimeout} timeout: " +
+                    $"{string.Join(", ", notConnected.Select(n => $"'{n}'"))}. " +
+                    "If any of these containers do not host an NServiceBus agent, " +
+                    "use AddContainer() instead of AddEndpoint().");
+            }
 
             return new TestEnvironment(
                 testHost,
                 network,
                 wireMock,
                 infraContainers,
-                containerEntries.ToDictionary(e => e.EndpointName, e => e.Container));
+                containerEntries.Where(e => e.HasAgent).ToDictionary(e => e.Name, e => e.Container),
+                containerEntries.Where(e => !e.HasAgent).ToDictionary(e => e.Name, e => e.Container));
         }
         catch
         {
             // Best-effort cleanup: attempt each disposal independently so a failure in
             // one step does not prevent the remaining resources from being released.
-            foreach (var (_, container) in containerEntries)
+            foreach (var (_, _, container) in containerEntries)
             {
                 try { await container.StopAsync(); } catch { }
                 try { await container.DisposeAsync(); } catch { }

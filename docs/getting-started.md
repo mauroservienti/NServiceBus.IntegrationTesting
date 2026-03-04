@@ -994,7 +994,12 @@ public class WhenSomeMessageIsSent
 
 ### Agent does not connect within the timeout
 
-- Increase `WithAgentConnectionTimeout` for slower machines or CI environments.
+When `StartAsync` throws `InvalidOperationException: The following endpoints did not connect within the timeout: 'MyApi'`, check the following:
+
+- **Wrong method**: if the named container does not host an NServiceBus agent (e.g., it is an ASP.NET Web API or a sidecar), register it with `AddContainer()` instead of `AddEndpoint()`. Only `AddEndpoint` waits for an agent connection.
+- **Endpoint name mismatch**: the name passed to `AddEndpoint("Name", ...)` must exactly match the name passed to `IntegrationTestingBootstrap.RunAsync("Name", ...)` in the companion `*.Testing` project's `Program.cs`.
+- **Missing agent bootstrap**: ensure the `*.Testing` project's `Program.cs` calls `IntegrationTestingBootstrap.RunAsync(...)` rather than starting NServiceBus directly.
+- **Slow startup**: increase `WithAgentConnectionTimeout` for slower machines or CI environments.
 - Check that `NSBUS_TESTING_HOST` is not blocked by a firewall rule on the host.
 - Ensure `WithExtraHost("host.docker.internal", "host-gateway")` resolves correctly on Linux Docker Engine (this is applied automatically by `TestEnvironmentBuilder`).
 - Dump the container logs for the failing endpoint to see the startup error:
@@ -1052,7 +1057,8 @@ full NServiceBus headers of the failed message.
 | `.UseMongoDB(containerOptions?, containerBuilder?)` | Starts a MongoDB container; injects `MONGODB_CONNECTION_STRING` |
 | `.UseRavenDB(containerOptions?, containerBuilder?)` | Starts a RavenDB container; injects `RAVENDB_CONNECTION_STRING` |
 | `.UseWireMock()` | Starts embedded WireMock stub server; injects `WIREMOCK_URL` |
-| `.AddEndpoint(name, dockerfile, containerOptions?, containerBuilder?)` | Registers an endpoint container to build and start |
+| `.AddEndpoint(name, dockerfile, containerOptions?, containerBuilder?)` | Registers an NServiceBus endpoint container (with agent); waits for agent connection on startup |
+| `.AddContainer(name, dockerfile, containerOptions?, containerBuilder?)` | Registers any Docker container that does **not** host an NServiceBus agent (e.g., ASP.NET Web APIs, sidecars); participates in the shared network and lifecycle but no agent-connection wait is performed |
 | `.WithAgentConnectionTimeout(ts)` | Overrides the 120 s default connection wait |
 | `.StartAsync()` | Builds and starts everything; returns `TestEnvironment` |
 
@@ -1061,9 +1067,10 @@ full NServiceBus headers of the failed message.
 | Member | Description |
 |---|---|
 | `GetEndpoint(name)` | Returns an `EndpointHandle` for the named endpoint |
+| `GetContainer(name)` | Returns a `ContainerHandle` for a container registered with `AddContainer` |
 | `Observe(correlationId, ct)` | Returns an `ObserveContext` for the given correlation ID |
 | `WireMock` | The embedded `WireMockServer`, or `null` if not configured |
-| `GetEndpointContainerLogsAsync(name)` | Returns `(stdout, stderr)` for the named container |
+| `GetEndpointContainerLogsAsync(name)` | Returns `(stdout, stderr)` for the named endpoint container |
 | `DisposeAsync()` | Stops and disposes all containers and the Docker network |
 
 ### `EndpointHandle`
@@ -1074,6 +1081,17 @@ full NServiceBus headers of the failed message.
 | `ExecuteScenarioAsync(name, args?, ct?)` | Triggers a scenario; returns the correlation ID |
 | `GetMappedPort(containerPort)` | Returns the host-side port Testcontainers mapped to `containerPort` |
 | `GetBaseUrl(containerPort, scheme?)` | Returns `{scheme}://localhost:{mappedPort}`; `scheme` defaults to `"http"` |
+
+### `ContainerHandle`
+
+Returned by `TestEnvironment.GetContainer(name)` for containers registered with `AddContainer`.
+
+| Member | Description |
+|---|---|
+| `Name` | The name this container was registered under |
+| `GetMappedPort(containerPort)` | Returns the host-side port Testcontainers mapped to `containerPort` |
+| `GetBaseUrl(containerPort, scheme?)` | Returns `{scheme}://localhost:{mappedPort}`; `scheme` defaults to `"http"` |
+| `GetLogsAsync()` | Returns `(Stdout, Stderr)` for this container |
 
 ### `ObserveContext`
 
