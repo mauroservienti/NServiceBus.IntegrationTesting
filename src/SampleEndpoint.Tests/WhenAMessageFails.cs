@@ -25,10 +25,8 @@ public class WhenAMessageFails
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        var srcDir = Path.Combine(FindRepoRoot(), "src");
-
         _env = await new TestEnvironmentBuilder()
-            .WithDockerfileDirectory(srcDir)
+            .WithDockerfileDirectory(TestEnvironmentBuilder.FindRootByDirectory(".git", "src"))
             .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
@@ -89,17 +87,5 @@ public class WhenAMessageFails
             Assert.That(failure.Headers["NServiceBus.EnclosedMessageTypes"].Contains("FailingMessage"), Is.True);
             Assert.That(failure.ExceptionMessage, Does.Contain("Intentional failure"));
         });
-    }
-
-    // ── Helpers ─────────────────────────────────────────────────────────────
-
-    static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !dir.GetDirectories(".git").Any())
-            dir = dir.Parent;
-        return dir?.FullName
-            ?? throw new InvalidOperationException(
-                "Cannot locate repository root. Ensure the test runs inside a git repository.");
     }
 }
