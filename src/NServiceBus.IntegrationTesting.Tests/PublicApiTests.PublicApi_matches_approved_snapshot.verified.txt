@@ -106,6 +106,8 @@ namespace NServiceBus.IntegrationTesting
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseWireMock(System.Action<NServiceBus.IntegrationTesting.WireMockOptions>? wireMockOptions = null) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithAgentConnectionTimeout(System.TimeSpan timeout) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder WithDockerfileDirectory(string directory) { }
+        public static string FindRootByDirectory(string markerDirectory, string? subPath = null) { }
+        public static string FindRootByFile(string filePattern, string? subPath = null) { }
     }
     public sealed class TestHostServer : System.IAsyncDisposable
     {

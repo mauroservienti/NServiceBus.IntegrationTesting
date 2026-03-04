@@ -67,6 +67,54 @@ public sealed class TestEnvironmentBuilder
     }
 
     /// <summary>
+    /// Locates the repository root by walking up from <see cref="AppContext.BaseDirectory"/>
+    /// until a directory named <paramref name="markerDirectory"/> is found, then returns
+    /// that root (or the root joined with <paramref name="subPath"/> when provided).
+    /// Throws <see cref="DirectoryNotFoundException"/> if the marker is never found.
+    /// </summary>
+    /// <param name="markerDirectory">Name of the directory to look for, e.g. <c>".git"</c>.</param>
+    /// <param name="subPath">Optional relative path to append to the found root, e.g. <c>"src"</c>.</param>
+    public static string FindRootByDirectory(string markerDirectory, string? subPath = null)
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (current.GetDirectories(markerDirectory).Length > 0)
+            {
+                var root = current.FullName;
+                return subPath is null ? root : Path.Combine(root, subPath);
+            }
+            current = current.Parent;
+        }
+        throw new DirectoryNotFoundException(
+            $"Could not find a directory named '{markerDirectory}' in '{AppContext.BaseDirectory}' or any of its parents.");
+    }
+
+    /// <summary>
+    /// Locates the repository root by walking up from <see cref="AppContext.BaseDirectory"/>
+    /// until a file matching <paramref name="filePattern"/> is found, then returns
+    /// that root (or the root joined with <paramref name="subPath"/> when provided).
+    /// Throws <see cref="FileNotFoundException"/> if the marker is never found.
+    /// </summary>
+    /// <param name="filePattern">File name or glob pattern to search for, e.g. <c>"*.sln"</c>.</param>
+    /// <param name="subPath">Optional relative path to append to the found root, e.g. <c>"src"</c>.</param>
+    public static string FindRootByFile(string filePattern, string? subPath = null)
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (current.GetFiles(filePattern).Length > 0)
+            {
+                var root = current.FullName;
+                return subPath is null ? root : Path.Combine(root, subPath);
+            }
+            current = current.Parent;
+        }
+        throw new FileNotFoundException(
+            $"Could not find a file matching '{filePattern}' in '{AppContext.BaseDirectory}' or any of its parents.");
+    }
+
+    /// <summary>
     /// Registers an endpoint to run as a Docker container.
     /// <paramref name="dockerfile"/> is the path to the Dockerfile relative to the
     /// directory set via WithDockerfileDirectory.
