@@ -823,6 +823,204 @@ _env = await new TestEnvironmentBuilder()
 <sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L161-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-agent-timeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Web applications hosting NServiceBus
+
+When an endpoint is an ASP.NET Core web application, the test trigger is an HTTP request rather than a message. NServiceBus.IntegrationTesting supports this pattern with three building blocks:
+
+1. **`CorrelationIdMiddleware`** — seeds the correlation ID from the inbound `X-Correlation-Id` header so the NServiceBus pipeline can stamp it on every outgoing message.
+2. **`CorrelationIdPropagationHandler`** — a `DelegatingHandler` that forwards the correlation ID onto outgoing HTTP calls so the chain stays connected across service boundaries.
+3. **`IntegrationTestingBootstrap.Configure`** (the `IServiceCollection` overload) — wires the agent behaviors into the NServiceBus pipeline and registers an `IHostedService` that connects to the test host automatically once the endpoint starts.
+
+#### Splitting production configuration
+
+Start by extracting the production `Program.cs` setup into static helpers so the companion project can reuse them without duplicating code:
+
+<!-- snippet: gs-webapp-config -->
+<a id='snippet-gs-webapp-config'></a>
+```cs
+public static class WebAppConfig
+{
+    public static WebApplicationBuilder CreateBuilder(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+        builder.Services.AddControllers();
+        // ... register other services
+        return builder;
+    }
+
+    public static EndpointConfiguration CreateNsbConfig(HostBuilderContext ctx)
+    {
+        var config = new EndpointConfiguration("WebApp");
+        // ... configure transport, persistence, etc.
+        return config;
+    }
+
+    public static void ConfigurePipeline(WebApplication app)
+    {
+        app.MapControllers();
+        // ... add other middleware
+    }
+}
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L15-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-config' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### The companion `Program.cs`
+
+The companion `Program.cs` calls `IntegrationTestingBootstrap.Configure` instead of starting the endpoint directly. Pass `builder.Services` so the framework can register the connector hosted service that dials home after startup.
+
+<!-- snippet: gs-webapp-testing-program -->
+<a id='snippet-gs-webapp-testing-program'></a>
+```cs
+public static async Task Main(string[] args)
+{
+    var builder = WebAppConfig.CreateBuilder(args);
+
+    // Wire the agent into NServiceBus and register the connector hosted service.
+    // The IServiceCollection overload handles everything: behavior registration
+    // and connecting to the test host after the endpoint starts.
+    builder.Host.UseNServiceBus(ctx =>
+    {
+        var config = WebAppConfig.CreateNsbConfig(ctx);
+        IntegrationTestingBootstrap.Configure("WebApp", config, builder.Services);
+        return config;
+    });
+
+    // Forward the test correlation ID onto outgoing HTTP calls so the chain
+    // stays connected across HTTP boundaries.
+    builder.Services.AddTransient<CorrelationIdPropagationHandler>();
+    builder.Services.AddHttpClient<IInventoryClient, InventoryClient>()
+        .AddHttpMessageHandler<CorrelationIdPropagationHandler>();
+
+    var app = builder.Build();
+
+    // Seed the test correlation ID from the inbound X-Correlation-Id header
+    // so the NServiceBus pipeline can stamp it on any outgoing messages.
+    app.UseMiddleware<CorrelationIdMiddleware>();
+
+    WebAppConfig.ConfigurePipeline(app);
+
+    await app.RunAsync();
+}
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L77-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-testing-program' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+For comparison, the production `Program.cs` remains clean — no test dependencies:
+
+<!-- snippet: gs-webapp-production-program -->
+<a id='snippet-gs-webapp-production-program'></a>
+```cs
+public static async Task Main(string[] args)
+{
+    var builder = WebAppConfig.CreateBuilder(args);
+    builder.Host.UseNServiceBus(WebAppConfig.CreateNsbConfig);
+    var app = builder.Build();
+    WebAppConfig.ConfigurePipeline(app);
+    await app.RunAsync();
+}
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L119-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-production-program' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Correlation ID middleware
+
+`CorrelationIdMiddleware` seeds the `AsyncLocal` correlation ID that the NServiceBus behaviors read. Register it with `app.UseMiddleware<CorrelationIdMiddleware>()` **before** your controller pipeline:
+
+<!-- snippet: gs-webapp-correlation-middleware -->
+<a id='snippet-gs-webapp-correlation-middleware'></a>
+```cs
+public class CorrelationIdMiddleware(RequestDelegate next)
+{
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (context.Request.Headers.TryGetValue("X-Correlation-Id", out var id))
+            IntegrationTestingBootstrap.SetCorrelationId(id.ToString());
+
+        await next(context);
+    }
+}
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L43-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-correlation-middleware' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Propagating the correlation ID across HTTP calls
+
+If the web app makes outbound HTTP calls as part of handling the request, use `CorrelationIdPropagationHandler` to forward the correlation ID on those requests:
+
+<!-- snippet: gs-webapp-propagation-handler -->
+<a id='snippet-gs-webapp-propagation-handler'></a>
+```cs
+public class CorrelationIdPropagationHandler : DelegatingHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var id = IntegrationTestingBootstrap.GetCorrelationId();
+        if (id is not null)
+            request.Headers.TryAddWithoutValidation("X-Correlation-Id", id);
+
+        return base.SendAsync(request, cancellationToken);
+    }
+}
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L58-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-propagation-handler' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Register it with `AddHttpMessageHandler` when configuring your typed clients:
+
+```csharp
+builder.Services.AddTransient<CorrelationIdPropagationHandler>();
+builder.Services.AddHttpClient<IInventoryClient, InventoryClient>()
+    .AddHttpMessageHandler<CorrelationIdPropagationHandler>();
+```
+
+#### Test fixture
+
+The test sends an HTTP request with an `X-Correlation-Id` header, then observes the resulting NServiceBus activity:
+
+<!-- snippet: gs-webapp-env-setup -->
+<a id='snippet-gs-webapp-env-setup'></a>
+```cs
+_env = await new TestEnvironmentBuilder()
+    .WithDockerfileDirectory(srcDir)
+    .UseRabbitMQ()
+    .AddEndpoint("WebApp", "WebApp.Testing/Dockerfile",
+        containerBuilder: b => b.WithPortBinding(8080, assignRandomHostPort: true))
+    .AddEndpoint("OrdersEndpoint", "OrdersEndpoint.Testing/Dockerfile")
+    .StartAsync();
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L144-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-env-setup' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+<!-- snippet: gs-webapp-test -->
+<a id='snippet-gs-webapp-test'></a>
+```cs
+var correlationId = Guid.NewGuid().ToString();
+
+using var http = new HttpClient
+{
+    BaseAddress = new Uri(_env.GetEndpoint("WebApp").GetBaseUrl(8080))
+};
+http.DefaultRequestHeaders.Add("X-Correlation-Id", correlationId);
+
+await http.PostAsJsonAsync("/api/orders", new { ProductId = "SKU-42", Quantity = 1 });
+
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+var results = await _env.Observe(correlationId, cts.Token)
+    .MessageDispatched("OrderCreated")
+    .HandlerInvoked("OrderCreatedHandler")
+    .WhenAllAsync();
+
+Assert.That(results.MessageDispatched("OrderCreated").EndpointName, Is.EqualTo("WebApp"));
+Assert.That(results.HandlerInvoked("OrderCreatedHandler").EndpointName, Is.EqualTo("OrdersEndpoint"));
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L161-L181' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`GetBaseUrl(8080)` resolves the host-mapped port assigned to container port 8080 at runtime.
+
 ## Complete example
 
 The following end-to-end example mirrors the sample included with this repository. It shows two endpoints, a saga with a timeout, a failure scenario, and WireMock stubbing.
@@ -1179,3 +1377,60 @@ SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000);
 ```
 <sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L257-L263' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### `IntegrationTestingBootstrap.Configure`
+
+Use `Configure` instead of `RunAsync` when the endpoint is hosted inside an ASP.NET Core web application where startup and lifecycle are controlled by the generic host.
+
+The `IServiceCollection` overload wires agent behaviors into the NServiceBus pipeline and registers an `IHostedService` that connects to the test host automatically once the endpoint starts:
+
+<!-- snippet: gs-webapp-testing-program -->
+<a id='snippet-gs-webapp-testing-program'></a>
+```cs
+public static async Task Main(string[] args)
+{
+    var builder = WebAppConfig.CreateBuilder(args);
+
+    // Wire the agent into NServiceBus and register the connector hosted service.
+    // The IServiceCollection overload handles everything: behavior registration
+    // and connecting to the test host after the endpoint starts.
+    builder.Host.UseNServiceBus(ctx =>
+    {
+        var config = WebAppConfig.CreateNsbConfig(ctx);
+        IntegrationTestingBootstrap.Configure("WebApp", config, builder.Services);
+        return config;
+    });
+
+    // Forward the test correlation ID onto outgoing HTTP calls so the chain
+    // stays connected across HTTP boundaries.
+    builder.Services.AddTransient<CorrelationIdPropagationHandler>();
+    builder.Services.AddHttpClient<IInventoryClient, InventoryClient>()
+        .AddHttpMessageHandler<CorrelationIdPropagationHandler>();
+
+    var app = builder.Build();
+
+    // Seed the test correlation ID from the inbound X-Correlation-Id header
+    // so the NServiceBus pipeline can stamp it on any outgoing messages.
+    app.UseMiddleware<CorrelationIdMiddleware>();
+
+    WebAppConfig.ConfigurePipeline(app);
+
+    await app.RunAsync();
+}
+```
+<sup><a href='/src/Snippets/GettingStartedWebAppSnippets.cs#L77-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-webapp-testing-program' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### `IntegrationTestingBootstrap.SetCorrelationId` / `GetCorrelationId`
+
+Set and read the `AsyncLocal` correlation ID from outside the NServiceBus pipeline — for example from an ASP.NET Core middleware or a `DelegatingHandler`:
+
+```csharp
+// In middleware — seed from inbound header
+IntegrationTestingBootstrap.SetCorrelationId(correlationId);
+
+// In DelegatingHandler — propagate to outbound HTTP
+var id = IntegrationTestingBootstrap.GetCorrelationId();
+if (id is not null)
+    request.Headers.TryAddWithoutValidation("X-Correlation-Id", id);
+```

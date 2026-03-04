@@ -30,6 +30,8 @@
 
     <!-- Link to the shared source files in Agent.v10 — single source of truth. -->
     <ItemGroup>
+        <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\AgentConnectorHostedService.cs" Link="AgentConnectorHostedService.cs" />
+        <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\AgentHandle.cs" Link="AgentHandle.cs" />
         <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\AgentService.cs" Link="AgentService.cs" />
         <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\IncomingCorrelationIdBehavior.cs" Link="IncomingCorrelationIdBehavior.cs" />
         <Compile Include="..\NServiceBus.IntegrationTesting.Agent.v10\IntegrationTestingBootstrap.cs" Link="IntegrationTestingBootstrap.cs" />
@@ -51,6 +53,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
         <PackageReference Include="NServiceBus" Version="8.2.6" />
     </ItemGroup>
 

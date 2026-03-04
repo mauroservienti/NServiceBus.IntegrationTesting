@@ -35,6 +35,15 @@ namespace Snippets.GettingStartedSkip
     }
 }
 
+namespace Snippets.GettingStartedWebApp
+{
+    // Stub handler name referenced in test fixture assertion
+    public class OrderCreatedHandler { }
+
+    // Stub message type dispatched by the web app
+    public class OrderCreated : NServiceBus.IEvent { }
+}
+
 namespace SampleEndpoint.Testing
 {
     public class FailingMessageScenario : Scenario
