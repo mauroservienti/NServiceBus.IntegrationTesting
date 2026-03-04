@@ -339,12 +339,8 @@ public class WhenSomeCommandIsSent
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        // Point to the directory that contains the endpoint sub-directories.
-        // Typically, this is the 'src/' folder of your repository.
-        var srcDir = Path.Combine(FindRepoRoot(), "src");
-
         _env = await new TestEnvironmentBuilder()
-            .WithDockerfileDirectory(srcDir)
+            .WithDockerfileDirectory(TestEnvironmentBuilder.FindRootByDirectory(".git", "src"))
             .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
@@ -374,19 +370,9 @@ public class WhenSomeCommandIsSent
             results.HandlerInvoked("SomeMessageHandler").EndpointName,
             Is.EqualTo("YourEndpoint"));
     }
-
-    static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !dir.GetDirectories(".git").Any())
-            dir = dir.Parent;
-        return dir?.FullName
-            ?? throw new InvalidOperationException(
-                "Cannot locate repository root. Ensure the test runs inside a git repository.");
-    }
 }
 ```
-<sup><a href='/src/Snippets/GettingStartedTestFixtureSnippets.cs#L6-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-test-fixture' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedTestFixtureSnippets.cs#L6-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-test-fixture' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Executing a scenario
@@ -929,10 +915,8 @@ public class WhenSomeMessageIsSent
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        var srcDir = Path.Combine(FindRepoRoot(), "src");
-
         _env = await new TestEnvironmentBuilder()
-            .WithDockerfileDirectory(srcDir)
+            .WithDockerfileDirectory(TestEnvironmentBuilder.FindRootByDirectory(".git", "src"))
             .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("SampleEndpoint", "SampleEndpoint.Testing/Dockerfile")
@@ -999,17 +983,9 @@ public class WhenSomeMessageIsSent
         Assert.That(failure.ExceptionMessage, Does.Contain("Intentional failure"));
     }
 
-    static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !dir.GetDirectories(".git").Any())
-            dir = dir.Parent;
-        return dir?.FullName
-            ?? throw new InvalidOperationException("Cannot locate repository root.");
-    }
 }
 ```
-<sup><a href='/src/Snippets/GettingStartedCompleteExampleSnippets.cs#L77-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-complete-test' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedCompleteExampleSnippets.cs#L77-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-complete-test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ---
@@ -1067,6 +1043,8 @@ full NServiceBus headers of the failed message.
 | Method | Description |
 |---|---|
 | `.WithDockerfileDirectory(path)` | Sets the Docker build context root (required) |
+| `FindRootByDirectory(name, subPath?)` | Static. Walks up from test output dir until a directory named `name` is found (e.g. `".git"`); returns that root optionally joined with `subPath` |
+| `FindRootByFile(pattern, subPath?)` | Static. Same but matches a file glob pattern (e.g. `"*.sln"`); returns that root optionally joined with `subPath` |
 | `.UseRabbitMQ(containerOptions?, containerBuilder?)` | Starts a RabbitMQ container; injects `RABBITMQ_CONNECTION_STRING` |
 | `.UsePostgreSql(containerOptions?, containerBuilder?)` | Starts a PostgreSQL container; injects `POSTGRESQL_CONNECTION_STRING` |
 | `.UseMySQL(containerOptions?, containerBuilder?)` | Starts a MySQL container; injects `MYSQL_CONNECTION_STRING` |

@@ -14,12 +14,8 @@ public class WhenSomeCommandIsSent
     [OneTimeSetUp]
     public static async Task SetUp()
     {
-        // Point to the directory that contains the endpoint sub-directories.
-        // Typically, this is the 'src/' folder of your repository.
-        var srcDir = Path.Combine(FindRepoRoot(), "src");
-
         _env = await new TestEnvironmentBuilder()
-            .WithDockerfileDirectory(srcDir)
+            .WithDockerfileDirectory(TestEnvironmentBuilder.FindRootByDirectory(".git", "src"))
             .UseRabbitMQ()
             .UsePostgreSql()
             .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
@@ -48,16 +44,6 @@ public class WhenSomeCommandIsSent
         Assert.That(
             results.HandlerInvoked("SomeMessageHandler").EndpointName,
             Is.EqualTo("YourEndpoint"));
-    }
-
-    static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !dir.GetDirectories(".git").Any())
-            dir = dir.Parent;
-        return dir?.FullName
-            ?? throw new InvalidOperationException(
-                "Cannot locate repository root. Ensure the test runs inside a git repository.");
     }
 }
 // end-snippet
