@@ -315,6 +315,9 @@ public sealed class TestEnvironmentBuilder
                         .WithNetwork(network)
                         .WithEnvironment(envVars)
                         .WithExtraHost("host.docker.internal", "host-gateway");
+
+                    if (e.Options.NetworkAlias is not null)
+                        cb = cb.WithNetworkAliases(e.Options.NetworkAlias);
                     return (e.Name, e.HasAgent,
                         Container: (IContainer)(e.ContainerBuilderCallback?.Invoke(cb) ?? cb).Build());
                 })

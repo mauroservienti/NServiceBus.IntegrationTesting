@@ -112,6 +112,34 @@ _env = await new TestEnvironmentBuilder()
 <sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L73-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-additional' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Setting a Docker network alias
+
+By default, containers on the shared Docker network are only reachable by their random container ID. Set `NetworkAlias` to give a container a stable hostname that other containers on the same network can use:
+
+<!-- snippet: env-var-network-alias -->
+<a id='snippet-env-var-network-alias'></a>
+```cs
+_env = await new TestEnvironmentBuilder()
+    .WithDockerfileDirectory(srcDir)
+    .UseRabbitMQ()
+    .AddEndpoint("WebApp", "WebApp.Testing/Dockerfile", opts =>
+    {
+        opts.NetworkAlias = "webapp";
+    })
+    .AddContainer("InventoryService", "InventoryService/Dockerfile", opts =>
+    {
+        opts.NetworkAlias = "inventory";
+    })
+    .StartAsync();
+
+// Other containers can now reach "WebApp" at http://webapp:<port>
+// and "InventoryService" at http://inventory:<port>
+```
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L90-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-network-alias' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+This works for both `AddEndpoint` and `AddContainer`.
+
 ### Combining overrides
 
 All per-endpoint options can be combined in a single callback:
@@ -138,7 +166,7 @@ _env = await new TestEnvironmentBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L90-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-combined' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L113-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-per-endpoint-combined' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Adding custom infrastructure with `UseInfrastructure`
@@ -163,7 +191,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L139-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `key` you choose is what endpoints use in `InfrastructureEnvVarNames` to override the

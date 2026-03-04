@@ -83,6 +83,29 @@ public class EnvVarCustomizationSnippets
         // end-snippet
     }
 
+    public async Task NetworkAlias()
+    {
+        string srcDir = null!;
+
+        // begin-snippet: env-var-network-alias
+        _env = await new TestEnvironmentBuilder()
+            .WithDockerfileDirectory(srcDir)
+            .UseRabbitMQ()
+            .AddEndpoint("WebApp", "WebApp.Testing/Dockerfile", opts =>
+            {
+                opts.NetworkAlias = "webapp";
+            })
+            .AddContainer("InventoryService", "InventoryService/Dockerfile", opts =>
+            {
+                opts.NetworkAlias = "inventory";
+            })
+            .StartAsync();
+
+        // Other containers can now reach "WebApp" at http://webapp:<port>
+        // and "InventoryService" at http://inventory:<port>
+        // end-snippet
+    }
+
     public async Task PerEndpointCombined()
     {
         string srcDir = null!;
