@@ -1,6 +1,16 @@
 ﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NServiceBus.IntegrationTesting.Tests")]
 namespace NServiceBus.IntegrationTesting
 {
+    public sealed class ContainerHandle
+    {
+        public string Name { get; }
+        public string GetBaseUrl(int containerPort, string scheme = "http") { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Stdout",
+                "Stderr"})]
+        public System.Threading.Tasks.Task<System.ValueTuple<string, string>> GetLogsAsync() { }
+        public int GetMappedPort(int containerPort) { }
+    }
     public sealed class EndpointContainerOptions
     {
         public EndpointContainerOptions() { }
@@ -90,6 +100,7 @@ namespace NServiceBus.IntegrationTesting
     {
         public WireMock.Server.WireMockServer? WireMock { get; }
         public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public NServiceBus.IntegrationTesting.ContainerHandle GetContainer(string name) { }
         public NServiceBus.IntegrationTesting.EndpointHandle GetEndpoint(string endpointName) { }
         [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
                 "Stdout",
@@ -100,6 +111,7 @@ namespace NServiceBus.IntegrationTesting
     public sealed class TestEnvironmentBuilder
     {
         public TestEnvironmentBuilder() { }
+        public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddContainer(string name, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? containerOptions = null, System.Func<DotNet.Testcontainers.Builders.ContainerBuilder, DotNet.Testcontainers.Builders.ContainerBuilder>? containerBuilder = null) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder AddEndpoint(string endpointName, string dockerfile, System.Action<NServiceBus.IntegrationTesting.EndpointContainerOptions>? containerOptions = null, System.Func<DotNet.Testcontainers.Builders.ContainerBuilder, DotNet.Testcontainers.Builders.ContainerBuilder>? containerBuilder = null) { }
         public System.Threading.Tasks.Task<NServiceBus.IntegrationTesting.TestEnvironment> StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public NServiceBus.IntegrationTesting.TestEnvironmentBuilder UseInfrastructure(string key, string defaultEnvVarName, System.Func<DotNet.Testcontainers.Networks.INetwork, DotNet.Testcontainers.Containers.IContainer> buildContainer, string connectionString) { }

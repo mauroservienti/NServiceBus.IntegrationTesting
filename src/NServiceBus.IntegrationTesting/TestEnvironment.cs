@@ -14,19 +14,22 @@ public sealed class TestEnvironment : IAsyncDisposable
     readonly INetwork _network;
     readonly IReadOnlyList<IContainer> _infraContainers;
     readonly Dictionary<string, IContainer> _endpointContainers;
+    readonly Dictionary<string, IContainer> _containers;
 
     internal TestEnvironment(
         TestHostServer testHost,
         INetwork network,
         WireMockServer? wireMock,
         IReadOnlyList<IContainer> infraContainers,
-        Dictionary<string, IContainer> endpointContainers)
+        Dictionary<string, IContainer> endpointContainers,
+        Dictionary<string, IContainer> containers)
     {
         _testHost = testHost;
         _network = network;
         WireMock = wireMock;
         _infraContainers = infraContainers;
         _endpointContainers = endpointContainers;
+        _containers = containers;
     }
 
     /// <summary>
@@ -43,6 +46,19 @@ public sealed class TestEnvironment : IAsyncDisposable
             throw new InvalidOperationException(
                 $"No endpoint named '{endpointName}' was registered.");
         return new EndpointHandle(_testHost.GrpcService, endpointName, container);
+    }
+
+    /// <summary>
+    /// Returns a handle to the named container registered with
+    /// <see cref="TestEnvironmentBuilder.AddContainer"/>.
+    /// </summary>
+    public ContainerHandle GetContainer(string name)
+    {
+        if (!_containers.TryGetValue(name, out var container))
+            throw new InvalidOperationException(
+                $"No container named '{name}' was registered. " +
+                "Use AddContainer() to register agent-less containers.");
+        return new ContainerHandle(name, container);
     }
 
     /// <summary>
@@ -72,6 +88,9 @@ public sealed class TestEnvironment : IAsyncDisposable
     {
         await Task.WhenAll(_endpointContainers.Values.Select(c => c.StopAsync()));
         await Task.WhenAll(_endpointContainers.Values.Select(c => c.DisposeAsync().AsTask()));
+
+        await Task.WhenAll(_containers.Values.Select(c => c.StopAsync()));
+        await Task.WhenAll(_containers.Values.Select(c => c.DisposeAsync().AsTask()));
 
         await _testHost.DisposeAsync();
 
