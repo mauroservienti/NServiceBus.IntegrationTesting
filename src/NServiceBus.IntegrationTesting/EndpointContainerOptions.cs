@@ -20,4 +20,10 @@ public sealed class EndpointContainerOptions
     /// Additional static environment variables to inject into this endpoint's container.
     /// </summary>
     public Dictionary<string, string> EnvironmentVariables { get; } = [];
+
+    /// <summary>
+    /// When set, registers this value as a Docker network alias for the container so that
+    /// other containers on the same network can reach it by this hostname.
+    /// </summary>
+    public string? NetworkAlias { get; set; }
 }

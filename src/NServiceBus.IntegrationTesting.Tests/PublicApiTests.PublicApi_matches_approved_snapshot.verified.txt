@@ -16,6 +16,7 @@ namespace NServiceBus.IntegrationTesting
         public EndpointContainerOptions() { }
         public System.Collections.Generic.Dictionary<string, string> EnvironmentVariables { get; }
         public System.Collections.Generic.Dictionary<string, string> InfrastructureEnvVarNames { get; }
+        public string? NetworkAlias { get; set; }
     }
     public sealed class EndpointHandle
     {

@@ -38,7 +38,7 @@ _env = await new TestEnvironmentBuilder()
     .AddEndpoint("YourEndpoint", "YourEndpoint.Testing/Dockerfile")
     .StartAsync();
 ```
-<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L116-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/EnvVarCustomizationSnippets.cs#L139-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-env-var-use-infrastructure' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Parameters:
