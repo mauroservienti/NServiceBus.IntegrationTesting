@@ -207,6 +207,36 @@ public class AdvancedSnippets
             skipRules: [SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000)]);
         // end-snippet
     }
+
+    // begin-snippet: gs-restart-endpoint
+    [SetUp]
+    public Task RestartBeforeEachTest() =>
+        _env.RestartEndpointAsync("YourEndpoint");
+    // end-snippet
+
+    [Test]
+    public async Task RestartInfrastructure()
+    {
+        // begin-snippet: gs-restart-infrastructure
+        // Simulate a RabbitMQ restart mid-test
+        await _env.RestartInfrastructureAsync(RabbitMqContainerOptions.InfrastructureKey);
+        // ... observe endpoint reconnects and resumes processing
+        // end-snippet
+    }
+
+    // begin-snippet: gs-stop-start-endpoint
+    [Test]
+    public async Task System_handles_endpoint_being_temporarily_down()
+    {
+        // Stop the endpoint to simulate a crash or planned shutdown.
+        await _env.StopEndpointAsync("YourEndpoint");
+
+        // ... trigger work on other endpoints, assert retry/compensation behaviour ...
+
+        // Bring the endpoint back up; blocks until the agent reconnects.
+        await _env.StartEndpointAsync("YourEndpoint");
+    }
+    // end-snippet
 }
 
 class WireMockConsumerHandler

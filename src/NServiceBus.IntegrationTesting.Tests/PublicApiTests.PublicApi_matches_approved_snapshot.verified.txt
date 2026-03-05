@@ -10,6 +10,9 @@ namespace NServiceBus.IntegrationTesting
                 "Stderr"})]
         public System.Threading.Tasks.Task<System.ValueTuple<string, string>> GetLogsAsync() { }
         public int GetMappedPort(int containerPort) { }
+        public System.Threading.Tasks.Task RestartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class EndpointContainerOptions
     {
@@ -24,6 +27,9 @@ namespace NServiceBus.IntegrationTesting
         public System.Threading.Tasks.Task<string> ExecuteScenarioAsync(string scenarioName, System.Collections.Generic.Dictionary<string, string>? args = null, System.Threading.CancellationToken cancellationToken = default) { }
         public string GetBaseUrl(int containerPort, string scheme = "http") { }
         public int GetMappedPort(int containerPort) { }
+        public System.Threading.Tasks.Task RestartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class HandlerInvokedEvent : System.IEquatable<NServiceBus.IntegrationTesting.HandlerInvokedEvent>
     {
@@ -108,6 +114,15 @@ namespace NServiceBus.IntegrationTesting
                 "Stderr"})]
         public System.Threading.Tasks.Task<System.ValueTuple<string, string>> GetEndpointContainerLogsAsync(string endpointName) { }
         public NServiceBus.IntegrationTesting.ObserveContext Observe(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task RestartContainerAsync(string name, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task RestartEndpointAsync(string endpointName, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task RestartInfrastructureAsync(string key, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartContainerAsync(string name, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartEndpointAsync(string endpointName, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartInfrastructureAsync(string key, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StopContainerAsync(string name, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StopEndpointAsync(string endpointName, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StopInfrastructureAsync(string key, System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class TestEnvironmentBuilder
     {

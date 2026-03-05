@@ -749,7 +749,7 @@ if (externalUrl is not null)
     var response = await _http.GetStringAsync($"{externalUrl}/api/data", ct);
 }
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L218-L225' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L248-L255' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the test, configure the stub before triggering the scenario, then verify the request was received afterward:
@@ -1347,7 +1347,7 @@ await IntegrationTestingBootstrap.RunAsync(
     skipRules:          [SkipRule.For<ProcessPayment>()],                                    // optional
     sigTermGracePeriod: TimeSpan.FromSeconds(10));                                          // optional, default 5 s
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L233-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L263-L271' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `TimeoutRule`
@@ -1361,7 +1361,7 @@ TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5));
 // Compute the delay from the timeout message instance
 TimeoutRule.For<OrderProcessingTimeout>(msg => msg.CustomDelay);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L246-L252' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L276-L282' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `SkipRule`
@@ -1375,7 +1375,7 @@ SkipRule.For<ProcessPayment>();
 // ACK only messages of type T that satisfy the predicate
 SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L257-L263' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L287-L293' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `IntegrationTestingBootstrap.Configure`
@@ -1433,4 +1433,86 @@ IntegrationTestingBootstrap.SetCorrelationId(correlationId);
 var id = IntegrationTestingBootstrap.GetCorrelationId();
 if (id is not null)
     request.Headers.TryAddWithoutValidation("X-Correlation-Id", id);
+```
+
+### Managing container lifecycle
+
+All container lifecycle operations — stop, start, and restart — are available on endpoint containers, agent-less containers, and infrastructure containers. None of them clear database-persisted state (saga data, outbox records, etc.); use unique correlation IDs per test to isolate results at the observation layer.
+
+#### Restarting an endpoint between tests
+
+Use `RestartEndpointAsync` in a `[SetUp]` method to restart the endpoint container before each test. The call blocks until the agent reconnects:
+
+<!-- snippet: gs-restart-endpoint -->
+<a id='snippet-gs-restart-endpoint'></a>
+```cs
+[SetUp]
+public Task RestartBeforeEachTest() =>
+    _env.RestartEndpointAsync("YourEndpoint");
+```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L211-L215' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-restart-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Restarting an agent-less container
+
+Use `RestartContainerAsync` for containers registered with `AddContainer` (those that don't host an NServiceBus agent):
+
+```csharp
+[SetUp]
+public Task RestartBeforeEachTest() =>
+    _env.RestartContainerAsync("WebApi");
+```
+
+#### Restarting infrastructure (chaos / resilience testing)
+
+Use `RestartInfrastructureAsync` to simulate a broker or database restart mid-test. Pass the infrastructure key used when the container was registered:
+
+<!-- snippet: gs-restart-infrastructure -->
+<a id='snippet-gs-restart-infrastructure'></a>
+```cs
+// Simulate a RabbitMQ restart mid-test
+await _env.RestartInfrastructureAsync(RabbitMqContainerOptions.InfrastructureKey);
+// ... observe endpoint reconnects and resumes processing
+```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L220-L224' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-restart-infrastructure' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Stopping and starting an endpoint
+
+Use `StopEndpointAsync` and `StartEndpointAsync` separately when you need to assert on system behaviour *while the endpoint is down* — for example, to verify that other endpoints retry, queue messages, or apply compensation logic when a collaborator is unavailable:
+
+<!-- snippet: gs-stop-start-endpoint -->
+<a id='snippet-gs-stop-start-endpoint'></a>
+```cs
+[Test]
+public async Task System_handles_endpoint_being_temporarily_down()
+{
+    // Stop the endpoint to simulate a crash or planned shutdown.
+    await _env.StopEndpointAsync("YourEndpoint");
+
+    // ... trigger work on other endpoints, assert retry/compensation behaviour ...
+
+    // Bring the endpoint back up; blocks until the agent reconnects.
+    await _env.StartEndpointAsync("YourEndpoint");
+}
+```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L227-L239' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-stop-start-endpoint' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`StartEndpointAsync` blocks until the agent reconnects, just like `RestartEndpointAsync`.
+
+#### Stopping and starting an agent-less container
+
+```csharp
+await _env.StopContainerAsync("WebApi");
+// ... assert behaviour while the service is unavailable ...
+await _env.StartContainerAsync("WebApi");
+```
+
+#### Stopping and starting infrastructure
+
+```csharp
+await _env.StopInfrastructureAsync(RabbitMqContainerOptions.InfrastructureKey);
+// ... assert behaviour while the broker is down ...
+await _env.StartInfrastructureAsync(RabbitMqContainerOptions.InfrastructureKey);
 ```
