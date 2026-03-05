@@ -224,6 +224,18 @@ public class AdvancedSnippets
         // end-snippet
     }
 
+    [SetUp]
+    public async Task ResetDatabaseState()
+    {
+        // begin-snippet: gs-exec-infrastructure
+        var result = await _env.GetInfrastructure(PostgreSqlContainerOptions.InfrastructureKey)
+            .ExecAsync(["psql", "-U", "postgres", "-c", "TRUNCATE orders, saga_data"]);
+
+        if (result.ExitCode != 0)
+            throw new InvalidOperationException($"Database reset failed: {result.Stderr}");
+        // end-snippet
+    }
+
     // begin-snippet: gs-stop-start-endpoint
     [Test]
     public async Task System_handles_endpoint_being_temporarily_down()

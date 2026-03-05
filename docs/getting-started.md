@@ -749,7 +749,7 @@ if (externalUrl is not null)
     var response = await _http.GetStringAsync($"{externalUrl}/api/data", ct);
 }
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L248-L255' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L260-L267' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-wiremock-endpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the test, configure the stub before triggering the scenario, then verify the request was received afterward:
@@ -1347,7 +1347,7 @@ await IntegrationTestingBootstrap.RunAsync(
     skipRules:          [SkipRule.For<ProcessPayment>()],                                    // optional
     sigTermGracePeriod: TimeSpan.FromSeconds(10));                                          // optional, default 5 s
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L263-L271' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L275-L283' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-bootstrap' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `TimeoutRule`
@@ -1361,7 +1361,7 @@ TimeoutRule.For<OrderProcessingTimeout>(TimeSpan.FromSeconds(5));
 // Compute the delay from the timeout message instance
 TimeoutRule.For<OrderProcessingTimeout>(msg => msg.CustomDelay);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L276-L282' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L288-L294' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-timeout-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `SkipRule`
@@ -1375,7 +1375,7 @@ SkipRule.For<ProcessPayment>();
 // ACK only messages of type T that satisfy the predicate
 SkipRule.For<ProcessPayment>(msg => msg.Amount > 1000);
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L287-L293' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L299-L305' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-api-skip-rule' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### `IntegrationTestingBootstrap.Configure`
@@ -1496,7 +1496,7 @@ public async Task System_handles_endpoint_being_temporarily_down()
     await _env.StartEndpointAsync("YourEndpoint");
 }
 ```
-<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L227-L239' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-stop-start-endpoint' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L239-L251' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-stop-start-endpoint' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `StartEndpointAsync` blocks until the agent reconnects, just like `RestartEndpointAsync`.
@@ -1516,3 +1516,19 @@ await _env.StopInfrastructureAsync(RabbitMqContainerOptions.InfrastructureKey);
 // ... assert behaviour while the broker is down ...
 await _env.StartInfrastructureAsync(RabbitMqContainerOptions.InfrastructureKey);
 ```
+
+#### Resetting infrastructure state between tests
+
+Use `GetInfrastructure(key)` to obtain an `InfrastructureHandle` and call `ExecAsync` to run a command inside the container. This is the recommended way to reset database state (e.g. truncate tables) without restarting the container:
+
+<!-- snippet: gs-exec-infrastructure -->
+<a id='snippet-gs-exec-infrastructure'></a>
+```cs
+var result = await _env.GetInfrastructure(PostgreSqlContainerOptions.InfrastructureKey)
+    .ExecAsync(["psql", "-U", "postgres", "-c", "TRUNCATE orders, saga_data"]);
+
+if (result.ExitCode != 0)
+    throw new InvalidOperationException($"Database reset failed: {result.Stderr}");
+```
+<sup><a href='/src/Snippets/GettingStartedAdvancedSnippets.cs#L230-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-gs-exec-infrastructure' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

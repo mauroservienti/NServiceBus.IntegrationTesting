@@ -114,45 +114,40 @@ public sealed class TestEnvironment : IAsyncDisposable
         => GetContainer(name).RestartAsync(cancellationToken);
 
     /// <summary>
-    /// Stops the infrastructure container registered under <paramref name="key"/>
+    /// Returns a handle to the infrastructure container registered under <paramref name="key"/>
     /// (e.g., <see cref="RabbitMqContainerOptions.InfrastructureKey"/> or
     /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>).
+    /// Use the handle to run commands inside the container, stop/start/restart it, or retrieve its logs.
     /// </summary>
-    public async Task StopInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+    public InfrastructureHandle GetInfrastructure(string key)
     {
         if (!_infraContainers.TryGetValue(key, out var container))
             throw new InvalidOperationException(
                 $"No infrastructure with key '{key}' was registered.");
-        await container.StopAsync(cancellationToken);
+        return new InfrastructureHandle(key, container);
     }
 
     /// <summary>
-    /// Starts a previously stopped infrastructure container registered under <paramref name="key"/>
-    /// (e.g., <see cref="RabbitMqContainerOptions.InfrastructureKey"/> or
-    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>).
+    /// Stops the infrastructure container registered under <paramref name="key"/>.
+    /// Convenience wrapper around <see cref="InfrastructureHandle.StopAsync"/>.
     /// </summary>
-    public async Task StartInfrastructureAsync(string key, CancellationToken cancellationToken = default)
-    {
-        if (!_infraContainers.TryGetValue(key, out var container))
-            throw new InvalidOperationException(
-                $"No infrastructure with key '{key}' was registered.");
-        await container.StartAsync(cancellationToken);
-    }
+    public Task StopInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+        => GetInfrastructure(key).StopAsync(cancellationToken);
 
     /// <summary>
-    /// Restarts the infrastructure container registered under <paramref name="key"/>
-    /// (e.g., <see cref="RabbitMqContainerOptions.InfrastructureKey"/> or
-    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>).
+    /// Starts a previously stopped infrastructure container registered under <paramref name="key"/>.
+    /// Convenience wrapper around <see cref="InfrastructureHandle.StartAsync"/>.
+    /// </summary>
+    public Task StartInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+        => GetInfrastructure(key).StartAsync(cancellationToken);
+
+    /// <summary>
+    /// Restarts the infrastructure container registered under <paramref name="key"/>.
     /// Use this to simulate a broker or database restart during chaos / resilience tests.
+    /// Convenience wrapper around <see cref="InfrastructureHandle.RestartAsync"/>.
     /// </summary>
-    public async Task RestartInfrastructureAsync(string key, CancellationToken cancellationToken = default)
-    {
-        if (!_infraContainers.TryGetValue(key, out var container))
-            throw new InvalidOperationException(
-                $"No infrastructure with key '{key}' was registered.");
-        await container.StopAsync(cancellationToken);
-        await container.StartAsync(cancellationToken);
-    }
+    public Task RestartInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+        => GetInfrastructure(key).RestartAsync(cancellationToken);
 
     /// <summary>
     /// Returns the stdout and stderr of the named endpoint's container.

@@ -45,6 +45,18 @@ namespace NServiceBus.IntegrationTesting
         public bool SagaNotFound { get; init; }
         public string SagaTypeName { get; init; }
     }
+    public sealed class InfrastructureHandle
+    {
+        public string Key { get; }
+        public System.Threading.Tasks.Task<DotNet.Testcontainers.Containers.ExecResult> ExecAsync(System.Collections.Generic.IList<string> command, System.Threading.CancellationToken cancellationToken = default) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Stdout",
+                "Stderr"})]
+        public System.Threading.Tasks.Task<System.ValueTuple<string, string>> GetLogsAsync() { }
+        public System.Threading.Tasks.Task RestartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
     public sealed class MessageDispatchedEvent : System.IEquatable<NServiceBus.IntegrationTesting.MessageDispatchedEvent>
     {
         public MessageDispatchedEvent(string EndpointName, string MessageTypeName, string Intent, string CorrelationId) { }
@@ -113,6 +125,7 @@ namespace NServiceBus.IntegrationTesting
                 "Stdout",
                 "Stderr"})]
         public System.Threading.Tasks.Task<System.ValueTuple<string, string>> GetEndpointContainerLogsAsync(string endpointName) { }
+        public NServiceBus.IntegrationTesting.InfrastructureHandle GetInfrastructure(string key) { }
         public NServiceBus.IntegrationTesting.ObserveContext Observe(string correlationId, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task RestartContainerAsync(string name, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task RestartEndpointAsync(string endpointName, System.Threading.CancellationToken cancellationToken = default) { }
