@@ -1021,6 +1021,54 @@ Assert.That(results.HandlerInvoked("OrderCreatedHandler").EndpointName, Is.Equal
 
 `GetBaseUrl(8080)` resolves the host-mapped port assigned to container port 8080 at runtime.
 
+#### Project structure and Dockerfile
+
+The companion project must use `Sdk="Microsoft.NET.Sdk.Web"`. Using the plain `Sdk="Microsoft.NET.Sdk"` (the default for console apps) means web content items — including `wwwroot` — are not included in the publish output. The symptom is a warning in the container logs:
+
+```
+warn: Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware[16]
+      The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
+```
+
+```xml
+<!-- WebApp.Testing/WebApp.Testing.csproj -->
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  ...
+  <ProjectReference Include="..\WebApp\WebApp.csproj" />
+</Project>
+```
+
+Also ensure the reference to the production project does **not** have `ReferenceOutputAssembly="false"` — that attribute suppresses content items as well as the DLL. The `ReferenceOutputAssembly="false"` pattern is only correct for `WebApp.Tests` → `WebApp.Testing` (the NUnit/xUnit project that never builds the image).
+
+**Port**: `launchSettings.json` is ignored inside Docker containers. The ASP.NET Core base images default to port **8080** on .NET 8 and later. Declare the binding when registering the endpoint and use it in the test:
+
+```csharp
+.AddEndpoint("WebApp", "WebApp.Testing/Dockerfile",
+    containerBuilder: b => b.WithPortBinding(8080, assignRandomHostPort: true))
+```
+
+**Views**: Razor views are pre-compiled into the assembly during `dotnet publish -c Release` (the default). The `.cshtml` files will not appear in the publish output — this is expected and the views will render correctly. Static files in `wwwroot` are copied to the publish output automatically and served from `/app/wwwroot` inside the container.
+
+**Container log noise**: two warnings appear in all ASP.NET Core containers and are harmless in test environments:
+
+- _DataProtection keys stored in `/root/.aspnet/DataProtection-Keys`_ — keys won't survive a container restart, which doesn't matter for tests.
+- _Cannot load library `libgssapi_krb5.so.2`_ — .NET probes for Kerberos on startup; the slim `aspnet` base image doesn't include it. Safe to ignore unless you are using Windows/Negotiate authentication.
+
+A minimal Dockerfile for a web app companion project:
+
+```dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore WebApp.Testing/WebApp.Testing.csproj
+RUN dotnet publish WebApp.Testing/WebApp.Testing.csproj -c Release -o /app/publish
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "WebApp.Testing.dll"]
+```
+
 ## Complete example
 
 The following end-to-end example mirrors the sample included with this repository. It shows two endpoints, a saga with a timeout, a failure scenario, and WireMock stubbing.
