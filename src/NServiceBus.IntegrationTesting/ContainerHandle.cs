@@ -40,6 +40,28 @@ public sealed class ContainerHandle
         => $"{scheme}://localhost:{GetMappedPort(containerPort)}";
 
     /// <summary>
+    /// Stops this container.
+    /// </summary>
+    public Task StopAsync(CancellationToken cancellationToken = default)
+        => _container.StopAsync(cancellationToken);
+
+    /// <summary>
+    /// Starts a previously stopped container.
+    /// </summary>
+    public Task StartAsync(CancellationToken cancellationToken = default)
+        => _container.StartAsync(cancellationToken);
+
+    /// <summary>
+    /// Stops and restarts this container.
+    /// Equivalent to calling <see cref="StopAsync"/> followed by <see cref="StartAsync"/>.
+    /// </summary>
+    public async Task RestartAsync(CancellationToken cancellationToken = default)
+    {
+        await _container.StopAsync(cancellationToken);
+        await _container.StartAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Returns the stdout and stderr of this container.
     /// Useful for dumping diagnostic output when a test fails.
     /// </summary>

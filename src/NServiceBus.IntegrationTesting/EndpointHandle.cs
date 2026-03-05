@@ -40,6 +40,40 @@ public sealed class EndpointHandle
         => _grpcService.ExecuteScenarioAsync(EndpointName, scenarioName, args, cancellationToken);
 
     /// <summary>
+    /// Stops the endpoint container. Resets the agent connection so a subsequent
+    /// <see cref="StartAsync"/> waits for the agent to reconnect rather than
+    /// returning immediately on a stale completed task.
+    /// </summary>
+    public async Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        _grpcService.ResetAgentConnection(EndpointName);
+        await _container.StopAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Starts a previously stopped endpoint container and waits for the agent to reconnect.
+    /// </summary>
+    public async Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        await _container.StartAsync(cancellationToken);
+        await _grpcService.WaitForAgentAsync(EndpointName, cancellationToken);
+    }
+
+    /// <summary>
+    /// Stops and restarts the endpoint container, then waits for the agent to reconnect.
+    /// Equivalent to calling <see cref="StopAsync"/> followed by <see cref="StartAsync"/>.
+    /// Use this in a <c>[SetUp]</c> method to isolate in-process state between tests
+    /// without tearing down the full environment.
+    /// </summary>
+    public async Task RestartAsync(CancellationToken cancellationToken = default)
+    {
+        _grpcService.ResetAgentConnection(EndpointName);
+        await _container.StopAsync(cancellationToken);
+        await _container.StartAsync(cancellationToken);
+        await _grpcService.WaitForAgentAsync(EndpointName, cancellationToken);
+    }
+
+    /// <summary>
     /// Returns the host-side port that Testcontainers mapped to
     /// <paramref name="containerPort"/>. The port must have been declared via
     /// <c>b.WithPortBinding(<paramref name="containerPort"/>, assignRandomHostPort: true)</c>

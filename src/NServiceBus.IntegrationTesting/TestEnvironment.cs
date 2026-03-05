@@ -12,7 +12,7 @@ public sealed class TestEnvironment : IAsyncDisposable
 {
     readonly TestHostServer _testHost;
     readonly INetwork _network;
-    readonly IReadOnlyList<IContainer> _infraContainers;
+    readonly Dictionary<string, IContainer> _infraContainers;
     readonly Dictionary<string, IContainer> _endpointContainers;
     readonly Dictionary<string, IContainer> _containers;
 
@@ -20,7 +20,7 @@ public sealed class TestEnvironment : IAsyncDisposable
         TestHostServer testHost,
         INetwork network,
         WireMockServer? wireMock,
-        IReadOnlyList<IContainer> infraContainers,
+        Dictionary<string, IContainer> infraContainers,
         Dictionary<string, IContainer> endpointContainers,
         Dictionary<string, IContainer> containers)
     {
@@ -69,6 +69,92 @@ public sealed class TestEnvironment : IAsyncDisposable
         => _testHost.Observe(correlationId, cancellationToken);
 
     /// <summary>
+    /// Stops the named endpoint's container.
+    /// Convenience wrapper around <see cref="EndpointHandle.StopAsync"/>.
+    /// </summary>
+    public Task StopEndpointAsync(string endpointName, CancellationToken cancellationToken = default)
+        => GetEndpoint(endpointName).StopAsync(cancellationToken);
+
+    /// <summary>
+    /// Starts a previously stopped endpoint container and waits for the agent to reconnect.
+    /// Convenience wrapper around <see cref="EndpointHandle.StartAsync"/>.
+    /// </summary>
+    public Task StartEndpointAsync(string endpointName, CancellationToken cancellationToken = default)
+        => GetEndpoint(endpointName).StartAsync(cancellationToken);
+
+    /// <summary>
+    /// Restarts the named endpoint's container and waits for the agent to reconnect.
+    /// Convenience wrapper around <see cref="EndpointHandle.RestartAsync"/>.
+    /// </summary>
+    public Task RestartEndpointAsync(string endpointName, CancellationToken cancellationToken = default)
+        => GetEndpoint(endpointName).RestartAsync(cancellationToken);
+
+    /// <summary>
+    /// Stops the named agent-less container registered with
+    /// <see cref="TestEnvironmentBuilder.AddContainer"/>.
+    /// Convenience wrapper around <see cref="ContainerHandle.StopAsync"/>.
+    /// </summary>
+    public Task StopContainerAsync(string name, CancellationToken cancellationToken = default)
+        => GetContainer(name).StopAsync(cancellationToken);
+
+    /// <summary>
+    /// Starts a previously stopped agent-less container registered with
+    /// <see cref="TestEnvironmentBuilder.AddContainer"/>.
+    /// Convenience wrapper around <see cref="ContainerHandle.StartAsync"/>.
+    /// </summary>
+    public Task StartContainerAsync(string name, CancellationToken cancellationToken = default)
+        => GetContainer(name).StartAsync(cancellationToken);
+
+    /// <summary>
+    /// Restarts the named agent-less container registered with
+    /// <see cref="TestEnvironmentBuilder.AddContainer"/>.
+    /// Convenience wrapper around <see cref="ContainerHandle.RestartAsync"/>.
+    /// </summary>
+    public Task RestartContainerAsync(string name, CancellationToken cancellationToken = default)
+        => GetContainer(name).RestartAsync(cancellationToken);
+
+    /// <summary>
+    /// Stops the infrastructure container registered under <paramref name="key"/>
+    /// (e.g., <see cref="RabbitMqContainerOptions.InfrastructureKey"/> or
+    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>).
+    /// </summary>
+    public async Task StopInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+    {
+        if (!_infraContainers.TryGetValue(key, out var container))
+            throw new InvalidOperationException(
+                $"No infrastructure with key '{key}' was registered.");
+        await container.StopAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Starts a previously stopped infrastructure container registered under <paramref name="key"/>
+    /// (e.g., <see cref="RabbitMqContainerOptions.InfrastructureKey"/> or
+    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>).
+    /// </summary>
+    public async Task StartInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+    {
+        if (!_infraContainers.TryGetValue(key, out var container))
+            throw new InvalidOperationException(
+                $"No infrastructure with key '{key}' was registered.");
+        await container.StartAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Restarts the infrastructure container registered under <paramref name="key"/>
+    /// (e.g., <see cref="RabbitMqContainerOptions.InfrastructureKey"/> or
+    /// <see cref="PostgreSqlContainerOptions.InfrastructureKey"/>).
+    /// Use this to simulate a broker or database restart during chaos / resilience tests.
+    /// </summary>
+    public async Task RestartInfrastructureAsync(string key, CancellationToken cancellationToken = default)
+    {
+        if (!_infraContainers.TryGetValue(key, out var container))
+            throw new InvalidOperationException(
+                $"No infrastructure with key '{key}' was registered.");
+        await container.StopAsync(cancellationToken);
+        await container.StartAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Returns the stdout and stderr of the named endpoint's container.
     /// Useful for dumping diagnostic output when a test fails.
     /// </summary>
@@ -96,7 +182,7 @@ public sealed class TestEnvironment : IAsyncDisposable
 
         WireMock?.Stop();
 
-        await Task.WhenAll(_infraContainers.Select(c => c.DisposeAsync().AsTask()));
+        await Task.WhenAll(_infraContainers.Values.Select(c => c.DisposeAsync().AsTask()));
 
         await _network.DeleteAsync();
     }

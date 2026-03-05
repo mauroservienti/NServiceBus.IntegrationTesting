@@ -217,7 +217,7 @@ public sealed class TestEnvironmentBuilder
         // Declare all resources upfront so the catch block can clean up whatever was
         // successfully created even if startup fails partway through.
         INetwork? network = null;
-        List<IContainer> infraContainers = [];
+        Dictionary<string, IContainer> infraContainerMap = [];
         TestHostServer? testHost = null;
         WireMockServer? wireMock = null;
         List<(string Name, bool HasAgent, IContainer Container)> containerEntries = [];
@@ -229,8 +229,9 @@ public sealed class TestEnvironmentBuilder
             await network.CreateAsync(cancellationToken);
 
             // ── Infrastructure containers ────────────────────────────────────────
-            infraContainers.AddRange(_infrastructure.Select(decl => decl.BuildContainer(network)));
-            await Task.WhenAll(infraContainers.Select(c => c.StartAsync(cancellationToken)));
+            foreach (var decl in _infrastructure)
+                infraContainerMap[decl.Key] = decl.BuildContainer(network);
+            await Task.WhenAll(infraContainerMap.Values.Select(c => c.StartAsync(cancellationToken)));
 
             // ── gRPC test host ───────────────────────────────────────────────────
             testHost = new TestHostServer();
@@ -366,7 +367,7 @@ public sealed class TestEnvironmentBuilder
                 testHost,
                 network,
                 wireMock,
-                infraContainers,
+                infraContainerMap,
                 containerEntries.Where(e => e.HasAgent).ToDictionary(e => e.Name, e => e.Container),
                 containerEntries.Where(e => !e.HasAgent).ToDictionary(e => e.Name, e => e.Container));
         }
@@ -385,7 +386,7 @@ public sealed class TestEnvironmentBuilder
 
             wireMock?.Stop();
 
-            foreach (var c in infraContainers)
+            foreach (var c in infraContainerMap.Values)
                 try { await c.DisposeAsync(); } catch { }
 
             if (network is not null)

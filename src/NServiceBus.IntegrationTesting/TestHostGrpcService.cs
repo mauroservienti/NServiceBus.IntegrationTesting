@@ -132,6 +132,31 @@ internal sealed class TestHostGrpcService : TestHostService.TestHostServiceBase
         => new(this, correlationId, cancellationToken);
 
     /// <summary>
+    /// Removes the stale TCS and command channel for the named endpoint so that
+    /// the next WaitForAgentAsync call blocks until the restarted agent reconnects.
+    /// Must be called before stopping the container to prevent a window where the
+    /// dying connection's events could be attributed to the fresh TCS.
+    /// </summary>
+    internal void ResetAgentConnection(string endpointName)
+    {
+        _agentConnections.TryRemove(endpointName, out _);
+        if (_commandChannels.TryRemove(endpointName, out var old))
+            old.Writer.TryComplete();
+    }
+
+    /// <summary>
+    /// Marks the named endpoint as connected without going through the gRPC stream.
+    /// For use in unit tests only.
+    /// </summary>
+    internal void SimulateAgentConnected(string endpointName)
+    {
+        var tcs = _agentConnections.GetOrAdd(
+            endpointName,
+            _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        tcs.TrySetResult();
+    }
+
+    /// <summary>
     /// Returns a Task that completes when the named endpoint's agent connects.
     /// </summary>
     public Task WaitForAgentAsync(string endpointName, CancellationToken cancellationToken = default)
