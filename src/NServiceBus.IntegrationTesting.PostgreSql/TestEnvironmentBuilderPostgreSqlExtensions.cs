@@ -36,6 +36,7 @@ public static class TestEnvironmentBuilderPostgreSqlExtensions
             network =>
             {
                 var builder = new PostgreSqlBuilder(opts.ImageName)
+                    .WithName(opts.Key)
                     .WithNetwork(network)
                     .WithNetworkAliases(opts.NetworkAlias)
                     .WithDatabase(database)

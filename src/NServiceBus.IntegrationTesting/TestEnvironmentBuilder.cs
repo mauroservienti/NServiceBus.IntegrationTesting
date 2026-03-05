@@ -313,6 +313,7 @@ public sealed class TestEnvironmentBuilder
                         envVars[key] = value;
 
                     var cb = new ContainerBuilder(e.Image.FullName)
+                        .WithName(e.Name.ToLowerInvariant())
                         .WithNetwork(network)
                         .WithEnvironment(envVars)
                         .WithExtraHost("host.docker.internal", "host-gateway");
