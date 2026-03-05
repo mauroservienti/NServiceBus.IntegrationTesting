@@ -33,6 +33,7 @@ public static class TestEnvironmentBuilderRabbitMqExtensions
             network =>
             {
                 var builder = new RabbitMqBuilder(opts.ImageName)
+                    .WithName(opts.Key)
                     .WithNetwork(network)
                     .WithNetworkAliases(opts.NetworkAlias)
                     .WithUsername(opts.Username ?? RabbitMqBuilder.DefaultUsername)
