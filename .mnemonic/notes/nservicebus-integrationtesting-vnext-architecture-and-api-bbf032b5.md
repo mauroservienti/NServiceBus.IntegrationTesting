@@ -1,3 +1,26 @@
+---
+title: NServiceBus.IntegrationTesting — Full Claude Context
+tags:
+  - architecture
+  - vnext
+  - grpc
+  - docker
+  - testcontainers
+  - nservicebus
+  - rabbitmq
+  - postgresql
+  - mdsnippets
+  - nuget
+  - saga
+  - reporting
+  - scenarios
+lifecycle: permanent
+createdAt: '2026-03-12T19:20:03.779Z'
+updatedAt: '2026-03-12T20:46:24.335Z'
+project: https-github-com-mauroservienti-nservicebus-integrationtesting
+projectName: NServiceBus.IntegrationTesting
+memoryVersion: 1
+---
 # NServiceBus.IntegrationTesting — Claude Context
 
 ## Project Purpose
@@ -40,6 +63,7 @@ against real transports/persistence in tests.
 ### NSB version alignment rule
 
 NuGet TFMs actually shipped (NOT NSB version = .NET version):
+
 - NSB 10 → **net10.0** only
 - NSB 9 → **net8.0** only (NuGet lib/net8.0)
 - NSB 8 → **net6.0** + **net472** (NuGet lib/net6.0 and lib/net472)
@@ -135,6 +159,9 @@ _env = await new TestEnvironmentBuilder()
 
 `TestEnvironment` is `IAsyncDisposable`; owns network, infra containers, test host, endpoint containers.
 
+- `.GetEndpoint(name)` → `EndpointHandle`; `.Observe(correlationId, ct)` → `ObserveContext`
+- `.GetEndpointContainerLogsAsync(name)` → `(string Stdout, string Stderr)` for failure diagnostics
+
 ## Saga Reporting
 
 - `IsSaga`, `SagaIsNew`, `SagaIsCompleted`, `SagaNotFound`, `SagaId` fields on `HandlerInvokedEvent`
@@ -174,35 +201,24 @@ Code examples in `/docs/*.md` are kept in sync with compilable C# via **mdsnippe
 
 ### Snippet authoring
 
-1. Add a method (or block) in `src/Snippets/` with `// begin-snippet: id` / `// end-snippet` markers:
-   ```csharp
-   // begin-snippet: my-snippet-id
-   var x = DoSomething();
-   // end-snippet
-   ```
-2. Reference the snippet in the markdown using an HTML comment pair:
-   ```markdown
-   <!-- snippet: my-snippet-id -->
-   <!-- endSnippet -->
-   ```
+1. Add a method (or block) in `src/Snippets/` with `// begin-snippet: id` / `// end-snippet` markers.
+2. Reference the snippet in the markdown: `<!-- snippet: my-snippet-id -->` / `<!-- endSnippet -->`
 3. Run `mdsnippets -c InPlaceOverwrite` from the repo root to expand all snippets in place.
-   mdsnippets replaces the content between the comment pair with a fenced code block and a
-   source-file link, leaving the markers so the file can be re-synced in future.
 
 ### Naming conventions
+
 - Getting-started snippets: `gs-*` prefix
 - Feature-specific snippets: short descriptive prefix matching the doc file name (e.g. `env-var-*`)
 
 ### Stubs
+
 Types that don't exist in production code (e.g. `YourEndpoint.Messages.SomeCommand`) are
 declared in `src/Snippets/GettingStartedStubs.cs` so snippet files compile without external
 dependencies. Add new stubs there when a snippet references a non-existent type.
 
 ### Running mdsnippets
-```
-cd /Users/mauroservienti/dev/mauroservienti/NServiceBus.IntegrationTesting
-mdsnippets -c InPlaceOverwrite
-```
+
+Run from repo root: `mdsnippets -c InPlaceOverwrite`
 
 ## Remaining Gaps
 
