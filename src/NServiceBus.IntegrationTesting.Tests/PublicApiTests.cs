@@ -1,5 +1,5 @@
+using NUnit.Framework;
 using PublicApiGenerator;
-using VerifyNUnit;
 
 namespace NServiceBus.IntegrationTesting.Tests;
 
@@ -18,51 +18,51 @@ public class PublicApiTests
     };
 
     [Test]
-    public Task PublicApi_matches_approved_snapshot()
+    public void PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(TestEnvironment).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 
     [Test]
-    public Task RabbitMQ_PublicApi_matches_approved_snapshot()
+    public void RabbitMQ_PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(RabbitMqContainerOptions).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 
     [Test]
-    public Task PostgreSql_PublicApi_matches_approved_snapshot()
+    public void PostgreSql_PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(PostgreSqlContainerOptions).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 
     [Test]
-    public Task MySql_PublicApi_matches_approved_snapshot()
+    public void MySql_PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(MySqlContainerOptions).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 
     [Test]
-    public Task MongoDb_PublicApi_matches_approved_snapshot()
+    public void MongoDb_PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(MongoDbContainerOptions).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 
     [Test]
-    public Task SqlServer_PublicApi_matches_approved_snapshot()
+    public void SqlServer_PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(SqlServerContainerOptions).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 
     [Test]
-    public Task RavenDb_PublicApi_matches_approved_snapshot()
+    public void RavenDb_PublicApi_matches_approved_snapshot()
     {
         var publicApi = typeof(RavenDbContainerOptions).Assembly.GeneratePublicApi(Options);
-        return Verifier.Verify(publicApi);
+        Approver.Verify(publicApi);
     }
 }
