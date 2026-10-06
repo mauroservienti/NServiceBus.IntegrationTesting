@@ -1,3 +1,4 @@
+using NUnit.Framework;
 using PublicApiGenerator;
 
 namespace NServiceBus.IntegrationTesting.Tests;
